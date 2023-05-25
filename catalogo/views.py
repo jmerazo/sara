@@ -49,3 +49,10 @@ class BuscarEspecieView(APIView):
         serializer = EspecieForestalSerializer(search)
         
         return Response(serializer.data)
+    
+class BuscarFamiliaView(APIView):
+    def get(self, request, familia, format=None):        
+        search = EspecieForestal.objects.filter(familia__icontains=familia)
+        serializer = EspecieForestalSerializer(search, many=True)
+        
+        return Response(serializer.data)
