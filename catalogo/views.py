@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Q
+from django.db.models import Q, Count
 from .models import EspecieForestal
 from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -56,3 +56,28 @@ class BuscarFamiliaView(APIView):
         serializer = EspecieForestalSerializer(search, many=True)
         
         return Response(serializer.data)
+
+class FamiliasView(APIView):
+    def get(self, request, format=None):
+        # Obtener las familias
+        familias = EspecieForestal.objects.values('familia').annotate(total=Count('familia')).distinct()
+
+        resultado = []
+
+        # Recorrer las familias
+        for familia in familias:
+            familia_nombre = familia['familia']
+
+            # Obtener las especies relacionadas a la familia actual
+            especies = EspecieForestal.objects.filter(familia=familia_nombre)
+
+            # Crear una lista de nombres de especies
+            especies_nombres = [especie.nom_comunes for especie in especies]
+
+            # Agregar la familia y las especies a la lista de resultados
+            resultado.append({
+                'familia': familia_nombre,
+                'especies': especies_nombres
+            })
+
+        return Response(resultado)
