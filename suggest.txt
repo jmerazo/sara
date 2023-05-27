@@ -1,0 +1,22 @@
+-- REQUERIMENTS --
+DATE: 11/05/2023
+HOME
+- MOD NAVBAR: En logo Sara crear menu sandwich
+- MOD SECTION: definir porque el logo es Sara en información complementaria de la pantalla de inicio y relacion a consulta base
+- MOD GLOSARIO: Agregar opción de glosario, texto e imagen
+- MOD ALIADOS: Minciencias, regalias, Gobernación de Putumayo, ITP.
+- MOD PAGINAS RELACIONADAS: Agregar accesos directos a páginas usadas para consulta: Tropicos, Powo, Catalogo de plantas y liquenes de Colombia
+- MOD APP: Agregar información de la aplicación y protocolo de acceso
+- MOD UNIRSE: Opción para solicitar acceso a la aplicación, normatividad?
+- MOD SEMILLAS: Agregar acceso directo a Catalogo de semillas disponibles de viveristas, crear ecommerse
+- MOD REPORTES: Reemplazar informes por reportes
+- MOD LOGIN: se requiere descarga de información con restricciones ?, se requiere para crear vistas dinamicas y actualizables
+
+S - Sistema de información de Semillas
+A - y Árboles
+R - de la Región sur
+A - de la Amazonía
+
+VIEW SEARCH SPECIE
+- MOD CITACIÓN: Agregar opción de citación de las consultas realizadas en el catalogo web, como citar? example: http://catalogoplantasdecolombia.unal.edu.co/es/como-citar/
+- 
