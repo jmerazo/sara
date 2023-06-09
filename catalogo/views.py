@@ -81,3 +81,10 @@ class FamiliasView(APIView):
             })
 
         return Response(resultado)
+    
+class ScientificNameView(APIView):
+    def get(self, request, scientific, format=None):        
+        search = EspecieForestal.objects.filter(nombre_cientifico__icontains=scientific).first()
+        serializer = EspecieForestalSerializer(search)
+        
+        return Response(serializer.data)
