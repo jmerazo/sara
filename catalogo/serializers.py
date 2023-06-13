@@ -19,4 +19,4 @@ class FamiliaSerializer(serializers.ModelSerializer):
 class NombreCientificoSerializer(serializers.ModelSerializer):
     class Meta:
         model = EspecieForestal
-        fields = ['nombre_cientifico']
+        fields = ['nombre_cientifico','nom_comunes', 'distribucion' ,'foto_general']
