@@ -34,6 +34,18 @@ class EspecieForestal(models.Model):
     def __str__(self):
         return f"Nombre común: {self.nom_comunes}, Nombre científico: {self.nombre_cientifico} ,Código de especie: {self.cod_especie}"
 
+class Glossary(models.Model):
+    id = models.IntegerField(primary_key=True, blank=False)
+    word = models.CharField(max_length=100)
+    definition = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'glossary'
+
+    def __str__(self):
+        return f"ID: {self.id}, Word: {self.word}, Definition: {self.definition}"
+
 """
 CharField: Campo de texto de longitud variable.
 TextField: Campo de texto de longitud variable (para textos más largos).

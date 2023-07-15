@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EspecieForestalView, NombresComunesView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView
+from .views import EspecieForestalView, NombresComunesView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView
 
 urlpatterns = [
     path('especie_forestal/', EspecieForestalView.as_view({
@@ -21,5 +21,6 @@ urlpatterns = [
     path('especie_forestal/search/nombre_comun/<str:nombre>', BuscarEspecieView.as_view()),
     path('especie_forestal/search/familia/<str:familia>', BuscarFamiliaView.as_view()),
     path('especie_forestal/familias', FamiliasView.as_view()),
-    path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view())
+    path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view()),
+    path('especie_forestal/glossary', GlossaryView.as_view())
 ]

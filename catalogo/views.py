@@ -3,8 +3,8 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q, Count
-from .models import EspecieForestal
-from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer
+from .models import EspecieForestal, Glossary
+from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer
 from rest_framework.permissions import IsAuthenticated
 
 class CurrentUser(viewsets.ModelViewSet):
@@ -88,3 +88,10 @@ class ScientificNameView(APIView):
         serializer = EspecieForestalSerializer(search)
         
         return Response(serializer.data)
+    
+class GlossaryView(APIView):
+    def get(self, request, format = None):
+        word = Glossary.objects.all()
+        word_serializer = GlossarySerializer(word)
+
+        return Response(word_serializer.data)
