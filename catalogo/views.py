@@ -3,8 +3,9 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q, Count
-from .models import EspecieForestal, Glossary
-from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer
+
+from .models import EspecieForestal
+from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer
 from rest_framework.permissions import IsAuthenticated
 
 class CurrentUser(viewsets.ModelViewSet):
@@ -20,9 +21,15 @@ class NombresComunesView(viewsets.ModelViewSet):
    queryset = EspecieForestal.objects.all()
    serializer_class = NombresComunesSerializer
 
-class FamiliaView(viewsets.ModelViewSet):
-   queryset = EspecieForestal.objects.all()
-   serializer_class = FamiliaSerializer
+class FamiliaView(viewsets.ViewSet):
+    serializer_class = FamiliaSerializer
+
+    #Aquí se realizó la función para enviar las familias sin duplicados
+    def list(self, request, *args, **kwargs):
+        queryset = EspecieForestal.objects.values('familia').distinct()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
 
 class NombreCientificoView(viewsets.ModelViewSet):
    queryset = EspecieForestal.objects.all()
@@ -88,10 +95,3 @@ class ScientificNameView(APIView):
         serializer = EspecieForestalSerializer(search)
         
         return Response(serializer.data)
-    
-class GlossaryView(APIView):
-    def get(self, request, format = None):
-        word = Glossary.objects.all()
-        word_serializer = GlossarySerializer(word)
-
-        return Response(word_serializer.data)
