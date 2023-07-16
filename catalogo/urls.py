@@ -22,5 +22,5 @@ urlpatterns = [
     path('especie_forestal/search/familia/<str:familia>', BuscarFamiliaView.as_view()),
     path('especie_forestal/familias', FamiliasView.as_view()),
     path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view()),
-    path('especie_forestal/glossary', GlossaryView.as_view())
+    path('glossary', GlossaryView.as_view())
 ]

@@ -24,8 +24,8 @@ class NombreCientificoSerializer(serializers.ModelSerializer):
 class GlossarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Glossary
-        fields = ['id', 'word', 'definition']
-        read_only_fields = ['id']
+        fields = '__all__'
+        """ read_only_fields = ['id']
 
     def validate_word(self, value):
         # Ejemplo de validación personalizada para el campo 'word'
@@ -38,4 +38,4 @@ class GlossarySerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         # Puedes manipular la representación antes de devolverla
         representation['word'] = representation['word'].upper()
-        return representation
+        return representation """
