@@ -106,7 +106,15 @@ class GlossaryView(APIView):
 class GeoCandidateTreesView(APIView):
     def get(self, request, format=None): 
         geo = CandidateTrees.objects.all()
-        geoData = GeoCandidateTreesSerializer(geo, many=True)
+        geoData = GeoCandidateTreesSerializer(geo, many=True).data
 
-        return Response(geoData.data)
+        geo_format = []
+
+        for datos in geoData:
+            latitud, longitud  = datos['abcisa_xy'].split(', ')
+            geo_fixed = {'codigo': datos['cod_especie'], 'lat': float(latitud), 'lon': float(longitud)}
+            geo_format.append(geo_fixed)
+
+        print('Coordendas', geo_format)
+        return Response(geo_format)
    
