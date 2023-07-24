@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 
-from .models import EspecieForestal, Glossary
-from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer
+from .models import EspecieForestal, Glossary, CandidateTrees
+from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer
 from rest_framework.permissions import IsAuthenticated
 
 class CurrentUser(viewsets.ModelViewSet):
@@ -102,4 +102,11 @@ class GlossaryView(APIView):
         serializer = GlossarySerializer(queryset, many=True)
 
         return Response(serializer.data)
+    
+class GeoCandidateTreesView(APIView):
+    def get(self, request, format=None): 
+        geo = CandidateTrees.objects.all()
+        geoData = GeoCandidateTreesSerializer(geo, many=True)
+
+        return Response(geoData.data)
    

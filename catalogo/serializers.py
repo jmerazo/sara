@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary
+from .models import EspecieForestal, Glossary, CandidateTrees
 
 class EspecieForestalSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,3 +39,8 @@ class GlossarySerializer(serializers.ModelSerializer):
         # Puedes manipular la representación antes de devolverla
         representation['word'] = representation['word'].upper()
         return representation """
+
+class GeoCandidateTreesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateTrees
+        fields = ['cod_especie', 'abcisa_xy']
