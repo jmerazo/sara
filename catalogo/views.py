@@ -112,9 +112,10 @@ class GeoCandidateTreesView(APIView):
 
         for datos in geoData:
             latitud, longitud  = datos['abcisa_xy'].split(', ')
-            geo_fixed = {'codigo': datos['cod_especie'], 'lat': float(latitud), 'lon': float(longitud)}
+            code_number = int(datos['cod_especie'])
+            geo_fixed = {'codigo': code_number, 'lat': float(latitud), 'lon': float(longitud)}
             geo_format.append(geo_fixed)
 
-        print('Coordendas', geo_format)
+        #print('Coordendas', geo_format)
         return Response(geo_format)
    
