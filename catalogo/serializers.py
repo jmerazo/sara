@@ -44,3 +44,8 @@ class GeoCandidateTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateTrees
         fields = ['cod_especie', 'abcisa_xy']
+
+class AverageTreesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateTrees
+        fields = ['cod_especie', 'altitud', 'altura_total', 'altura_comercial', 'cobertura']

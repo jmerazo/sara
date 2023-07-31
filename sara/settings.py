@@ -90,6 +90,14 @@ DATABASES = {
         'PASSWORD': 'Jmerazo96*',
         'HOST': 'localhost',
         'PORT': '3306',
+    },
+    'external_db': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'basesara',
+        'USER': 'basesara',
+        'PASSWORD': 'Putumayo@2022',
+        'HOST': 'amazoniaesenciadevida.com.co',
+        'PORT': '3306',
     }
 }
 
