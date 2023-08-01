@@ -20,3 +20,8 @@ A - de la Amazonía
 VIEW SEARCH SPECIE
 - MOD CITACIÓN: Agregar opción de citación de las consultas realizadas en el catalogo web, como citar? example: http://catalogoplantasdecolombia.unal.edu.co/es/como-citar/
 - 
+
+
+REUNION 31 07 2023
+AGREGAR OTROS NOMBRE COMUNES A LA CONSULTA DE NOMBRE COMUN
+MODAL ESPECIES: DESCRIPCION GENERAL, SINONIMOS Y OTROS NOMBRES COMUNES
