@@ -131,21 +131,27 @@ class AverageCandidateTreesView(APIView):
                 return None
 
     def get(self, request, format=None): 
-        average = CandidateTrees.objects.all()
-        averageData = AverageTreesSerializer(average, many=True).data
+        try:
+            average = CandidateTrees.objects.all()
+            averageData = AverageTreesSerializer(average, many=True).data
 
-        average_format = []
+            average_format = []
 
-        for datos in averageData:
-            code_number = self.convert_to_decimal_or_int(datos['altura_comercial'])
+            for datos in averageData:
+                code_number = int(datos['cod_especie'])
 
-            altura_total_str = datos['altura_total']
-            at = self.convert_to_decimal_or_int(altura_total_str)
+                altura_total_str = datos['altura_total']
+                at = self.convert_to_decimal_or_int(altura_total_str)
 
-            altura_ccial_str = datos['altura_comercial']
-            ac = self.convert_to_decimal_or_int(altura_ccial_str)
+                altura_ccial_str = datos['altura_comercial']
+                ac = self.convert_to_decimal_or_int(altura_ccial_str)
 
-            average_fixed = {'codigo': code_number, 'altura_total': at, 'altura_comercial': ac, 'cobertura': datos['cobertura']}
-            average_format.append(average_fixed)
+                average_fixed = {'codigo': code_number, 'altitud': datos['altitud'], 'altura_total': at, 'altura_comercial': ac, 'cobertura': datos['cobertura']}
+                average_format.append(average_fixed)
 
-        return Response(average_format)
+            print('Average data: ', average_format)
+            return Response(average_format)
+
+        except Exception as e:
+            print('Error:', str(e))
+            return Response({'error': 'Ocurrió un error al obtener los datos'}, status=500)
