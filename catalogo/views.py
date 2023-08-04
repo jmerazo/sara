@@ -1,13 +1,37 @@
-from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.response import Response
+from django.contrib.auth.models import User
+from rest_framework import status, generics, permissions
+from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 from decimal import Decimal
-
 from .models import EspecieForestal, Glossary, CandidateTrees
 from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+
+class LoginView(generics.CreateAPIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        user = User.objects.filter(username=username).first()
+        if user is None or not user.check_password(password):
+            return Response({'error': 'Invalid username or password'}, status=401)
+
+        login(request, user)
+        return Response({'user': user.to_dict()}, status=200)
+
+class LogoutView(generics.DestroyAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        logout(request)
+        return Response({'success': 'Successfully logged out'}, status=200)
 
 class CurrentUser(viewsets.ModelViewSet):
      def get_queryset(self):

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EspecieForestalView, NombresComunesView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView
+from .views import EspecieForestalView, NombresComunesView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView
 
 urlpatterns = [
     path('especie_forestal/', EspecieForestalView.as_view({
@@ -24,5 +24,8 @@ urlpatterns = [
     path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view()),
     path('glossary', GlossaryView.as_view()),
     path('candidate/geolocation', GeoCandidateTreesView.as_view()),
-    path('candidate/average', AverageCandidateTreesView.as_view())
+    path('candidate/average', AverageCandidateTreesView.as_view()),
+
+    path('auth/login/', LoginView.as_view()),
+    path('auth/logout/', LogoutView.as_view())
 ]
