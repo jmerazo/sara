@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import datetime
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -94,19 +98,11 @@ DATABASES = {
     #}
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sara_v1',
-        'USER': 'jmerazo96',
-        'PASSWORD': 'Jmerazo96*',
-        'HOST': 'localhost',
-        'PORT': '3306',
-    },
-    'external_db': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'basesara',
-        'USER': 'basesara',
-        'PASSWORD': 'Putumayo@2022',
-        'HOST': 'amazoniaesenciadevida.com.co',
-        'PORT': '3306',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -166,9 +162,13 @@ REST_FRAMEWORK = {
     ]
 }
 
-JWT_AUTH = {
-    'JWT_ALLOW_REFRESH': True,
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=3600),  # Duración del token (1 hora)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Cambia el tiempo según tus necesidades
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    'SLIDING_TOKEN_LIFETIME': timedelta(days=1),
+    'SLIDING_TOKEN_REFRESH_LIFETIME_GRACE_PERIOD': timedelta(days=0),
+    'SLIDING_TOKEN_REFRESH_LIFETIME_ALLOW_REFRESH': True,
+    'SLIDING_TOKEN_REFRESH_LIFETIME_CALCULATION': 'refresh_exp',
 }
 
 CORS_ORIGIN_ALLOW_ALL = True

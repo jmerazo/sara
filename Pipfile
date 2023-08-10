@@ -11,8 +11,12 @@ djangorestframework-simplejwt = "*"
 pyjwt = "*"
 pillow = "*"
 django-filter = "*"
+django = "==4.1.1"
 
 [dev-packages]
 
 [requires]
 python_version = "3.11"
+
+[pipenv]
+allow_prereleases = true
