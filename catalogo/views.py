@@ -173,7 +173,7 @@ class AverageCandidateTreesView(APIView):
                 average_fixed = {'codigo': code_number, 'altitud': datos['altitud'], 'altura_total': at, 'altura_comercial': ac, 'cobertura': datos['cobertura']}
                 average_format.append(average_fixed)
 
-            print('Average data: ', average_format)
+            """ print('Average data: ', average_format) """
             return Response(average_format)
 
         except Exception as e:
