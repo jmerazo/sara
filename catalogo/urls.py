@@ -27,7 +27,7 @@ urlpatterns = [
     path('candidate/geolocation', GeoCandidateTreesView.as_view()),
     path('candidate/average', AverageCandidateTreesView.as_view()),
 
-    path('especie_forestal/export', ExportSpecies.as_view(), name='export-species'),
+    path('especie_forestal/export/<int:code>', ExportSpecies.as_view(), name='export-species'),
 
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view())
