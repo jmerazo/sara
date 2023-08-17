@@ -56,3 +56,8 @@ class AverageTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateTrees
         fields = ['cod_especie', 'altitud', 'altura_total', 'altura_comercial', 'cobertura']
+
+class CandidateTreesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateTrees
+        fields = '__all__'
