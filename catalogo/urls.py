@@ -2,6 +2,7 @@ from django.urls import path
 from .views import EspecieForestalView, NombresComunesView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView
 from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
+from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
 
 urlpatterns = [
     path('especie_forestal/', EspecieForestalView.as_view({
@@ -30,6 +31,10 @@ urlpatterns = [
 
     path('especie_forestal/export/<int:code>', ExportSpecies.as_view(), name='export-species'),
     path('candidate/export/all', ExportCandidateTrees.as_view(), name='export-candidates'),
+
+    path('monitoring/report', MonitoringReport.as_view(), name='monitoring-report'),
+    path('monitoring/report/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
+    path('monitoring/report/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
 
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view())

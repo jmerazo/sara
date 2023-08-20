@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -57,7 +57,17 @@ class AverageTreesSerializer(serializers.ModelSerializer):
         model = CandidateTrees
         fields = ['cod_especie', 'altitud', 'altura_total', 'altura_comercial', 'cobertura']
 
+class TreesVerifyMonitoringSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateTrees
+        fields = ['ShortcutIDEV', 'numero_placa', 'cod_especie', 'fecha_evaluacion', 'usuario_evaluador', 'departamento', 'municipio']
+
 class CandidateTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateTrees
         fields = '__all__'
+
+class MonitoringTreesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Monitoring
+        fields = ['IDmonitoreo', 'ShortcutIDEV', 'fecha_monitoreo', 'usuario_realiza_monitoreo']
