@@ -32,9 +32,9 @@ urlpatterns = [
     path('especie_forestal/export/<int:code>', ExportSpecies.as_view(), name='export-species'),
     path('candidate/export/all', ExportCandidateTrees.as_view(), name='export-candidates'),
 
-    path('monitoring/report', MonitoringReport.as_view(), name='monitoring-report'),
-    path('monitoring/report/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
-    path('monitoring/report/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
+    path('monitoring/report/month', MonitoringReport.as_view(), name='monitoring-report'),
+    path('monitoring/report/month/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
+    path('monitoring/report/general/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
 
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view())

@@ -100,7 +100,7 @@ class MonitoringReportLocates(APIView):
             department_totals[departamento]['municipios'][municipio]['total_monitoreos_mes'] += 1
         
         response_data = {
-            'department_totals': department_totals
+            'locates_totals': department_totals
         }
 
         return Response(response_data)
