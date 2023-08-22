@@ -3,6 +3,7 @@ from .views import EspecieForestalView, NombresComunesView, FamiliaView, NombreC
 from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
+from .reports.samples import SamplesReport
 
 urlpatterns = [
     path('especie_forestal/', EspecieForestalView.as_view({
@@ -35,6 +36,7 @@ urlpatterns = [
     path('monitoring/report/month', MonitoringReport.as_view(), name='monitoring-report'),
     path('monitoring/report/month/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
     path('monitoring/report/general/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
+    path('samples/report/general', SamplesReport.as_view()),
 
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view())
