@@ -2,12 +2,13 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework import status, generics, permissions
+from django.http import Http404
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 from decimal import Decimal
-from .models import EspecieForestal, Glossary, CandidateTrees
-from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer
+from .models import EspecieForestal, Glossary, CandidateTrees, Page
+from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -179,3 +180,36 @@ class AverageCandidateTreesView(APIView):
         except Exception as e:
             print('Error:', str(e))
             return Response({'error': 'Ocurrió un error al obtener los datos'}, status=500)
+            
+class PageView(APIView):
+    def get_object(self, pk=None):
+        if pk is not None:
+            try:
+                return Page.objects.get(pk=pk)
+            except Page.DoesNotExist:
+                raise Http404
+        else:
+            return Page.objects.all()
+
+    def get(self, request, pk=None, format=None):
+        pages = self.get_object(pk)
+        
+        if isinstance(pages, Page):
+            serializer = PageSerializer(pages)
+        else:
+            serializer = PageSerializer(pages, many=True)
+            
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        page = self.get_object(pk)
+        serializer = PageSerializer(page, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        page = self.get_object(pk)
+        page.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

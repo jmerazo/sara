@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -71,3 +71,8 @@ class MonitoringTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Monitoring
         fields = ['IDmonitoreo', 'ShortcutIDEV', 'fecha_monitoreo', 'usuario_realiza_monitoreo']
+
+class PageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = '__all__'
