@@ -25,7 +25,7 @@ title_style.fontSize = 10  # Cambia el tamaño de la fuente si es necesario
 
 class ExportSpecies(APIView):
     def get(self, request, code, *args, **kwargs):
-        specie = EspecieForestal.objects.filter(cod_especie__icontains=code).first()
+        specie = EspecieForestal.objects.filter(cod_especie=code).first()
         specieData = EspecieForestalSerializer(specie).data
 
         current_date = datetime.now().strftime("%Y-%m-%d")
@@ -46,29 +46,31 @@ class ExportSpecies(APIView):
         header = Paragraph(header_text)
         elements.append(header)
 
-        ltpsinonimos = Paragraph(specieData['sinonimos'])
-        ltpdistribucion = Paragraph(specieData['distribucion'])
-        ltphojas = Paragraph(specieData['hojas'])
-        ltpflor = Paragraph(specieData['flor'])
-        ltpfrutos = Paragraph(specieData['frutos'])
-        ltpsemillas = Paragraph(specieData['semillas'])
-        ltptallo = Paragraph(specieData['tallo'])
-        ltpraiz = Paragraph(specieData['raiz'])
+        # Crear una lista de tuplas para los datos de la tabla
+        table_data = []
 
-        especies_table = Table([
-                                [Paragraph("<b>Nombre común:</b>", title_style), specieData['nom_comunes']],
-                                [Paragraph("<b>Otros nombres:</b>", title_style), specieData['otros_nombres']],
-                                [Paragraph("<b>Nombre científico:</b>", title_style), specieData['nombre_cientifico']],
-                                [Paragraph("<b>Sinonimos:</b>", title_style), ltpsinonimos],
-                                [Paragraph("<b>Familia:</b>", title_style), specieData['familia']],
-                                [Paragraph("<b>Distribución:</b>", title_style), ltpdistribucion],
-                                [Paragraph("<b>Hojas:</b>", title_style), ltphojas],
-                                [Paragraph("<b>Flor:</b>", title_style), ltpflor],
-                                [Paragraph("<b>Frutos:</b>", title_style), ltpfrutos],
-                                [Paragraph("<b>Semillas:</b>", title_style), ltpsemillas],
-                                [Paragraph("<b>Tallo:</b>", title_style), ltptallo],
-                                [Paragraph("<b>Raíz:</b>", title_style), ltpraiz]
-                                ], colWidths=col_widths)
+        def add_table_row(label, value):
+            if value is not None and value.strip() != "":
+                label_paragraph = Paragraph(f"<b>{label}:</b>", title_style)
+                value_paragraph = Paragraph(value, cell_style)
+                table_data.append((label_paragraph, value_paragraph))
+
+        # Agregar filas de datos a la tabla
+        add_table_row("Nombre común", specieData.get('nom_comunes', ''))
+        add_table_row("Otros nombres", specieData.get('otros_nombres', ''))
+        add_table_row("Nombre científico", specieData.get('nombre_cientifico', ''))
+        add_table_row("Sinonimos", specieData.get('sinonimos', ''))
+        add_table_row("Familia", specieData.get('familia', ''))
+        add_table_row("Distribución", specieData.get('distribucion', ''))
+        add_table_row("Hojas", specieData.get('hojas', ''))
+        add_table_row("Flor", specieData.get('flor', ''))
+        add_table_row("Frutos", specieData.get('frutos', ''))
+        add_table_row("Semillas", specieData.get('semillas', ''))
+        add_table_row("Tallo", specieData.get('tallo', ''))
+        add_table_row("Raíz", specieData.get('raiz', ''))
+
+        # Crear la tabla con los datos
+        especies_table = Table(table_data, colWidths=col_widths)
         especies_table.setStyle([('STYLE', (0, 0), (-1, -1), cell_style)])
         elements.append(especies_table)
 
