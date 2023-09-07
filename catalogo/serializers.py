@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -76,3 +77,15 @@ class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
         fields = '__all__'
+
+class UsersSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Users  # o tu modelo de usuario personalizado
+        fields = '__all__'
+
+    def create(self, validated_data):
+        # Hash de la contraseña antes de guardarla en la base de datos
+        validated_data['password'] = make_password(validated_data['password'])
+        return super(UsersSerializer, self).create(validated_data)

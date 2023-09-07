@@ -98,11 +98,11 @@ DATABASES = {
     #}
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'NAME': 'sara_v1',
+        'USER': 'jmerazo96',
+        'PASSWORD': 'Jmerazo96*',
+        'HOST': 'localhost',
+        'PORT': '3306',
     },
     'default2': {
         'ENGINE': 'django.db.backends.mysql',
@@ -133,6 +133,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+""" AUTH_USER_MODEL = 'myapp.CustomUser' """
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

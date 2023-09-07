@@ -193,7 +193,26 @@ class Page(models.Model):
         managed = False
         db_table = 'page'
 
+class Users(models.Model):
+    id = models.CharField(db_column='UserID', primary_key=True, max_length=50)
+    email = models.CharField(db_column='UserEmail',max_length=50, blank=True, null=True)
+    password = models.CharField(max_length=150, blank=True, null=True)
+    fullname = models.CharField(db_column='UserName',max_length=100, blank=True, null=True)
+    rol = models.CharField(db_column='UserRol',max_length=100, blank=True, null=True)
+    active = models.CharField(db_column='UserActive',max_length=30, blank=True, null=True)
+    document_type = models.CharField(db_column='tipo_documento', max_length=40, blank=True, null=True)
+    document_number = models.CharField(db_column='nro_documento', max_length=20, blank=True, null=True)
+    entity = models.CharField(max_length=100, blank=True, null=True)
+    cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
+    departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
+    device = models.CharField(max_length=2, blank=True, null=True)
+    serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
+    profession = models.CharField(max_length=150, blank=True, null=True)
+    reason = models.CharField(max_length=500, blank=True, null=True)
 
+    class Meta:
+        managed = False
+        db_table = 'users'
 """
 CharField: Campo de texto de longitud variable.
 TextField: Campo de texto de longitud variable (para textos más largos).

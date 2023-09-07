@@ -4,6 +4,7 @@ from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
 from .reports.samples import SamplesReport
+from .administration.users import UsersView
 
 urlpatterns = [
     path('especie_forestal/', EspecieForestalView.as_view({
@@ -42,5 +43,8 @@ urlpatterns = [
     path('auth/logout/', LogoutView.as_view()),
 
     path('page/content', PageView.as_view(), name='page-list'),
-    path('page/content/<int:pk>', PageView.as_view(), name='page-detail')
+    path('page/content/<int:pk>', PageView.as_view(), name='page-detail'),
+
+    path('users/', UsersView.as_view()),
+    path('users/<str:pk>', UsersView.as_view())
 ]
