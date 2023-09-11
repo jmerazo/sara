@@ -75,12 +75,13 @@ class MonitoringReportLocates(APIView):
         department_totals = defaultdict(lambda: {
             'monitoreos_realizados_mes': 0,
             'monitoreos_pendientes_mes': 0,
-            'total_monitoreos_mes': 0,
-            'municipios': defaultdict(lambda: {
-                'monitoreos_realizados_mes': 0,
-                'monitoreos_pendientes_mes': 0,
-                'total_monitoreos_mes': 0
-            })
+            'total_monitoreos_mes': 0
+        })
+
+        municipality_totals = defaultdict(lambda: {
+            'monitoreos_realizados_mes': 0,
+            'monitoreos_pendientes_mes': 0,
+            'total_monitoreos_mes': 0
         })
 
         for entry in total_monitoreos:
@@ -90,16 +91,17 @@ class MonitoringReportLocates(APIView):
             
             if realizado and realizado > 0:
                 department_totals[departamento]['monitoreos_realizados_mes'] += 1
-                department_totals[departamento]['municipios'][municipio]['monitoreos_realizados_mes'] += 1
+                municipality_totals[municipio]['monitoreos_realizados_mes'] += 1
             else:
                 department_totals[departamento]['monitoreos_pendientes_mes'] += 1
-                department_totals[departamento]['municipios'][municipio]['monitoreos_pendientes_mes'] += 1
+                municipality_totals[municipio]['monitoreos_pendientes_mes'] += 1
 
             department_totals[departamento]['total_monitoreos_mes'] += 1
-            department_totals[departamento]['municipios'][municipio]['total_monitoreos_mes'] += 1
+            municipality_totals[municipio]['total_monitoreos_mes'] += 1
         
         response_data = {
-            'locates_totals': department_totals
+            'departamentos': dict(department_totals),
+            'municipios': dict(municipality_totals)
         }
 
         return Response(response_data)
@@ -116,24 +118,21 @@ class MonitoringReportTotal(APIView):
             cursor.execute(sql_query)
             results = cursor.fetchall()
 
-        departamento_municipio_counts = {}
-        departamento_total_counts = {}
+        departamento_totals = {}
+        municipio_totals = {}
 
         for departamento, municipio, total in results:
-            if departamento not in departamento_municipio_counts:
-                departamento_municipio_counts[departamento] = {}
-                departamento_total_counts[departamento] = 0
+            if departamento not in departamento_totals:
+                departamento_totals[departamento] = 0
+            if municipio not in municipio_totals:
+                municipio_totals[municipio] = 0
 
-            departamento_municipio_counts[departamento][municipio] = total
-            departamento_total_counts[departamento] += total
+            departamento_totals[departamento] += total
+            municipio_totals[municipio] += total
 
-        response_data = {}
-
-        for departamento, total in departamento_total_counts.items():
-            departamento_data = {
-                "total": total,
-                "municipios": departamento_municipio_counts[departamento]
-            }
-            response_data[departamento] = departamento_data
+        response_data = {
+            'departamentos': dict(departamento_totals),
+            'municipios': dict(municipio_totals)
+        }
 
         return Response(response_data)

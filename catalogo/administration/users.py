@@ -9,6 +9,8 @@ from django.db.models import Q, Count
 from decimal import Decimal
 from ..models import Users
 from ..serializers import UsersSerializer
+import random
+import string
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -34,7 +36,28 @@ class UsersView(APIView):
         return Response(serializer.data)
     
     def post(self, request, format=None):
-        serializer = UsersSerializer(data=request.data)
+        adjusted_data = request.data.copy()
+        existing_user = Users.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
+        if existing_user:
+            return Response({'error': f'El usuario ya está registrado con el correo electrónico {existing_user.email} y número de documento {existing_user.document_number}.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        def generate_random_id(length):
+            characters = string.ascii_letters + string.digits
+            random_id = ''.join(random.choice(characters) for _ in range(length))
+            return random_id
+
+        random_id = generate_random_id(8)  # Genera un ID de 8 caracteres (números y letras)
+        user_active = 0
+        user_rol_default = "Básico"
+
+        adjusted_data['fullname'] = f"{adjusted_data['names']} {adjusted_data['lastnames']}"
+        adjusted_data.pop('names', None)  # Elimina el campo 'nombres'
+        adjusted_data.pop('lastnames', None)
+        adjusted_data['id'] = random_id
+        adjusted_data['active'] = user_active
+        adjusted_data['rol'] = user_rol_default
+
+        serializer = UsersSerializer(data=adjusted_data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

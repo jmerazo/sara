@@ -205,7 +205,8 @@ class Users(models.Model):
     entity = models.CharField(max_length=100, blank=True, null=True)
     cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
     departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
-    device = models.CharField(max_length=2, blank=True, null=True)
+    city = models.IntegerField(blank=True, null=True)
+    device = models.CharField(db_column='Equipo Celular', max_length=2, blank=True, null=True)
     serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
     profession = models.CharField(max_length=150, blank=True, null=True)
     reason = models.CharField(max_length=500, blank=True, null=True)
@@ -213,6 +214,26 @@ class Users(models.Model):
     class Meta:
         managed = False
         db_table = 'users'
+
+class Departments(models.Model):
+    id = models.IntegerField(primary_key=True)
+    code = models.IntegerField(blank=True, null=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'departments'
+
+class Cities(models.Model):
+    id = models.IntegerField(primary_key=True)
+    code = models.CharField(max_length=10, blank=True, null=True)
+    name = models.CharField(max_length=60, blank=True, null=True)
+    department_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'cities'
+
 """
 CharField: Campo de texto de longitud variable.
 TextField: Campo de texto de longitud variable (para textos más largos).

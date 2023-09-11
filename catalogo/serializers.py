@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
@@ -89,3 +89,13 @@ class UsersSerializer(serializers.ModelSerializer):
         # Hash de la contraseña antes de guardarla en la base de datos
         validated_data['password'] = make_password(validated_data['password'])
         return super(UsersSerializer, self).create(validated_data)
+    
+class DepartmentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Departments
+        fields = '__all__'
+
+class CitiesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cities
+        fields = '__all__'
