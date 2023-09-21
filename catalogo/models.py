@@ -210,10 +210,11 @@ class Users(models.Model):
     serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
     profession = models.CharField(max_length=150, blank=True, null=True)
     reason = models.CharField(max_length=500, blank=True, null=True)
+    state = models.CharField(max_length=25, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'users'
+        db_table = 'Users'
 
 class Departments(models.Model):
     id = models.IntegerField(primary_key=True)
