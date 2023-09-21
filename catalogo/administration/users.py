@@ -11,6 +11,11 @@ from ..models import Users
 from ..serializers import UsersSerializer
 import random
 import string
+from ..helpers.recaptcha import verify_recaptcha
+
+from django.shortcuts import render
+from captcha.fields import ReCaptchaField
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -37,8 +42,19 @@ class UsersView(APIView):
     
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
+
+        # Validación mediante recaptcha para peticiones
+        recaptcha_response = request.data.get('g-recaptcha-response')
+
+        # Verificar el reCAPTCHA
+        if not recaptcha_response:
+            return Response({'error': 'Por favor, complete el reCAPTCHA.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         existing_user = Users.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
         if existing_user:
+            if not verify_recaptcha(recaptcha_response):
+                return Response({'error': 'El reCAPTCHA no es válido.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             return Response({'error': f'El usuario ya está registrado con el correo electrónico {existing_user.email} y número de documento {existing_user.document_number}.'}, status=status.HTTP_400_BAD_REQUEST)
         
         def generate_random_id(length):

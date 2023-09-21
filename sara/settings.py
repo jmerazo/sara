@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_jwt',
     'corsheaders',
+    'captcha',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -63,6 +64,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -123,6 +125,9 @@ DATABASES = {
 
 }
 
+RECAPTCHA_PUBLIC_KEY = '6LepWkAoAAAAAFqnxSEbfmFvuRyF4_ut9E-ZeTM3'
+RECAPTCHA_PRIVATE_KEY = '6LepWkAoAAAAAKkMK6XdoxwdLzrh4wrcbJXocNFi'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -154,7 +159,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
