@@ -1,32 +1,103 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status, generics, permissions
+from django.contrib.auth.backends import BaseBackend
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from rest_framework import status, generics, permissions
 from django.http import Http404
-from django.contrib.auth import authenticate
+from django.contrib.auth import login, authenticate, logout
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 from decimal import Decimal
-from .models import EspecieForestal, Glossary, CandidateTrees, Page
+from .models import EspecieForestal, Glossary, CandidateTrees, Page, CustomUser
 from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            refresh = response.data.get('refresh')
+            token = RefreshToken(refresh)
+            user_id = token.payload.get('user_id')  # Obtén el ID del usuario desde el payload del token
+            
+            try:
+                user_instance = CustomUser.objects.get(id=user_id)  # Utiliza CustomUser en lugar de User
+                # Accede a los campos adicionales de CustomUser
+                email = user_instance.email
+                username = user_instance.username
+                document_type = user_instance.document_type
+                document_number = user_instance.document_number
+                cellphone = user_instance.cellphone
+                entity = user_instance.entity
+                profession = user_instance.profession
+                rol = user_instance.rol
+                first_name = user_instance.first_name
+                last_name = user_instance.last_name
+                
+                # Agrega los campos al response.data
+                response.data['rol'] = rol
+                response.data['email'] = email
+                response.data['document_type'] = document_type
+                response.data['username'] = username
+                response.data['document_number'] = document_number
+                response.data['cellphone'] = cellphone
+                response.data['entity'] = entity
+                response.data['profession'] = profession
+                response.data['first_name'] = first_name
+                response.data['last_name'] = last_name
+                
+            except CustomUser.DoesNotExist:
+                pass  # Si el usuario no existe, simplemente continua sin hacer nada
+        
+        return response
 
 class LoginView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        username = request.data.get('username')
+        asdsa = request.data.get('username')
         password = request.data.get('password')
 
-        user = User.objects.filter(username=username).first()
-        if user is None or not user.check_password(password):
-            return Response({'error': 'Invalid username or password'}, status=401)
+        user = authenticate(request, username=username, password=password)
 
-        login(request, user)
-        return Response({'user': user.to_dict()}, status=200)
+        if user is not None:
+            login(request, user)
+            user_profile = user.userprofile  # Obtén el perfil asociado
 
+            # Obtén el rol y tipo de usuario del perfil
+            email = user_profile.email
+            username = user_profile.username
+            document_type = user_profile.document_type
+            document_number = user_profile.document_number
+            cellphone = user_profile.cellphone
+            entity = user_profile.entity
+            profession = user_profile.profession
+            rol = user_profile.rol
+            first_name = user_profile.first_name
+            last_name = user_profile.last_name
+
+            return Response({
+                'user': user.to_dict(),
+                'profile': {
+                    'email': email,
+                    'document_type': document_type,
+                    'document_number': document_number,
+                    'cellphone': cellphone,
+                    'entity': entity,
+                    'profession': profession,
+                    'rol': rol,
+                    'first_name': first_name,
+                    'last_name': last_name
+                }
+            }, status=200)
+        else:
+            return Response({'error': 'Invalid email or password'}, status=401)
+        
 class LogoutView(generics.DestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -40,8 +111,26 @@ class CurrentUser(viewsets.ModelViewSet):
       return self.serializer_class.Meta.model.objects.filter(usuario=user)
 
 class EspecieForestalView(viewsets.ModelViewSet):
-   queryset = EspecieForestal.objects.all()
-   serializer_class = EspecieForestalSerializer
+    queryset = EspecieForestal.objects.all()
+    serializer_class = EspecieForestalSerializer
+
+    @action(detail=True, methods=['GET'])
+    def get_image_links(self, request, pk=None):
+        especie = self.get_object()
+        image_links = {
+            'foto_general': self._get_image_link(especie.foto_general),
+            'foto_hojas': self._get_image_link(especie.foto_hojas),
+            'foto_flor': self._get_image_link(especie.foto_flor),
+            'foto_fruto': self._get_image_link(especie.foto_fruto),
+            'foto_semillas': self._get_image_link(especie.foto_semillas),
+        }
+        return Response(image_links)
+
+    def _get_image_link(self, image_relative_path):
+        # Reutiliza la lógica para construir el enlace de descarga directa de Google Drive
+        base_drive_url = "https://drive.google.com/uc?export=download&id="
+        full_drive_url = base_drive_url + extract_file_id(image_relative_path)
+        return full_drive_url
 
 class NombresComunesView(viewsets.ModelViewSet):
    queryset = EspecieForestal.objects.all()

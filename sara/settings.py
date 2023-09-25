@@ -128,7 +128,6 @@ DATABASES = {
 RECAPTCHA_PUBLIC_KEY = '6LepWkAoAAAAAFqnxSEbfmFvuRyF4_ut9E-ZeTM3'
 RECAPTCHA_PRIVATE_KEY = '6LepWkAoAAAAAKkMK6XdoxwdLzrh4wrcbJXocNFi'
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

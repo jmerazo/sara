@@ -1,5 +1,54 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+    rol = models.CharField(db_column='UserRol',max_length=100, blank=True, null=True)
+    document_type = models.CharField(db_column='tipo_documento', max_length=40, blank=True, null=True)
+    document_number = models.CharField(db_column='nro_documento', max_length=20, blank=True, null=True)
+    entity = models.CharField(max_length=100, blank=True, null=True)
+    cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
+    departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
+    city = models.IntegerField(blank=True, null=True)
+    device = models.CharField(db_column='Equipo Celular', max_length=2, blank=True, null=True)
+    serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
+    profession = models.CharField(max_length=150, blank=True, null=True)
+    reason = models.CharField(max_length=500, blank=True, null=True)
+    state = models.CharField(max_length=25, blank=True, null=True)
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='custom_users'  # Añade este argumento
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='custom_users'  # Añade este argumento
+    )
+
+class Users(models.Model):
+    id = models.CharField(db_column='UserID', primary_key=True, max_length=50)
+    email = models.EmailField(db_column='UserEmail',max_length=50, blank=False, null=False, unique=True)
+    password = models.CharField(max_length=150, blank=True, null=True)
+    fullname = models.CharField(db_column='UserName',max_length=100, blank=True, null=True)
+    rol = models.CharField(db_column='UserRol',max_length=100, blank=True, null=True)
+    is_active = models.BooleanField(db_column='UserActive',max_length=30, blank=True, null=True)
+    document_type = models.CharField(db_column='tipo_documento', max_length=40, blank=True, null=True)
+    document_number = models.CharField(db_column='nro_documento', max_length=20, blank=True, null=True)
+    entity = models.CharField(max_length=100, blank=True, null=True)
+    cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
+    departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
+    city = models.IntegerField(blank=True, null=True)
+    device = models.CharField(db_column='Equipo Celular', max_length=2, blank=True, null=True)
+    serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
+    profession = models.CharField(max_length=150, blank=True, null=True)
+    reason = models.CharField(max_length=500, blank=True, null=True)
+    state = models.CharField(max_length=25, blank=True, null=True)
+    is_staff = models.BooleanField(default=False)
+    last_login = models.DateTimeField()
+    is_superuser = models.SmallIntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'Users'
 
 class EspecieForestal(models.Model):
     ShortcutID = models.CharField(primary_key=True, max_length=60, blank=True)  # Field name made lowercase.
@@ -192,29 +241,6 @@ class Page(models.Model):
     class Meta:
         managed = False
         db_table = 'page'
-
-class Users(models.Model):
-    id = models.CharField(db_column='UserID', primary_key=True, max_length=50)
-    email = models.CharField(db_column='UserEmail',max_length=50, blank=True, null=True)
-    password = models.CharField(max_length=150, blank=True, null=True)
-    fullname = models.CharField(db_column='UserName',max_length=100, blank=True, null=True)
-    rol = models.CharField(db_column='UserRol',max_length=100, blank=True, null=True)
-    active = models.CharField(db_column='UserActive',max_length=30, blank=True, null=True)
-    document_type = models.CharField(db_column='tipo_documento', max_length=40, blank=True, null=True)
-    document_number = models.CharField(db_column='nro_documento', max_length=20, blank=True, null=True)
-    entity = models.CharField(max_length=100, blank=True, null=True)
-    cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
-    departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
-    city = models.IntegerField(blank=True, null=True)
-    device = models.CharField(db_column='Equipo Celular', max_length=2, blank=True, null=True)
-    serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
-    profession = models.CharField(max_length=150, blank=True, null=True)
-    reason = models.CharField(max_length=500, blank=True, null=True)
-    state = models.CharField(max_length=25, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'Users'
 
 class Departments(models.Model):
     id = models.IntegerField(primary_key=True)

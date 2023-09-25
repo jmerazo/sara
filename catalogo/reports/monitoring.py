@@ -72,16 +72,21 @@ class MonitoringReportLocates(APIView):
             )
         ).filter(numero_placa__isnull=False).values('departamento', 'realizado', 'municipio')
 
+        municipios_por_departamento = {
+            "Putumayo": ["Sibundoy", "Santiago", "San Francisco", "Colon", "Mocoa", "Villagarzón", "Puerto Guzmán", "Puerto Caicedo", "Puerto Asís", "Orito", "Valle del Guamuez", "San Miguel", "Puerto Leguízamo"],
+            "Caquetá": ["Albania", "Belpen de los Andaquíes", "Cartagena del Chairá", "Curillo", "El Doncello", "El Paujil", "Florencia", "La Montañita", "Morelia", "Puerto Milán", "Puerto Rico", "San José del Fragua", "San Vicente del Caguán", "Solano", "Solita", "Valparaíso"],
+            "Amazonas": ["Leticia", "Puerto Nariño", "El Encanto", "La Pedrera", "La Chorrera", "Tarapacá", "Puerto Santander", "Mirití Paraná", "Puerto Alegría", "Puerto Arica", "La Victoria"]
+        }
+
         department_totals = defaultdict(lambda: {
             'monitoreos_realizados_mes': 0,
             'monitoreos_pendientes_mes': 0,
-            'total_monitoreos_mes': 0
-        })
-
-        municipality_totals = defaultdict(lambda: {
-            'monitoreos_realizados_mes': 0,
-            'monitoreos_pendientes_mes': 0,
-            'total_monitoreos_mes': 0
+            'total_monitoreos_mes': 0,
+            'municipios': defaultdict(lambda: {
+                'monitoreos_realizados_mes': 0,
+                'monitoreos_pendientes_mes': 0,
+                'total_monitoreos_mes': 0
+            })
         })
 
         for entry in total_monitoreos:
@@ -89,19 +94,20 @@ class MonitoringReportLocates(APIView):
             municipio = entry['municipio']
             realizado = entry['realizado']
             
-            if realizado and realizado > 0:
-                department_totals[departamento]['monitoreos_realizados_mes'] += 1
-                municipality_totals[municipio]['monitoreos_realizados_mes'] += 1
-            else:
-                department_totals[departamento]['monitoreos_pendientes_mes'] += 1
-                municipality_totals[municipio]['monitoreos_pendientes_mes'] += 1
+            # Verificar si el municipio pertenece al departamento actual
+            if municipio in municipios_por_departamento.get(departamento, []):
+                if realizado and realizado > 0:
+                    department_totals[departamento]['monitoreos_realizados_mes'] += 1
+                    department_totals[departamento]['municipios'][municipio]['monitoreos_realizados_mes'] += 1
+                else:
+                    department_totals[departamento]['monitoreos_pendientes_mes'] += 1
+                    department_totals[departamento]['municipios'][municipio]['monitoreos_pendientes_mes'] += 1
 
-            department_totals[departamento]['total_monitoreos_mes'] += 1
-            municipality_totals[municipio]['total_monitoreos_mes'] += 1
+                department_totals[departamento]['total_monitoreos_mes'] += 1
+                department_totals[departamento]['municipios'][municipio]['total_monitoreos_mes'] += 1
         
         response_data = {
-            'departamentos': dict(department_totals),
-            'municipios': dict(municipality_totals)
+            'departamentos': dict(department_totals)
         }
 
         return Response(response_data)

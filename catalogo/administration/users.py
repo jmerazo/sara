@@ -1,7 +1,6 @@
-from rest_framework import viewsets
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from rest_framework import status, generics, permissions
+from django.contrib.auth.models import BaseUserManager
+from rest_framework import status
 from django.http import Http404
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
@@ -12,6 +11,7 @@ from ..serializers import UsersSerializer
 import random
 import string
 from ..helpers.recaptcha import verify_recaptcha
+from ..managers import CustomUserManager
 
 from django.shortcuts import render
 from captcha.fields import ReCaptchaField
@@ -43,39 +43,29 @@ class UsersView(APIView):
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
 
-        # Validación mediante recaptcha para peticiones
-        recaptcha_response = request.data.get('g-recaptcha-response')
-
-        # Verificar el reCAPTCHA
-        if not recaptcha_response:
-            return Response({'error': 'Por favor, complete el reCAPTCHA.'}, status=status.HTTP_400_BAD_REQUEST)
+        custom_user_manager = CustomUserManager()
         
         existing_user = Users.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
         if existing_user:
-            if not verify_recaptcha(recaptcha_response):
-                return Response({'error': 'El reCAPTCHA no es válido.'}, status=status.HTTP_400_BAD_REQUEST)
-            
             return Response({'error': f'El usuario ya está registrado con el correo electrónico {existing_user.email} y número de documento {existing_user.document_number}.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         def generate_random_id(length):
             characters = string.ascii_letters + string.digits
             random_id = ''.join(random.choice(characters) for _ in range(length))
             return random_id
 
-        random_id = generate_random_id(8)  # Genera un ID de 8 caracteres (números y letras)
+        random_id = generate_random_id(8)
         user_active = 0
         user_rol_default = "Básico"
-
-        adjusted_data['fullname'] = f"{adjusted_data['names']} {adjusted_data['lastnames']}"
-        adjusted_data.pop('names', None)  # Elimina el campo 'nombres'
-        adjusted_data.pop('lastnames', None)
+        
         adjusted_data['id'] = random_id
         adjusted_data['active'] = user_active
         adjusted_data['rol'] = user_rol_default
 
         serializer = UsersSerializer(data=adjusted_data)
         if serializer.is_valid():
-            serializer.save()
+            user = custom_user_manager.create_user(email=adjusted_data['email'], password=None, **adjusted_data)
+            serializer.save(user = user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
