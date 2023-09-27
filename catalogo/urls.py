@@ -7,6 +7,7 @@ from .reports.samples import SamplesReport
 from .administration.users import UsersView
 from .helpers.locates import DepartmentsView, CitiesView
 
+
 urlpatterns = [
     path('especie_forestal/', EspecieForestalView.as_view({
         'get' : 'list',

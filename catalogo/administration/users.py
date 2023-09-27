@@ -14,7 +14,7 @@ from ..helpers.recaptcha import verify_recaptcha
 from ..managers import CustomUserManager
 
 from django.shortcuts import render
-from captcha.fields import ReCaptchaField
+#from captcha.fields import ReCaptchaField
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
