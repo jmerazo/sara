@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities, CustomUser
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities, Users
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
-        fields = ['id', 'username', 'email', 'password', 'rol', 'document_type', 'document_number', 'entity', 'cellphone', 'departament', 'city', 'device', 'serial', 'profession', 'reason', 'state']
+        model = Users
+        fields = '__all__'
         extra_kwargs = {'password': {'write_only': True}}
 
 class EspecieForestalSerializer(serializers.ModelSerializer):
