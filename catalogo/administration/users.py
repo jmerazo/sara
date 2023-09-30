@@ -6,19 +6,26 @@ from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 from decimal import Decimal
-from ..models import Users
+from ..models import CustomUser
+from django.contrib.auth.models import User
 from ..serializers import UsersSerializer
 import random
 import string
+from django.utils import timezone
 from ..helpers.recaptcha import verify_recaptcha
 from ..managers import CustomUserManager
 
 from django.shortcuts import render
-from captcha.fields import ReCaptchaField
+#from captcha.fields import ReCaptchaField
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+
+def generate_random_id(length):
+            characters = string.ascii_letters + string.digits
+            random_id = ''.join(random.choice(characters) for _ in range(length))
+            return random_id
 
 class UsersView(APIView):
     def get_object(self, pk=None):
@@ -42,32 +49,27 @@ class UsersView(APIView):
     
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
-
-        custom_user_manager = CustomUserManager()
         
-        existing_user = Users.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
+        existing_user = User.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
         if existing_user:
             return Response({'error': f'El usuario ya está registrado con el correo electrónico {existing_user.email} y número de documento {existing_user.document_number}.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        def generate_random_id(length):
-            characters = string.ascii_letters + string.digits
-            random_id = ''.join(random.choice(characters) for _ in range(length))
-            return random_id
+        user_fields = ['email', 'password', 'username', 'first_name', 'last_name', 'is_superuser', 'is_staff', 'is_active', 'last_login', 'date_joined']
+        user_data = {key: adjusted_data[key] for key in user_fields if key in adjusted_data}
 
-        random_id = generate_random_id(8)
-        user_active = 0
-        user_rol_default = "Básico"
+        custom_user_fields = ['document_type', 'document_number', 'rol', 'entity', 'cellphone', 'department', 'city', 'device', 'serial', 'profession', 'reason', 'state']
+        custom_user_data = {key: adjusted_data[key] for key in custom_user_fields if key in adjusted_data}
+
+        password = adjusted_data.pop('password', None)  # Obtener y quitar la contraseña del diccionario
         
-        adjusted_data['id'] = random_id
-        adjusted_data['active'] = user_active
-        adjusted_data['rol'] = user_rol_default
+        user = User.objects.create(**user_data)  # Crear el usuario en la base de datos
+        user.set_password(password)
+        user.save()  # Guardar el usuario en la base de datos
 
-        serializer = UsersSerializer(data=adjusted_data)
-        if serializer.is_valid():
-            user = custom_user_manager.create_user(email=adjusted_data['email'], password=None, **adjusted_data)
-            serializer.save(user = user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        custom_user = CustomUser.objects.create(user=user, **custom_user_data)  # Asociar con CustomUser
+
+        serializer = UsersSerializer(custom_user)  # Actualizar el serializer con los datos del usuario
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def put(self, request, pk, format=None):
         user = self.get_object(pk)

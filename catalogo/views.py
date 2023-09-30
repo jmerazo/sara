@@ -58,6 +58,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class LoginView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
+    # serializer_class = (permissions.AllowAny,)
 
     def post(self, request):
         asdsa = request.data.get('username')

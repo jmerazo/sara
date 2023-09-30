@@ -1,28 +1,24 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 
-class CustomUser(AbstractUser):
-    rol = models.CharField(db_column='UserRol',max_length=100, blank=True, null=True)
-    document_type = models.CharField(db_column='tipo_documento', max_length=40, blank=True, null=True)
-    document_number = models.CharField(db_column='nro_documento', max_length=20, blank=True, null=True)
+class CustomUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    rol = models.CharField(max_length=100, blank=True, null=True)
+    document_type = models.CharField(max_length=40, blank=True, null=True)
+    document_number = models.CharField(max_length=20, blank=True, null=True)
     entity = models.CharField(max_length=100, blank=True, null=True)
-    cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
-    departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
+    cellphone = models.CharField(max_length=15, blank=True, null=True)
+    department = models.CharField(max_length=25, blank=True, null=True)
     city = models.IntegerField(blank=True, null=True)
-    device = models.CharField(db_column='Equipo Celular', max_length=2, blank=True, null=True)
-    serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
+    device = models.CharField(max_length=2, blank=True, null=True)
+    serial = models.CharField(max_length=17, blank=True, null=True)
     profession = models.CharField(max_length=150, blank=True, null=True)
     reason = models.CharField(max_length=500, blank=True, null=True)
     state = models.CharField(max_length=25, blank=True, null=True)
 
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='custom_users'  # Añade este argumento
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='custom_users'  # Añade este argumento
-    )
+    def __str__(self):
+        return self.user.username
 
 class Users(models.Model):
     id = models.CharField(db_column='UserID', primary_key=True, max_length=50)
@@ -35,10 +31,10 @@ class Users(models.Model):
     document_number = models.CharField(db_column='nro_documento', max_length=20, blank=True, null=True)
     entity = models.CharField(max_length=100, blank=True, null=True)
     cellphone = models.CharField(db_column='celular',max_length=15, blank=True, null=True)
-    departament = models.CharField(db_column='departamento',max_length=25, blank=True, null=True)
+    department = models.CharField(max_length=25, blank=True, null=True)
     city = models.IntegerField(blank=True, null=True)
-    device = models.CharField(db_column='Equipo Celular', max_length=2, blank=True, null=True)
-    serial = models.CharField(db_column='Serial',max_length=17, blank=True, null=True)
+    device = models.CharField(max_length=2, blank=True, null=True)
+    serial = models.CharField(max_length=17, blank=True, null=True)
     profession = models.CharField(max_length=150, blank=True, null=True)
     reason = models.CharField(max_length=500, blank=True, null=True)
     state = models.CharField(max_length=25, blank=True, null=True)

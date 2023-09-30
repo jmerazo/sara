@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import make_password
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'password', 'rol', 'document_type', 'document_number', 'entity', 'cellphone', 'departament', 'city', 'device', 'serial', 'profession', 'reason', 'state']
+        fields = ['id', 'username', 'email', 'password', 'rol', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'city', 'device', 'serial', 'profession', 'reason', 'state']
         extra_kwargs = {'password': {'write_only': True}}
 
 class EspecieForestalSerializer(serializers.ModelSerializer):
