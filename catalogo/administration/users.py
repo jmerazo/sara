@@ -84,7 +84,6 @@ class UsersView(APIView):
         serializer = UsersSerializer(data=adjusted_data)
         if serializer.is_valid():
             user = Users(
-                id=random_id,
                 email=adjusted_data['email'],
                 first_name=adjusted_data['first_name'],
                 last_name=adjusted_data['last_name'],
