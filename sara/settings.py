@@ -78,7 +78,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'sara.wsgi.application'
-
+AUTH_USER_MODEL = 'catalogo.Users'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -118,8 +118,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-""" AUTH_USER_MODEL = 'myapp.CustomUser' """
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -194,4 +192,3 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
-

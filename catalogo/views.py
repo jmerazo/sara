@@ -8,7 +8,7 @@ from django.contrib.auth import login, authenticate, logout
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 from decimal import Decimal
-from .models import EspecieForestal, Glossary, CandidateTrees, Page, CustomUser
+from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users
 from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -26,10 +26,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             user_id = token.payload.get('user_id')  # Obtén el ID del usuario desde el payload del token
             
             try:
-                user_instance = CustomUser.objects.get(id=user_id)  # Utiliza CustomUser en lugar de User
+                user_instance = Users.objects.get(id=user_id)  # Utiliza CustomUser en lugar de User
                 # Accede a los campos adicionales de CustomUser
                 email = user_instance.email
-                username = user_instance.username
                 document_type = user_instance.document_type
                 document_number = user_instance.document_number
                 cellphone = user_instance.cellphone
@@ -38,20 +37,33 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 rol = user_instance.rol
                 first_name = user_instance.first_name
                 last_name = user_instance.last_name
-                
+                state=user_instance.state
+                is_staff=user_instance.is_staff
+                is_superuser=user_instance.is_superuser
                 # Agrega los campos al response.data
-                response.data['rol'] = rol
-                response.data['email'] = email
-                response.data['document_type'] = document_type
-                response.data['username'] = username
-                response.data['document_number'] = document_number
-                response.data['cellphone'] = cellphone
-                response.data['entity'] = entity
-                response.data['profession'] = profession
-                response.data['first_name'] = first_name
-                response.data['last_name'] = last_name
+                user_data = {
+                    'rol': rol,
+                    'email': email,
+                    'document_type': document_type,
+                    'document_number': document_number,
+                    'cellphone': cellphone,
+                    'entity': entity,
+                    'profession': profession,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'state': state,
+                    'is_staff': is_staff,
+                    'is_superuser': is_superuser
+                }
+                print('User data: ', user_data)
+                # Devuelve una respuesta JSON con el diccionario de datos
+                return Response({
+                    'access': response.data['access'],
+                    'refresh': response.data['refresh'],
+                    'user_data': user_data,  # Agrega los datos del usuario
+                })
                 
-            except CustomUser.DoesNotExist:
+            except Users.DoesNotExist:
                 pass  # Si el usuario no existe, simplemente continua sin hacer nada
         
         return response

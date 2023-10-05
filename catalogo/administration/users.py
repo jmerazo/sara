@@ -1,22 +1,16 @@
 from rest_framework.response import Response
-from django.contrib.auth.models import BaseUserManager
+from django.db import connection
 from rest_framework import status
 from django.http import Http404
-from django.contrib.auth import authenticate
 from rest_framework.views import APIView
-from django.db.models import Q, Count
-from decimal import Decimal
-from ..models import CustomUser
-from django.contrib.auth.models import User
+from django.db.models import Q, F
+from ..models import Users, Departments
 from ..serializers import UsersSerializer
 import random
 import string
 from django.utils import timezone
+from django.contrib.auth.models import Group, Permission
 from ..helpers.recaptcha import verify_recaptcha
-from ..managers import CustomUserManager
-
-from django.shortcuts import render
-#from captcha.fields import ReCaptchaField
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -28,48 +22,95 @@ def generate_random_id(length):
             return random_id
 
 class UsersView(APIView):
+    def get_queryset(self):
+        # Consulta SQL directa
+        query = """
+            SELECT u.id, u.email, u.first_name, u.last_name, u.rol, u.is_active, u.document_type, u.document_number, u.entity, u.cellphone, u.department, d.name, u.city, u.device_movile, u.serial_device, u.profession, u.reason, u.state, u.is_staff, u.last_login, u.is_superuser, u.date_joined
+            FROM Users AS u
+            INNER JOIN departments AS d ON u.department = d.code
+        """
+        # Ejecutar la consulta
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+        columns = ['id', 'email', 'first_name', 'last_name', 'rol', 'is_active', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'name', 'city', 'device_movile', 'serial_device', 'profession', 'reason', 'state', 'is_staff', 'last_login', 'is_superuser', 'date_joined']
+        queryset = [dict(zip(columns, row)) for row in result]
+
+        return queryset
+
     def get_object(self, pk=None):
+        queryset = self.get_queryset()
+
         if pk is not None:
             try:
-                return Users.objects.get(pk=pk)
-            except Users.DoesNotExist:
+                user = next(user for user in queryset if user['id'] == pk)
+                return user
+            except StopIteration:
                 raise Http404
         else:
-            return Users.objects.all()
+            return queryset
 
     def get(self, request, pk=None, format=None):
         users = self.get_object(pk)
-        
-        if isinstance(users, Users):
-            serializer = UsersSerializer(users)
-        else:
-            serializer = UsersSerializer(users, many=True)
-            
-        return Response(serializer.data)
+
+        if isinstance(users, dict):
+            # Convertir el resultado en una lista de diccionarios
+            users = [users]
+
+        return Response(users)
     
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
+
+        """ custom_user_manager = CustomUserManager() """
         
-        existing_user = User.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
+        existing_user = Users.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
         if existing_user:
             return Response({'error': f'El usuario ya está registrado con el correo electrónico {existing_user.email} y número de documento {existing_user.document_number}.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user_fields = ['email', 'password', 'username', 'first_name', 'last_name', 'is_superuser', 'is_staff', 'is_active', 'last_login', 'date_joined']
-        user_data = {key: adjusted_data[key] for key in user_fields if key in adjusted_data}
-
-        custom_user_fields = ['document_type', 'document_number', 'rol', 'entity', 'cellphone', 'department', 'city', 'device', 'serial', 'profession', 'reason', 'state']
-        custom_user_data = {key: adjusted_data[key] for key in custom_user_fields if key in adjusted_data}
-
-        password = adjusted_data.pop('password', None)  # Obtener y quitar la contraseña del diccionario
+        random_id = generate_random_id(8)
+        user_active = 0
+        user_rol_default = "Básico"
         
-        user = User.objects.create(**user_data)  # Crear el usuario en la base de datos
-        user.set_password(password)
-        user.save()  # Guardar el usuario en la base de datos
+        adjusted_data['id'] = random_id
+        adjusted_data['active'] = user_active
+        adjusted_data['rol'] = user_rol_default
+        password = adjusted_data['password']
 
-        custom_user = CustomUser.objects.create(user=user, **custom_user_data)  # Asociar con CustomUser
+        default_group = Group.objects.get(name='Usuarios normales')
+        default_permission = Permission.objects.get(codename='view_user')
 
-        serializer = UsersSerializer(custom_user)  # Actualizar el serializer con los datos del usuario
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer = UsersSerializer(data=adjusted_data)
+        if serializer.is_valid():
+            user = Users(
+                id=random_id,
+                email=adjusted_data['email'],
+                first_name=adjusted_data['first_name'],
+                last_name=adjusted_data['last_name'],
+                rol='DEFAULT',
+                is_active=0,
+                document_type=adjusted_data['document_type'],
+                document_number=adjusted_data['document_number'],
+                entity=adjusted_data['entity'],
+                cellphone=adjusted_data['cellphone'],
+                department=adjusted_data['department'],
+                city=adjusted_data['city'],
+                profession=adjusted_data['profession'],
+                reason=adjusted_data['reason'],
+                state='REVIEW',
+                is_staff=0,
+                last_login=None,
+                is_superuser=0,
+                date_joined=timezone.now()
+            )
+            user.set_password(password)
+            user.groups.add(default_group)
+            user.user_permissions.add(default_permission)
+            user.save()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
         user = self.get_object(pk)

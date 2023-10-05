@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities, CustomUser
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities, Users
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
-        fields = ['id', 'username', 'email', 'password', 'rol', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'city', 'device', 'serial', 'profession', 'reason', 'state']
+        model = Users
+        fields = '__all__'
         extra_kwargs = {'password': {'write_only': True}}
 
 class EspecieForestalSerializer(serializers.ModelSerializer):
@@ -83,7 +83,7 @@ class UsersSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users  # o tu modelo de usuario personalizado
-        fields = '__all__'
+        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'rol', 'is_active', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'city', 'device_movile', 'serial_device', 'profession', 'reason', 'state', 'is_staff', 'last_login', 'is_superuser', 'date_joined']
 
     def create(self, validated_data):
         # Hash de la contraseña antes de guardarla en la base de datos
