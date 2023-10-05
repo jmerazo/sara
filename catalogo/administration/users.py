@@ -4,7 +4,7 @@ from rest_framework import status
 from django.http import Http404
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
-from django.db.models import Q, Count
+from django.db.models import Q, F
 from decimal import Decimal
 from ..models import Users
 from ..serializers import UsersSerializer
@@ -34,7 +34,7 @@ class UsersView(APIView):
             except Users.DoesNotExist:
                 raise Http404
         else:
-            return Users.objects.all()
+            return Users.objects.all().annotate(department_name=F('department__name'))
 
     def get(self, request, pk=None, format=None):
         users = self.get_object(pk)
