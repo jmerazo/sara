@@ -1,21 +1,16 @@
 from rest_framework.response import Response
-from django.contrib.auth.models import BaseUserManager
+from django.db import connection
 from rest_framework import status
 from django.http import Http404
-from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from django.db.models import Q, F
-from decimal import Decimal
-from ..models import Users
+from ..models import Users, Departments
 from ..serializers import UsersSerializer
 import random
 import string
 from django.utils import timezone
+from django.contrib.auth.models import Group, Permission
 from ..helpers.recaptcha import verify_recaptcha
-from ..managers import CustomUserManager
-
-from django.shortcuts import render
-#from captcha.fields import ReCaptchaField
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -27,24 +22,43 @@ def generate_random_id(length):
             return random_id
 
 class UsersView(APIView):
+    def get_queryset(self):
+        # Consulta SQL directa
+        query = """
+            SELECT u.id, u.email, u.first_name, u.last_name, u.rol, u.is_active, u.document_type, u.document_number, u.entity, u.cellphone, u.department, d.name, u.city, u.device_movile, u.serial_device, u.profession, u.reason, u.state, u.is_staff, u.last_login, u.is_superuser, u.date_joined
+            FROM Users AS u
+            INNER JOIN departments AS d ON u.department = d.code
+        """
+        # Ejecutar la consulta
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+        columns = ['id', 'email', 'first_name', 'last_name', 'rol', 'is_active', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'name', 'city', 'device_movile', 'serial_device', 'profession', 'reason', 'state', 'is_staff', 'last_login', 'is_superuser', 'date_joined']
+        queryset = [dict(zip(columns, row)) for row in result]
+
+        return queryset
+
     def get_object(self, pk=None):
+        queryset = self.get_queryset()
+
         if pk is not None:
             try:
-                return Users.objects.get(pk=pk)
-            except Users.DoesNotExist:
+                user = next(user for user in queryset if user['id'] == pk)
+                return user
+            except StopIteration:
                 raise Http404
         else:
-            return Users.objects.all().annotate(department_name=F('department__name'))
+            return queryset
 
     def get(self, request, pk=None, format=None):
         users = self.get_object(pk)
-        
-        if isinstance(users, Users):
-            serializer = UsersSerializer(users)
-        else:
-            serializer = UsersSerializer(users, many=True)
-            
-        return Response(serializer.data)
+
+        if isinstance(users, dict):
+            # Convertir el resultado en una lista de diccionarios
+            users = [users]
+
+        return Response(users)
     
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
@@ -63,6 +77,9 @@ class UsersView(APIView):
         adjusted_data['active'] = user_active
         adjusted_data['rol'] = user_rol_default
         password = adjusted_data['password']
+
+        default_group = Group.objects.get(name='Usuarios normales')
+        default_permission = Permission.objects.get(codename='view_user')
 
         serializer = UsersSerializer(data=adjusted_data)
         if serializer.is_valid():
@@ -87,6 +104,9 @@ class UsersView(APIView):
                 date_joined=timezone.now()
             )
             user.set_password(password)
+            user.groups.add(default_group)
+            user.user_permissions.add(default_permission)
+            user.save()
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

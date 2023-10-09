@@ -38,17 +38,30 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 first_name = user_instance.first_name
                 last_name = user_instance.last_name
                 state=user_instance.state
+                is_staff=user_instance.is_staff
+                is_superuser=user_instance.is_superuser
                 # Agrega los campos al response.data
-                response.data['rol'] = rol
-                response.data['email'] = email
-                response.data['document_type'] = document_type
-                response.data['document_number'] = document_number
-                response.data['cellphone'] = cellphone
-                response.data['entity'] = entity
-                response.data['profession'] = profession
-                response.data['first_name'] = first_name
-                response.data['last_name'] = last_name
-                response.data['state'] = state
+                user_data = {
+                    'rol': rol,
+                    'email': email,
+                    'document_type': document_type,
+                    'document_number': document_number,
+                    'cellphone': cellphone,
+                    'entity': entity,
+                    'profession': profession,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'state': state,
+                    'is_staff': is_staff,
+                    'is_superuser': is_superuser
+                }
+                print('User data: ', user_data)
+                # Devuelve una respuesta JSON con el diccionario de datos
+                return Response({
+                    'access': response.data['access'],
+                    'refresh': response.data['refresh'],
+                    'user_data': user_data,  # Agrega los datos del usuario
+                })
                 
             except Users.DoesNotExist:
                 pass  # Si el usuario no existe, simplemente continua sin hacer nada

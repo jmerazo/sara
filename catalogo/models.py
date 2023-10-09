@@ -22,24 +22,6 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('El superusuario debe tener is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
-    
-class Departments(models.Model):
-    code = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=100, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'departments'
-
-class Cities(models.Model):
-    id = models.IntegerField(primary_key=True)
-    code = models.CharField(max_length=10, blank=True, null=True)
-    name = models.CharField(max_length=60, blank=True, null=True)
-    department_id = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'cities'
 
 class Users(AbstractBaseUser, PermissionsMixin):
     id = models.CharField(primary_key=True, max_length=50)
@@ -53,7 +35,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     document_number = models.CharField(max_length=20, blank=True, null=True)
     entity = models.CharField(max_length=100, blank=True, null=True)
     cellphone = models.CharField(max_length=15, blank=True, null=True)
-    department = models.ForeignKey(Departments, on_delete=models.PROTECT, db_index=True)
+    department = models.CharField(max_length=25, blank=True, null=True)
     city = models.IntegerField(blank=True, null=True)
     device_movile = models.CharField(max_length=2, blank=True, null=True)
     serial_device = models.CharField(max_length=17, blank=True, null=True)
@@ -74,7 +56,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'Users'
 
     def __str__(self):
@@ -271,6 +253,25 @@ class Page(models.Model):
     class Meta:
         managed = False
         db_table = 'page'
+
+class Departments(models.Model):
+    id = models.IntegerField(primary_key=True)
+    code = models.IntegerField(blank=True, null=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'departments'
+
+class Cities(models.Model):
+    id = models.IntegerField(primary_key=True)
+    code = models.CharField(max_length=10, blank=True, null=True)
+    name = models.CharField(max_length=60, blank=True, null=True)
+    department_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'cities'
 
 """
 CharField: Campo de texto de longitud variable.

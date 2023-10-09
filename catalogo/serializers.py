@@ -83,7 +83,7 @@ class UsersSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users  # o tu modelo de usuario personalizado
-        fields = '__all__'
+        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'rol', 'is_active', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'city', 'device_movile', 'serial_device', 'profession', 'reason', 'state', 'is_staff', 'last_login', 'is_superuser', 'date_joined']
 
     def create(self, validated_data):
         # Hash de la contraseña antes de guardarla en la base de datos
