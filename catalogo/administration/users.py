@@ -1,5 +1,5 @@
 from rest_framework.response import Response
-from django.db import connection
+from django.db import connection, transaction
 from rest_framework import status
 from django.http import Http404
 from rest_framework.views import APIView
@@ -60,26 +60,22 @@ class UsersView(APIView):
 
         return Response(users)
     
+    @transaction.atomic
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
 
-        """ custom_user_manager = CustomUserManager() """
-        
         existing_user = Users.objects.filter(Q(email=adjusted_data['email']) | Q(document_number=adjusted_data['document_number'])).first()
         if existing_user:
             return Response({'error': f'El usuario ya está registrado con el correo electrónico {existing_user.email} y número de documento {existing_user.document_number}.'}, status=status.HTTP_400_BAD_REQUEST)
 
         random_id = generate_random_id(8)
         user_active = 0
-        user_rol_default = "Básico"
+        user_rol_default = "DEFAULT"
         
         adjusted_data['id'] = random_id
         adjusted_data['active'] = user_active
         adjusted_data['rol'] = user_rol_default
         password = adjusted_data['password']
-
-        default_group = Group.objects.get(name='Usuarios normales')
-        default_permission = Permission.objects.get(codename='view_user')
 
         serializer = UsersSerializer(data=adjusted_data)
         if serializer.is_valid():
@@ -104,9 +100,14 @@ class UsersView(APIView):
                 date_joined=timezone.now()
             )
             user.set_password(password)
+            user.save()  # Guarda el usuario antes de asignarle el grupo
+
+            default_group = Group.objects.get(name='DEFAULT')
             user.groups.add(default_group)
+
+            default_permission = Permission.objects.get(codename='view_user')
             user.user_permissions.add(default_permission)
-            user.save()
+
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
