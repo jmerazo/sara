@@ -24,7 +24,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class Users(AbstractBaseUser, PermissionsMixin):
-    id = models.CharField(primary_key=True, max_length=50)
+    id = models.AutoField(primary_key=True)
     email = models.EmailField(max_length=100, unique=True)
     password = models.CharField(max_length=150, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True, null=True)
@@ -136,8 +136,14 @@ class CandidateTrees(models.Model):
     altura_total = models.CharField(max_length=15, blank=True, null=True)
     altura_comercial = models.CharField(max_length=15, blank=True, null=True)
     cap = models.CharField(max_length=15, blank=True, null=True)
+    eje_x = models.DecimalField(max_digits=10, decimal_places=2) 
+    eje_y = models.DecimalField(max_digits=10, decimal_places=2) 
+    eje_z = models.DecimalField(max_digits=10, decimal_places=2) 
     cobertura = models.CharField(max_length=100, blank=True, null=True)
     cober_otro = models.CharField(max_length=30, blank=True, null=True)
+    entorno_individuo = models.CharField(max_length=100, blank=True, null=True)
+    entorno_otro = models.CharField(max_length=100, blank=True, null=True)
+    especies_forestales_asociadas = models.CharField(max_length=200, blank=True, null=True)
     dominancia_if = models.CharField(max_length=16, blank=True,null=True)
     forma_fuste = models.CharField(max_length=40, blank=True, null=True)
     dominancia = models.CharField(max_length=70, blank=True, null=True)
@@ -149,6 +155,7 @@ class CandidateTrees(models.Model):
     resultado = models.IntegerField()
     evaluacion = models.CharField(max_length=145, blank=True, null=True)
     observaciones = models.CharField(max_length=255, blank=True, null=True)
+    placa_archivada = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

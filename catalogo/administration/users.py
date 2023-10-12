@@ -72,7 +72,6 @@ class UsersView(APIView):
         user_active = 0
         user_rol_default = "DEFAULT"
         
-        adjusted_data['id'] = random_id
         adjusted_data['active'] = user_active
         adjusted_data['rol'] = user_rol_default
         password = adjusted_data['password']

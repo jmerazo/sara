@@ -8,8 +8,8 @@ from django.contrib.auth import login, authenticate, logout
 from rest_framework.views import APIView
 from django.db.models import Q, Count
 from decimal import Decimal
-from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users
-from .serializers import EspecieForestalSerializer, NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer
+from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users, Monitoring
+from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer, MonitoringsSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -73,10 +73,10 @@ class LoginView(generics.CreateAPIView):
     # serializer_class = (permissions.AllowAny,)
 
     def post(self, request):
-        asdsa = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email=email, password=password)
 
         if user is not None:
             login(request, user)
@@ -246,6 +246,13 @@ class GeoCandidateTreesView(APIView):
 
         """ print('Coordendas', geo_format) """
         return Response(geo_format)
+    
+class CandidatesTreesView(APIView):
+    def get(self, request, format=None): 
+        queryset = CandidateTrees.objects.all()
+        serializer = CandidateTreesSerializer(queryset, many=True)
+
+        return Response(serializer.data)
 
 class AverageCandidateTreesView(APIView):
     def convert_to_decimal_or_int(self, value):
@@ -315,3 +322,12 @@ class PageView(APIView):
         page = self.get_object(pk)
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+# VISTAS MONITOREOS
+class SearchMonitoringCandidateView(APIView):
+    def get(self, request, id, format=None):        
+        search = Monitoring.objects.filter(ShortcutIDEV=id)
+        serializer = MonitoringsSerializer(search, many=True)
+        
+        return Response(serializer.data)
