@@ -63,6 +63,7 @@ class TreesVerifyMonitoringSerializer(serializers.ModelSerializer):
         model = CandidateTrees
         fields = ['ShortcutIDEV', 'numero_placa', 'cod_especie', 'fecha_evaluacion', 'usuario_evaluador', 'departamento', 'municipio']
 
+# RETORNA DATOS DE LA TABLA EVALUACION_AS -> CORRESPONDE A CANDIDATOS
 class CandidateTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateTrees
@@ -72,6 +73,11 @@ class MonitoringTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Monitoring
         fields = ['IDmonitoreo', 'ShortcutIDEV', 'fecha_monitoreo', 'usuario_realiza_monitoreo']
+
+class MonitoringsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Monitoring
+        fields = '__all__'
 
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
