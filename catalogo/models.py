@@ -108,7 +108,7 @@ class Glossary(models.Model):
         return f"ID: {self.id}, Word: {self.word}, Definition: {self.definition}"
     
 class CandidateTrees(models.Model):
-    ShortcutIDEV = models.CharField(primary_key=True, max_length=60, blank=True)
+    ShortcutIDEV = models.CharField(primary_key=True, max_length=60)
     numero_placa = models.IntegerField(blank=True, null=True)
     cod_expediente = models.CharField(max_length=35, blank=True, null=True)
     cod_especie = models.CharField(max_length=50, blank=True, null=True)

@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 from django.http import Http404
 from django.contrib.auth import login, authenticate, logout
 from rest_framework.views import APIView
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Value, CharField
+from django.db import connection
 from decimal import Decimal
 from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users, Monitoring
 from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer, MonitoringsSerializer
@@ -328,6 +329,18 @@ class PageView(APIView):
 class SearchMonitoringCandidateView(APIView):
     def get(self, request, id, format=None):        
         search = Monitoring.objects.filter(ShortcutIDEV=id)
+        serializer = MonitoringsSerializer(search, many=True)
+        
+        return Response(serializer.data)
+
+class SearchMonitoringSpecieView(APIView):
+    def get(self, request, code, format=None):
+        # Obtener los valores de ShortcutIDEV desde la subconsulta
+        shortcut_idevs = CandidateTrees.objects.filter(cod_especie=code).values('ShortcutIDEV')
+        
+        # Realizar la búsqueda en la tabla Monitoring usando esos valores
+        search = Monitoring.objects.filter(ShortcutIDEV__in=shortcut_idevs)
+        
         serializer = MonitoringsSerializer(search, many=True)
         
         return Response(serializer.data)

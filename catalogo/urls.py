@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchMonitoringCandidateView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView
+from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchMonitoringCandidateView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView
 from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
@@ -44,6 +44,7 @@ urlpatterns = [
 
     # CONSULTA DE MONITOREOS POR INDIVIDUO
     path('candidates/search/monitorings/<id>', SearchMonitoringCandidateView.as_view()),
+    path('monitoring/search/specie/<int:code>', SearchMonitoringSpecieView.as_view()),
 
     path('candidates/trees', CandidatesTreesView.as_view()),
 
