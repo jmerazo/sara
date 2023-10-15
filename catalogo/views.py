@@ -6,11 +6,12 @@ from django.contrib.auth.models import User
 from django.http import Http404
 from django.contrib.auth import login, authenticate, logout
 from rest_framework.views import APIView
-from django.db.models import Q, Count, Value, CharField
+from django.db.models import Q, Count, Value, CharField, Count, Sum, Case, When, IntegerField
+from django.db.models.functions import Coalesce
 from django.db import connection
 from decimal import Decimal
-from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users, Monitoring
-from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer, MonitoringsSerializer
+from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users, Monitoring, Samples
+from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer, MonitoringsSerializer, SamplesSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -344,3 +345,40 @@ class SearchMonitoringSpecieView(APIView):
         serializer = MonitoringsSerializer(search, many=True)
         
         return Response(serializer.data)
+    
+class ReportSpecieDataView(APIView):
+    def get(self, request, format=None):
+        query = """
+        SELECT
+            ef.cod_especie,
+            ef.nom_comunes,
+            ef.nombre_cientifico,
+            COUNT(DISTINCT e.ShortcutIDEV) AS evaluados,
+            SUM(CASE WHEN m.ShortcutIDEV IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
+            SUM(CASE WHEN mu.nro_placa IS NOT NULL THEN 1 ELSE 0 END) AS muestras
+        FROM especie_forestal AS ef
+        LEFT JOIN evaluacion_as AS e ON ef.cod_especie = e.cod_especie
+        LEFT JOIN monitoreo AS m ON e.ShortcutIDEV = m.ShortcutIDEV
+        LEFT JOIN muestras AS mu ON e.ShortcutIDEV = mu.nro_placa
+        WHERE e.numero_placa IS NOT NULL AND e.numero_placa != ''
+        GROUP BY ef.cod_especie, ef.nom_comunes, ef.nombre_cientifico;
+        """
+        
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            
+        data = []
+        for row in results:
+            item = {
+                'cod_especie': row[0],
+                'nom_comunes': row[1],
+                'nombre_cientifico': row[2],
+                'evaluados': row[3],
+                'monitoreos': row[4],
+                'muestras': row[5],
+            }
+            data.append(item)
+        
+        return Response(data)
+

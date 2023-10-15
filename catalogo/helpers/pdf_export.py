@@ -1,6 +1,7 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Image, Flowable
 from reportlab.lib import utils
 from io import BytesIO
 from rest_framework.views import APIView
@@ -22,6 +23,33 @@ title_style.alignment = 0  # Alinear a la izquierda
 title_style.leading = 14  # Espaciado entre líneas
 title_style.textColor = 'black'  # Cambia el color del texto si es necesario
 title_style.fontSize = 10  # Cambia el tamaño de la fuente si es necesario
+
+class ImageWithText(Flowable):
+    def __init__(self, image_path, text, width, height, style):
+        Flowable.__init__(self)
+        self.image_path = image_path
+        self.text = text
+        self.width = width
+        self.height = height
+        self.style = style
+
+    def wrap(self, available_width, available_height):
+        self.width = available_width
+        self.height = available_height
+        self.image_width = 50  # Ancho de la imagen
+        self.total_width = self.image_width + 10  # Espacio entre la imagen y el texto
+
+    def draw(self):
+        self.canv.saveState()
+        
+        # Dibujar la imagen
+        self.canv.drawImage(self.image_path, x=self._x, y=self._y, width=self.image_width, height=self.height)
+        
+        # Dibujar el texto
+        self.canv.setFont(self.style.fontName, self.style.fontSize)
+        self.canv.drawString(self._x + self.image_width + 10, self._y, self.text)
+        
+        self.canv.restoreState()
 
 class ExportSpecies(APIView):
     def get(self, request, code, *args, **kwargs):
@@ -45,6 +73,12 @@ class ExportSpecies(APIView):
         header_text = "Reporte de Especies Forestales"
         header = Paragraph(header_text)
         elements.append(header)
+
+        # Ruta de la imagen que deseas agregar al PDF
+        image_path = 'ruta_de_la_imagen.jpg'
+
+        image = Image(image_path, width=100, height=100)  # Puedes ajustar el ancho y el alto según tus necesidades
+        elements.append(image)
 
         # Crear una lista de tuplas para los datos de la tabla
         table_data = []
