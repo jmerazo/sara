@@ -56,8 +56,7 @@ urlpatterns = [
     path('page/content/<int:pk>', PageView.as_view(), name='page-detail'),
 
     path('users/', UsersView.as_view()),
-    path('users/<str:pk>', UsersView.as_view()),
-    path('users/update/<user_id>', UsersView.as_view()),
+    path('users/<int:pk>', UsersView.as_view()),
 
     path('departments/', DepartmentsView.as_view()),
     path('cities/', CitiesView.as_view())

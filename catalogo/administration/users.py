@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from django.db import connection, transaction
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from django.http import Http404
 from rest_framework.views import APIView
@@ -111,9 +112,12 @@ class UsersView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, user_id, format=None):
-        user = self.get_object(user_id)
+    def put(self, request, pk, format=None):
+        print('pk: ', pk)
+        user = get_object_or_404(Users, id=pk)
         adjusted_data = request.data
+        """ print('data user: ', adjusted_data) """
+        print('user: ', user)
 
         # Aquí puedes realizar las validaciones y actualizaciones necesarias.
         # Por ejemplo, para actualizar el email y el número de documento:
@@ -134,7 +138,7 @@ class UsersView(APIView):
             user.is_active = is_active
         
         # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
-        existing_user = Users.objects.exclude(id=user_id).filter(Q(email=email) | Q(document_number=document_number)).first()
+        existing_user = Users.objects.exclude(id=pk).filter(Q(email=email) | Q(document_number=document_number)).first()
         if existing_user:
             return Response({'error': f'El correo electrónico {email} o número de documento {document_number} ya están registrados en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
 
