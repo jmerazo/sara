@@ -51,6 +51,13 @@ class UsersView(APIView):
                 raise Http404
         else:
             return queryset
+        
+    def get_object_for_delete(self, pk):
+        # Este método se utiliza específicamente para la acción de eliminación.
+        try:
+            return Users.objects.get(pk=pk)
+        except Users.DoesNotExist:
+            raise Http404
 
     def get(self, request, pk=None, format=None):
         users = self.get_object(pk)
@@ -100,7 +107,7 @@ class UsersView(APIView):
                 date_joined=timezone.now()
             )
             user.set_password(password)
-            """ user.save() """  # Guarda el usuario antes de asignarle el grupo
+            user.save()  # Guarda el usuario antes de asignarle el grupo
 
             default_group = Group.objects.get(name='DEFAULT')
             user.groups.add(default_group)
@@ -108,12 +115,11 @@ class UsersView(APIView):
             default_permission = Permission.objects.get(codename='view_user')
             user.user_permissions.add(default_permission)
 
-            serializer.save()
+            """ serializer.save() """
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
-        print('pk: ', pk)
         user = get_object_or_404(Users, id=pk)
         adjusted_data = request.data
         """ print('data user: ', adjusted_data) """
@@ -163,6 +169,31 @@ class UsersView(APIView):
         return Response(serializer.data)
 
     def delete(self, request, pk, format=None):
-        user = self.get_object(pk)
+        user = self.get_object_for_delete(pk)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class UsersStateView(APIView):
+    def get_object_state(self, id):
+        try:
+            return Users.objects.get(id=id)
+        except Users.DoesNotExist:
+            raise Http404
+        
+    def put(self, request, pk, format=None):
+        user = self.get_object_state(id=pk)
+        adjusted_data = request.data
+        print('state on', adjusted_data)
+
+        is_active = adjusted_data.get('state')
+        print('state', is_active)
+        
+        # Actualizamos los campos del usuario
+        user.is_active = is_active
+
+        # Aquí debes continuar actualizando los demás campos según tus necesidades
+
+        user.save()  # Guardar los cambios
+
+        serializer = UsersSerializer(user)  # Serializa el usuario actualizado
+        return Response(serializer.data)

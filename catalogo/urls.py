@@ -4,7 +4,7 @@ from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
 from .reports.samples import SamplesReport
-from .administration.users import UsersView
+from .administration.users import UsersView, UsersStateView
 from .helpers.locates import DepartmentsView, CitiesView
 
 
@@ -58,6 +58,7 @@ urlpatterns = [
 
     path('users/', UsersView.as_view()),
     path('users/<int:pk>', UsersView.as_view()),
+    path('users/state/<int:pk>', UsersStateView.as_view()),
 
     path('departments/', DepartmentsView.as_view()),
     path('cities/', CitiesView.as_view())
