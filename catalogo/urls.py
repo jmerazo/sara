@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchMonitoringCandidateView, ReportSpecieDataView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView
+from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchCandidatesSpecieView, SearchMonitoringCandidateView, ReportSpecieDataView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView
 from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
@@ -48,6 +48,7 @@ urlpatterns = [
 
     path('candidates/trees', CandidatesTreesView.as_view()),
     path('specie/report/data', ReportSpecieDataView.as_view()),
+    path('specie/search/candidates/<str:nom>', SearchCandidatesSpecieView.as_view()),
 
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view()),
