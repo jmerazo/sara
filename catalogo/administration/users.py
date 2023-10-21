@@ -182,18 +182,11 @@ class UsersStateView(APIView):
         
     def put(self, request, pk, format=None):
         user = self.get_object_state(id=pk)
-        adjusted_data = request.data
-        print('state on', adjusted_data)
-
-        is_active = adjusted_data.get('state')
-        print('state', is_active)
-        
-        # Actualizamos los campos del usuario
-        user.is_active = is_active
-
+        newState = request.data.get('nuevoEstado')
+        print('state', newState)        
+        if newState in [0, 1]:
+            user.is_active = newState
         # Aquí debes continuar actualizando los demás campos según tus necesidades
-
         user.save()  # Guardar los cambios
-
         serializer = UsersSerializer(user)  # Serializa el usuario actualizado
         return Response(serializer.data)
