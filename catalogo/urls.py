@@ -9,18 +9,12 @@ from .helpers.locates import DepartmentsView, CitiesView
 
 
 urlpatterns = [
-    path('especie_forestal/', EspecieForestalView.as_view({
-        'get' : 'list',
-        'post' : 'create',
-        'delete': 'destroy',
-        'put': 'update'
-    })),
+    path('especie_forestal/', EspecieForestalView.as_view()),
+    path('especie_forestal/<str:pk>', EspecieForestalView.as_view()),
     path('especie_forestal/nombres_comunes', NombresComunesView.as_view({
         'get' : 'list'
     })),
-    path('especie_forestal/familia', FamiliaView.as_view({
-        'get' : 'list'
-    })),
+    path('especie_forestal/familia/filter', FamiliaView.as_view()),
     path('especie_forestal/nombres_cientificos', NombreCientificoView.as_view({
         'get' : 'list'
     })),

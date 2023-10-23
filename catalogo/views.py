@@ -125,9 +125,32 @@ class CurrentUser(viewsets.ModelViewSet):
       user = self.request.user 
       return self.serializer_class.Meta.model.objects.filter(usuario=user)
 
-class EspecieForestalView(viewsets.ModelViewSet):
-    queryset = EspecieForestal.objects.all()
-    serializer_class = EspecieForestalSerializer
+class EspecieForestalView(APIView):
+    def get_object(self, pk=None):
+        if pk is not None:
+            try:
+                return EspecieForestal.objects.get(ShortcutID=pk)
+            except EspecieForestal.DoesNotExist:
+                raise Http404
+        else:
+            return EspecieForestal.objects.all()
+
+    def get(self, request, pk=None, format=None):
+        if pk is not None:
+            # Si se proporciona un pk, devuelve un objeto específico
+            specie = self.get_object(pk)
+            serializer = EspecieForestalSerializer(specie)
+        else:
+            # Si no se proporciona un pk, devuelve la lista completa
+            species = self.get_object()
+            serializer = EspecieForestalSerializer(species, many=True)
+
+        return Response(serializer.data)
+
+    def delete(self, request, pk, format=None):
+        specie = self.get_object(pk)
+        specie.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['GET'])
     def get_image_links(self, request, pk=None):
@@ -151,15 +174,13 @@ class NombresComunesView(viewsets.ModelViewSet):
    queryset = EspecieForestal.objects.all()
    serializer_class = NombresComunesSerializer
 
-class FamiliaView(viewsets.ViewSet):
+class FamiliaView(APIView):
     serializer_class = FamiliaSerializer
 
-    #Aquí se realizó la función para enviar las familias sin duplicados
-    def list(self, request, *args, **kwargs):
+    def get(self, request, format=None):
         queryset = EspecieForestal.objects.values('familia').distinct()
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
-
 
 class NombreCientificoView(viewsets.ModelViewSet):
    queryset = EspecieForestal.objects.all()
