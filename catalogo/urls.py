@@ -37,12 +37,12 @@ urlpatterns = [
     path('samples/report/general', SamplesReport.as_view()),
 
     # CONSULTA DE MONITOREOS POR INDIVIDUO
-    path('candidates/search/monitorings/<id>', SearchMonitoringCandidateView.as_view()),
-    path('monitoring/search/specie/<int:code>', SearchMonitoringSpecieView.as_view()),
+    path('candidates/search/monitorings/<id>', SearchMonitoringCandidateView.as_view()), # genera el listado de monitoreos del individuo consultado
+    path('monitoring/search/specie/<int:code>', SearchMonitoringSpecieView.as_view()), # genera el listado de monitoreos por la especie consultada
 
-    path('candidates/trees', CandidatesTreesView.as_view()),
-    path('specie/report/data', ReportSpecieDataView.as_view()),
-    path('specie/search/candidates/<str:nom>', SearchCandidatesSpecieView.as_view()),
+    path('candidates/trees', CandidatesTreesView.as_view()), # Lista los individuos evaluados totales
+    path('specie/report/data', ReportSpecieDataView.as_view()), # Genera el reporte de cantidad de individuos evaluados, monitoreos y muestras por especie
+    path('specie/search/candidates/<str:nom>', SearchCandidatesSpecieView.as_view()), # Busca los individuos evaluados de cada especie en base a su nombre común
 
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view()),
