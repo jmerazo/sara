@@ -1,8 +1,7 @@
 from rest_framework import viewsets, status, generics, permissions
-from django.contrib.auth.backends import BaseBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.contrib.auth import login, authenticate, logout
 from rest_framework.views import APIView
@@ -145,6 +144,63 @@ class EspecieForestalView(APIView):
             species = self.get_object()
             serializer = EspecieForestalSerializer(species, many=True)
 
+        return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        specie = get_object_or_404(EspecieForestal, ShortcutID=pk)
+        adjusted_data = request.data
+
+        # Aquí puedes realizar las validaciones y actualizaciones necesarias.
+        # Por ejemplo, para actualizar el email y el número de documento:
+        cod_especie = adjusted_data.get('cod_especie')
+        nom_comunes = adjusted_data.get('nom_comunes')
+        otros_nombres = adjusted_data.get('otros_nombres')
+        nombre_cientifico = adjusted_data.get('nombre_cientifico')
+        sinonimos = adjusted_data.get('sinonimos')
+        familia = adjusted_data.get('familia')
+        distribucion = adjusted_data.get('distribucion')
+        habito = adjusted_data.get('habito')
+        follaje = adjusted_data.get('follaje')
+        forma_copa = adjusted_data.get('forma_copa')
+        tipo_hoja = adjusted_data.get('tipo_hoja')
+        disposicion_hojas = adjusted_data.get('disposicion_hojas')
+        hojas = adjusted_data.get('hojas')
+        flor = adjusted_data.get('flor')
+        frutos = adjusted_data.get('frutos')
+        semillas = adjusted_data.get('semillas')
+        tallo = adjusted_data.get('tallo')
+        raiz = adjusted_data.get('raiz')
+        
+        # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
+        existing_specie = EspecieForestal.objects.exclude(id=pk).filter(Q(cod_especie=cod_especie)).first()
+        if existing_specie:
+            return Response({'error': f'El código de espeie {cod_especie} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Actualizamos los campos del usuario
+        specie.cod_especie = cod_especie
+        specie.nom_comunes = nom_comunes
+        specie.otros_nombres = otros_nombres
+        specie.nombre_cientifico = nombre_cientifico
+        specie.sinonimos = sinonimos
+        specie.familia = familia
+        specie.distribucion = distribucion
+        specie.habito = habito
+        specie.follaje = follaje
+        specie.forma_copa = forma_copa
+        specie.tipo_hoja = tipo_hoja
+        specie.disposicion_hojas = disposicion_hojas
+        specie.hojas = hojas
+        specie.flor = flor
+        specie.frutos = frutos
+        specie.semillas = semillas
+        specie.tallo = tallo
+        specie.raiz = raiz        
+
+        # Aquí debes continuar actualizando los demás campos según tus necesidades
+
+        specie.save()  # Guardar los cambios
+
+        serializer = EspecieForestalSerializer(specie)  # Serializa el usuario actualizado
         return Response(serializer.data)
 
     def delete(self, request, pk, format=None):
