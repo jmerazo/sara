@@ -149,10 +149,13 @@ class EspecieForestalView(APIView):
     def put(self, request, pk, format=None):
         specie = get_object_or_404(EspecieForestal, ShortcutID=pk)
         adjusted_data = request.data
+        print('data: ', adjusted_data)
+
+        cod_specie_currently = specie.cod_especie
 
         # Aquí puedes realizar las validaciones y actualizaciones necesarias.
         # Por ejemplo, para actualizar el email y el número de documento:
-        cod_especie = adjusted_data.get('cod_especie')
+        cod_especie_new = adjusted_data.get('cod_especie')
         nom_comunes = adjusted_data.get('nom_comunes')
         otros_nombres = adjusted_data.get('otros_nombres')
         nombre_cientifico = adjusted_data.get('nombre_cientifico')
@@ -170,14 +173,17 @@ class EspecieForestalView(APIView):
         semillas = adjusted_data.get('semillas')
         tallo = adjusted_data.get('tallo')
         raiz = adjusted_data.get('raiz')
+
+        print('code act: ', cod_specie_currently, " and code form: ", cod_especie_new)
         
         # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
-        existing_specie = EspecieForestal.objects.exclude(id=pk).filter(Q(cod_especie=cod_especie)).first()
-        if existing_specie:
-            return Response({'error': f'El código de espeie {cod_especie} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
+        if cod_specie_currently != cod_especie_new:
+            existing_specie = EspecieForestal.objects.exclude(ShortcutID=pk).filter(cod_especie=cod_especie_new).first()
+            if existing_specie:
+                return Response({'error': f'El código de espeie {cod_especie_new} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Actualizamos los campos del usuario
-        specie.cod_especie = cod_especie
+        specie.cod_especie = cod_especie_new
         specie.nom_comunes = nom_comunes
         specie.otros_nombres = otros_nombres
         specie.nombre_cientifico = nombre_cientifico
