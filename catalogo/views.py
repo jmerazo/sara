@@ -174,6 +174,8 @@ class EspecieForestalView(APIView):
         tallo = adjusted_data.get('tallo')
         raiz = adjusted_data.get('raiz')
 
+        print('cod_specie_currently: ', cod_specie_currently)
+        print('cod_especie_new: ', cod_especie_new)
         print('code act: ', cod_specie_currently, " and code form: ", cod_especie_new)
         
         # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
