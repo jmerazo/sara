@@ -280,6 +280,23 @@ class Cities(models.Model):
         managed = False
         db_table = 'cities'
 
+class ImagesSpeciesRelated(models.Model):
+    id = models.IntegerField(primary_key=True)
+    specie_id = models.CharField(max_length=10, blank=True, null=True)
+    img_general = models.CharField(max_length=150, blank=True, null=True)
+    img_leafs = models.CharField(max_length=150, blank=True, null=True)
+    img_fruits = models.CharField(max_length=150, blank=True, null=True)
+    img_flowers = models.CharField(max_length=150, blank=True, null=True)
+    img_seeds = models.CharField(max_length=150, blank=True, null=True)
+    img_stem = models.CharField(max_length=150, blank=True, null=True)
+    img_landscape_one = models.CharField(max_length=150, blank=True, null=True)
+    img_landscape_two = models.CharField(max_length=150, blank=True, null=True)
+    img_landscape_three = models.CharField(max_length=150, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'img_species'
+
 """
 CharField: Campo de texto de longitud variable.
 TextField: Campo de texto de longitud variable (para textos más largos).

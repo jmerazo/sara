@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities, Users, Samples
+from .models import EspecieForestal, Glossary, CandidateTrees, Monitoring, Page, Users, Departments, Cities, Users, Samples, ImagesSpeciesRelated
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
@@ -12,6 +12,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class EspecieForestalSerializer(serializers.ModelSerializer):
     class Meta:
         model = EspecieForestal
+        fields = '__all__'
+
+class ImagesSpeciesRelatedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImagesSpeciesRelated
         fields = '__all__'
 
 class NombresComunesSerializer(serializers.ModelSerializer):

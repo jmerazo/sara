@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status, generics, permissions
+from django.db import connection, transaction
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -9,13 +10,43 @@ from django.db.models import Q, Count, Value, CharField, Count, Sum, Case, When,
 from django.db.models.functions import Coalesce
 from django.db import connection
 from decimal import Decimal
-from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users, Monitoring, Samples
-from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer, MonitoringsSerializer, SamplesSerializer
+import random, string, shutil, os
+from django.conf import settings
+from .models import EspecieForestal, Glossary, CandidateTrees, Page, Users, Monitoring, Samples, ImagesSpeciesRelated
+from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,NombresComunesSerializer, FamiliaSerializer, ImagesSpeciesRelatedSerializer, NombreCientificoSerializer, GlossarySerializer, GeoCandidateTreesSerializer, AverageTreesSerializer, PageSerializer, MonitoringsSerializer, SamplesSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+
+def save_image(image, cod_especie, nom_comunes, image_type):
+    # Carpeta principal para las imágenes
+    base_dir = 'images'
+
+    # Carpeta secundaria con el código de especie y nombre común
+    sub_dir = os.path.join(base_dir, f"{cod_especie}_{nom_comunes}")
+
+    # Carpeta tercera con el nombre de la imagen
+    os.makedirs(sub_dir, exist_ok=True)
+
+    # Nombre del archivo de imagen basado en el tipo (imgLeaf, imgFlower, etc.)
+    file_name = f"{image_type}_{cod_especie}_{nom_comunes}.jpg"
+
+    # Ruta completa del archivo
+    file_path = os.path.join(sub_dir, file_name)
+
+    with open(file_path, 'wb') as f:
+        for chunk in image.chunks():
+            f.write(chunk)
+
+    return file_path
+
+def generate_random_id(length):
+            characters = string.ascii_letters + string.digits
+            random_id = ''.join(random.choice(characters) for _ in range(length))
+            return random_id
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -145,6 +176,114 @@ class EspecieForestalView(APIView):
             serializer = EspecieForestalSerializer(species, many=True)
 
         return Response(serializer.data)
+    
+    @transaction.atomic
+    def post(self, request, format=None):
+        adjusted_data = request.data.copy()
+
+        ce = adjusted_data.get('cod_especie')
+
+        existing_specie = EspecieForestal.objects.filter(cod_especie=ce).first()
+        if existing_specie:
+            return Response({'error': f'El código de espeie {ce} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        while True:
+            random_id = generate_random_id(8)
+            existing_code = EspecieForestal.objects.filter(ShortcutID=random_id).first()
+            
+            if existing_code is None:
+                # El ID no existe en la base de datos, se puede utilizar
+                break
+        
+        cod_especie_img= adjusted_data['cod_especie'],
+        nom_comunes_img = adjusted_data['nom_comunes'],
+        imgGeneral = adjusted_data['imgGeneral'],
+        imgLeaf = adjusted_data['imgLeaf'],
+        imgFlower = adjusted_data['imgFlower'],
+        imgFruit = adjusted_data['imgFruit'],
+        imgSeed = adjusted_data['imgSeed'],
+        imgStem = adjusted_data['imgStem'],
+        imgLandScapeOne = adjusted_data['imgLandScapeOne'],
+        imgLandScapeTwo = adjusted_data['imgLandScapeTwo'],
+        imgLandScapeThree = adjusted_data['imgLandScapeThree']
+
+        base_dir = 'images'
+        # Carpeta secundaria con el código de especie y nombre común
+        sub_dir = os.path.join(base_dir, f"{cod_especie_img}_{nom_comunes_img}")
+        # Crear carpetas para cada tipo de imagen
+        img_types = {
+            'imgGeneral': imgGeneral,
+            'imgLeaf': imgLeaf,
+            'imgFlower': imgFlower,
+            'imgFruit': imgFruit,
+            'imgSeed': imgSeed,
+            'imgStem': imgStem,
+            'imgLandScapeOne': imgLandScapeOne,
+            'imgLandScapeTwo': imgLandScapeTwo,
+            'imgLandScapeThree': imgLandScapeThree,
+        }
+
+        for img_type, img_path in img_types.items():
+            if img_path:
+                img_path = img_path.replace('\\', '/')  # Asegúrate de que la ruta use barras inclinadas (/) en lugar de barras invertidas (\)
+
+                # Asegúrate de que la carpeta exista o créala si no existe
+                img_path_dir = os.path.dirname(os.path.join(sub_dir, img_path))
+                os.makedirs(img_path_dir, exist_ok=True)
+
+                # Obtiene el nombre de archivo de la imagen
+                image_filename = os.path.basename(img_path)
+
+                # Construye la ruta de destino en la subcarpeta correspondiente
+                destination_path = os.path.join(sub_dir, img_type, image_filename)
+
+                # Copia la imagen al destino
+                shutil.copy(img_path, destination_path)
+
+        imgSerializer = ImagesSpeciesRelatedSerializer()
+        if imgSerializer.is_valid():
+            imgs = ImagesSpeciesRelated(
+                specie_id=random_id,
+                img_general=f"{sub_dir}/{img_types[0]}/{img_types[0]}_{cod_especie_img}_{nom_comunes_img}",
+                img_leafs=f"{sub_dir}/{img_types[1]}/{img_types[1]}_{cod_especie_img}_{nom_comunes_img}",
+                img_fruits=f"{sub_dir}/{img_types[3]}/{img_types[3]}_{cod_especie_img}_{nom_comunes_img}",
+                img_flowers=f"{sub_dir}/{img_types[2]}/{img_types[2]}_{cod_especie_img}_{nom_comunes_img}",
+                img_seeds=f"{sub_dir}/{img_types[4]}/{img_types[4]}_{cod_especie_img}_{nom_comunes_img}",
+                img_stem=f"{sub_dir}/{img_types[5]}/{img_types[5]}_{cod_especie_img}_{nom_comunes_img}",
+                img_landscape_one=f"{sub_dir}/{img_types[6]}/{img_types[6]}_{cod_especie_img}_{nom_comunes_img}",
+                img_landscape_two=f"{sub_dir}/{img_types[7]}/{img_types[7]}_{cod_especie_img}_{nom_comunes_img}",
+                img_landscape_three=f"{sub_dir}/{img_types[8]}/{img_types[8]}_{cod_especie_img}_{nom_comunes_img}"
+            )
+
+            imgs.save()
+
+        serializer = EspecieForestalSerializer(data=adjusted_data)
+        if serializer.is_valid():
+            specie = EspecieForestal(
+                ShortcutID = random_id,
+                cod_especie_new = adjusted_data['cod_especie'],
+                nom_comunes = adjusted_data['nom_comunes'],
+                otros_nombres = adjusted_data['otros_nombres'],
+                nombre_cientifico = adjusted_data['nombre_cientifico'],
+                sinonimos = adjusted_data['sinonimos'],
+                familia = adjusted_data['familia'],
+                distribucion = adjusted_data['distribucion'],
+                habito = adjusted_data['habito'],
+                follaje = adjusted_data['follaje'],
+                forma_copa = adjusted_data['forma_copa'],
+                tipo_hoja = adjusted_data['tipo_hoja'],
+                disposicion_hojas = adjusted_data['disposicion_hojas'],
+                hojas = adjusted_data['hojas'],
+                flor = adjusted_data['flor'],
+                frutos = adjusted_data['frutos'],
+                semillas = adjusted_data['semillas'],
+                tallo = adjusted_data['tallo'],
+                raiz = adjusted_data['raiz']
+            )
+            specie.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
     def put(self, request, pk, format=None):
         specie = get_object_or_404(EspecieForestal, ShortcutID=pk)
