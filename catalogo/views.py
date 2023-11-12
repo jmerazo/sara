@@ -514,18 +514,36 @@ class GlossaryView(APIView):
     
 class GeoCandidateTreesView(APIView):
     def get(self, request, format=None): 
-        geo = CandidateTrees.objects.all()
-        geoData = GeoCandidateTreesSerializer(geo, many=True).data
+        # Realizar la consulta SQL
+        sql_query = """
+            SELECT ea.cod_especie, ea.numero_placa, ef.nom_comunes, ef.nombre_cientifico, ea.vereda, ea.nombre_del_predio, ea.abcisa_xy, ea.resultado 
+            FROM evaluacion_as AS ea 
+            INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query)
+            results = cursor.fetchall()
 
+        # Procesar los resultados
         geo_format = []
-
-        for datos in geoData:
-            latitud, longitud  = datos['abcisa_xy'].split(', ')
-            code_number = int(datos['cod_especie'])
-            geo_fixed = {'codigo': code_number, 'lat': float(latitud), 'lon': float(longitud)}
+        for datos in results:
+            cod_especie, numero_placa, nom_comunes, nombre_cientifico, vereda, nombre_del_predio, abcisa_xy, resultado = datos
+            latitud, longitud  = abcisa_xy.split(', ')
+            
+            geo_fixed = {
+                'codigo': int(cod_especie),
+                'numero_placa': numero_placa,
+                'vereda': vereda,
+                'nombre_del_predio': nombre_del_predio,
+                'lat': float(latitud),
+                'lon': float(longitud),
+                'coordenadas': abcisa_xy,
+                'resultado': resultado,
+                'nom_comunes': nom_comunes,
+                'nombre_cientifico': nombre_cientifico,
+            }
             geo_format.append(geo_fixed)
 
-        """ print('Coordendas', geo_format) """
         return Response(geo_format)
     
 class CandidatesTreesView(APIView):

@@ -56,7 +56,7 @@ class GlossarySerializer(serializers.ModelSerializer):
 class GeoCandidateTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateTrees
-        fields = ['cod_especie', 'abcisa_xy']
+        fields = ['cod_especie', 'numero_placa','abcisa_xy', 'vereda', 'nombre_del_predio', 'resultado']
 
 class AverageTreesSerializer(serializers.ModelSerializer):
     class Meta:
