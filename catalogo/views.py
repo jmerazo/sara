@@ -539,7 +539,7 @@ class GeoCandidateTreesView(APIView):
                 'lon': float(longitud),
                 'coordenadas': abcisa_xy,
                 'resultado': resultado,
-                'nom_comunes': nom_comunes,
+                'nombre_comun': nom_comunes,
                 'nombre_cientifico': nombre_cientifico,
             }
             geo_format.append(geo_fixed)
