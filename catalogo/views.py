@@ -157,6 +157,7 @@ class CurrentUser(viewsets.ModelViewSet):
       user = self.request.user 
       return self.serializer_class.Meta.model.objects.filter(usuario=user)
 
+# VISTAS ESPECIES FORESTALES
 class EspecieForestalView(APIView):
     def get_object(self, pk=None):
         if pk is not None:
@@ -505,13 +506,15 @@ class ScientificNameView(APIView):
         
         return Response(serializer.data)
 
+# VISTA GLOSARIO
 class GlossaryView(APIView):
     def get(self, request, format=None): 
         queryset = Glossary.objects.all()
         serializer = GlossarySerializer(queryset, many=True)
 
         return Response(serializer.data)
-    
+
+# VISTA INDIVIDUOS EVALUADOS    
 class GeoCandidateTreesView(APIView):
     def get(self, request, format=None): 
         # Realizar la consulta SQL
@@ -588,7 +591,8 @@ class AverageCandidateTreesView(APIView):
         except Exception as e:
             print('Error:', str(e))
             return Response({'error': 'Ocurrió un error al obtener los datos'}, status=500)
-            
+
+# VISTA PÁGINA ACERCA OTROS            
 class PageView(APIView):
     def get_object(self, pk=None):
         if pk is not None:
@@ -709,3 +713,184 @@ class SearchCandidatesSpecieView(APIView):
 
             return Response(queryset)
 
+class MonitoringsView(APIView):
+    def get_queryset(self):
+        # Consulta SQL directa
+        query = """
+            SELECT
+                m.IDmonitoreo,
+                ea.numero_placa, 
+                ef.nom_comunes, 
+                ef.nombre_cientifico, 
+                ea.cod_especie, 
+                m.fecha_monitoreo, 
+                m.hora, 
+                m.temperatura, 
+                m.humedad, 
+                m.precipitacion, 
+                m.factor_climatico, 
+                m.observaciones_temp, 
+                m.fitosanitario, 
+                m.afectacion, 
+                m.observaciones_afec,
+                m.follaje_porcentaje,
+                m.ren_caducifolio,
+                m.observaciones_follaje,
+                m.flor_abierta,
+                m.flor_boton,
+                m.color_flor,
+                m.color_flor_otro,
+                m.olor_flor,
+                m.olor_flor_otro,
+                m.fauna_flor,
+                m.fauna_flor_otros,
+                m.observaciones_flor,
+                m.frutos_verdes,
+                m.estado_madurez,
+                m.color_fruto,
+                m.color_fruto_otro,
+                m.cant_frutos,
+                m.medida_peso_frutos,
+                m.peso_frutos,
+                m.largo_fruto,
+                m.ancho_fruto,
+                m.fauna_frutos,
+                m.fauna_frutos_otro,
+                m.observacion_frutos,
+                m.cant_semillas,
+                m.medida_peso_sem,
+                m.peso_semillas,
+                m.largo_semilla,
+                m.ancho_semilla,
+                m.observacion_semilla,
+                m.observaciones
+            FROM 
+                monitoreo AS m 
+            LEFT JOIN 
+                evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV 
+            LEFT JOIN 
+                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie;
+        """
+        # Ejecutar la consulta
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+        columns = [
+            'IDmonitoreo', 'numero_placa', 'nom_comunes', 'nombre_cientifico',
+            'cod_especie', 'fecha_monitoreo', 'hora', 'temperatura', 'humedad',
+            'precipitacion', 'factor_climatico', 'observaciones_temp', 'fitosanitario',
+            'afectacion', 'observaciones_afec', 'follaje_porcentaje', 'ren_caducifolio',
+            'observaciones_follaje', 'flor_abierta', 'flor_boton', 'color_flor',
+            'color_flor_otro', 'olor_flor', 'olor_flor_otro', 'fauna_flor',
+            'fauna_flor_otros', 'observaciones_flor', 'frutos_verdes', 'estado_madurez',
+            'color_fruto', 'color_fruto_otro', 'cant_frutos', 'medida_peso_frutos',
+            'peso_frutos', 'largo_fruto', 'ancho_fruto', 'fauna_frutos',
+            'fauna_frutos_otro', 'observacion_frutos', 'cant_semillas',
+            'medida_peso_sem', 'peso_semillas', 'largo_semilla', 'ancho_semilla',
+            'observacion_semilla', 'observaciones'
+        ]
+        queryset = [dict(zip(columns, row)) for row in result]
+
+        return queryset
+
+    def get_object(self, pk=None):
+        queryset = self.get_queryset()
+
+        if pk is not None:
+            try:
+                monitoring = next(monitoring for monitoring in queryset if monitoring['IDmonitoreo'] == pk)
+                return monitoring
+            except StopIteration:
+                raise Http404
+        else:
+            return queryset
+        
+    def get_object_for_delete(self, pk):
+        # Este método se utiliza específicamente para la acción de eliminación.
+        try:
+            return Monitoring.objects.get(pk=pk)
+        except Monitoring.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk=None, format=None):
+        monitorings = self.get_object(pk)
+
+        if isinstance(monitorings, dict):
+            # Convertir el resultado en una lista de diccionarios
+            monitorings = [monitorings]
+
+        return Response(monitorings)
+        
+# VISTA MUESTRAS
+class SamplesView(APIView):
+    def get_queryset(self):
+        # Consulta SQL directa
+        query = """
+            SELECT
+                m.idmuestra, 
+                ea.numero_placa, 
+                ef.nom_comunes, 
+                ef.nombre_cientifico, 
+                ea.cod_especie, 
+                m.fecha_coleccion, 
+                m.nro_muestras, 
+                m.colector_ppal, 
+                m.siglas_colector_ppal, 
+                m.nro_coleccion, 
+                m.voucher, 
+                m.nombres_colectores, 
+                m.codigo_muestra, 
+                m.otros_nombres, 
+                m.descripcion, 
+                m.usos 
+            FROM 
+                muestras AS m 
+            LEFT JOIN 
+                evaluacion_as AS ea ON m.nro_placa = ea.numero_placa 
+            LEFT JOIN 
+                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie;
+        """
+        # Ejecutar la consulta
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+        columns = [
+            'idmuestra', 'numero_placa', 'nom_comunes', 'nombre_cientifico',
+            'cod_especie', 'fecha_coleccion', 'nro_muestras', 'colector_ppal',
+            'siglas_colector_ppal', 'nro_coleccion', 'voucher',
+            'nombres_colectores', 'codigo_muestra', 'otros_nombres',
+            'descripcion', 'usos'
+        ]
+        queryset = [dict(zip(columns, row)) for row in result]
+
+        return queryset
+
+    def get_object(self, pk=None):
+        queryset = self.get_queryset()
+
+        if pk is not None:
+            try:
+                sample = next(sample for sample in queryset if sample['idmuestra'] == pk)
+                return sample
+            except StopIteration:
+                raise Http404
+        else:
+            return queryset
+        
+    def get_object_for_delete(self, pk):
+        # Este método se utiliza específicamente para la acción de eliminación.
+        try:
+            return Samples.objects.get(pk=pk)
+        except Samples.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk=None, format=None):
+        samples = self.get_object(pk)
+
+        if isinstance(samples, dict):
+            # Convertir el resultado en una lista de diccionarios
+            samples = [samples]
+
+        return Response(samples)

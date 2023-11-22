@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchCandidatesSpecieView, SearchMonitoringCandidateView, ReportSpecieDataView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView
+from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchCandidatesSpecieView, MonitoringsView, SearchMonitoringCandidateView, ReportSpecieDataView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView, SamplesView
 from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
@@ -34,7 +34,12 @@ urlpatterns = [
     path('monitoring/report/month', MonitoringReport.as_view(), name='monitoring-report'),
     path('monitoring/report/month/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
     path('monitoring/report/general/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
+
+    path('monitoring/report/data', MonitoringsView.as_view()),
+
+    # URLS: SAMPLES
     path('samples/report/general', SamplesReport.as_view()),
+    path('samples/report/data', SamplesView.as_view()),
 
     # CONSULTA DE MONITOREOS POR INDIVIDUO
     path('candidates/search/monitorings/<id>', SearchMonitoringCandidateView.as_view()), # genera el listado de monitoreos del individuo consultado
