@@ -519,7 +519,7 @@ class GeoCandidateTreesView(APIView):
     def get(self, request, format=None): 
         # Realizar la consulta SQL
         sql_query = """
-            SELECT ea.cod_especie, ea.numero_placa, ef.nom_comunes, ef.nombre_cientifico, ea.vereda, ea.nombre_del_predio, ea.abcisa_xy, ea.resultado 
+            SELECT ea.cod_especie, ea.numero_placa, ef.nom_comunes, ef.nombre_cientifico, ea.departamento, ea.municipio, ea.vereda, ea.nombre_del_predio, ea.abcisa_xy, ea.resultado 
             FROM evaluacion_as AS ea 
             INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
         """
@@ -530,12 +530,14 @@ class GeoCandidateTreesView(APIView):
         # Procesar los resultados
         geo_format = []
         for datos in results:
-            cod_especie, numero_placa, nom_comunes, nombre_cientifico, vereda, nombre_del_predio, abcisa_xy, resultado = datos
+            cod_especie, numero_placa, nom_comunes, nombre_cientifico, departamento, municipio, vereda, nombre_del_predio, abcisa_xy, resultado = datos
             latitud, longitud  = abcisa_xy.split(', ')
             
             geo_fixed = {
                 'codigo': int(cod_especie),
                 'numero_placa': numero_placa,
+                'departamento': departamento,
+                'municipio': municipio,
                 'vereda': vereda,
                 'nombre_del_predio': nombre_del_predio,
                 'lat': float(latitud),
