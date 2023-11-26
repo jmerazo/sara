@@ -35,11 +35,11 @@ urlpatterns = [
     path('monitoring/report/month/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
     path('monitoring/report/general/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
 
-    path('monitoring/report/data', MonitoringsView.as_view()),
+    path('monitoring/report/data', MonitoringsView.as_view()), # Exporta todos los datos de monitoreos
 
     # URLS: SAMPLES
     path('samples/report/general', SamplesReport.as_view()),
-    path('samples/report/data', SamplesView.as_view()),
+    path('samples/report/data', SamplesView.as_view()), # Exporta todos los datos de las muestras
 
     # CONSULTA DE MONITOREOS POR INDIVIDUO
     path('candidates/search/monitorings/<id>', SearchMonitoringCandidateView.as_view()), # genera el listado de monitoreos del individuo consultado
