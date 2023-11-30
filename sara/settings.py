@@ -21,6 +21,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'images')  # Directorio donde se guardarán los archivos de medios
+MEDIA_URL = '/api/images/'  # Ajusta la URL base para incluir '/api/'
 
 # Application definition
 

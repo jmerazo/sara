@@ -169,16 +169,32 @@ class EspecieForestalView(APIView):
             return EspecieForestal.objects.all()
 
     def get(self, request, pk=None, format=None):
-        if pk is not None:
-            # Si se proporciona un pk, devuelve un objeto específico
-            specie = self.get_object(pk)
-            serializer = EspecieForestalSerializer(specie)
-        else:
-            # Si no se proporciona un pk, devuelve la lista completa
-            species = self.get_object()
-            serializer = EspecieForestalSerializer(species, many=True)
+        # Realizar la consulta SQL personalizada
+        query = """
+            SELECT * 
+            FROM especie_forestal AS ef 
+            LEFT JOIN img_species AS i ON ef.ShortcutID = i.specie_id;
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            try:
+                rows = cursor.fetchall()
+                if rows:
+                    columns = [col[0] for col in cursor.description]
 
-        return Response(serializer.data)
+                    # Procesar los datos obtenidos de la consulta SQL personalizada
+                    species_data = []
+                    for row in rows:
+                        data = {}
+                        for col, value in zip(columns, row):
+                            data[col] = value
+                        species_data.append(data)
+
+                    return Response(species_data)  # Devuelve directamente los datos obtenidos
+                else:
+                    return Response([])  # Devuelve una lista vacía si no hay resultados
+            except Exception as e:
+                return Response({"error": str(e)})  # Devuelve un mensaje de error en caso de excepción
     
     @transaction.atomic
     def post(self, request, format=None):
@@ -250,6 +266,10 @@ class EspecieForestalView(APIView):
             characters = string.ascii_letters + string.digits
             return ''.join(random.choice(characters) for _ in range(length))
 
+        img_related = ImagesSpeciesRelated()
+        # Agrega el specie_id a la instancia de ImagesSpeciesRelated
+        img_related.specie_id = random_id
+
         # Recorre las imágenes y realiza la copia con nombres aleatorios
         for img_type, img_data in img_types.items():
             if img_data:
@@ -272,8 +292,6 @@ class EspecieForestalView(APIView):
                 with open(destination_path, 'wb') as dest_file:
                     dest_file.write(img_data_bytes)
 
-                img_related = ImagesSpeciesRelated()
-
                 image_columns = {
                     'img_general': 'imgGeneral',
                     'img_leafs': 'imgLeaf',
@@ -286,19 +304,17 @@ class EspecieForestalView(APIView):
                     'img_landscape_three': 'imgLandScapeThree',
                 }
 
-                # Agrega el specie_id a la instancia de ImagesSpeciesRelated
-                img_related.specie_id = random_id
-
-                # Itera a través del diccionario y verifica si la imagen está cargada antes de asignarla al campo correspondiente
+                # Iterar a través del diccionario y asignar las rutas de las imágenes a la instancia de ImagesSpeciesRelated
                 for column_name, img_type in image_columns.items():
-                    if img_types[img_type]:  # Verifica si la imagen está cargada
+                    if img_types[img_type]:  # Verificar si la imagen está cargada
                         setattr(img_related, column_name, destination_path)
-
-                # Guarda la instancia en la base de datos solo si al menos un campo tiene una imagen cargada
-                if any(getattr(img_related, column) for column in image_columns):
-                    img_related.save()
-
+                
                 print(f"Archivo copiado a: {destination_path}")
+
+                # Guardar la instancia en la base de datos solo si al menos un campo tiene una imagen cargada
+                """ if any(getattr(img_related, column) for column in image_columns): """
+        
+        img_related.save()     
 
         """ # Crea una instancia de ImagesSpeciesRelated con los datos
         img_related = ImagesSpeciesRelated(

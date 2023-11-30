@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from catalogo.views import CustomTokenObtainPairView
+from django.conf import settings
+from django.conf.urls.static import static
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -21,12 +23,14 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('catalogo.urls')),
-    path('api/auth/accounts', include('allauth.urls')),
-    path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    
+   path('admin/', admin.site.urls),
+   path('api/', include('catalogo.urls')),
+   path('api/auth/accounts', include('allauth.urls')),
+   path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+   path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+   path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+   path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
+
+# Configurar la ruta estática para las imágenes
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
