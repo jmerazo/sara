@@ -19,7 +19,7 @@ SECRET_KEY = 'django-insecure-%79cuev8+)_&#ft&)f-htw7jeiadt_=+%^jhz4wp6#y9l+u6m@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')  # Directorio donde se guardarán los archivos de medios
 MEDIA_URL = '/api/images/'  # Ajusta la URL base para incluir '/api/'
@@ -169,7 +169,9 @@ SIMPLE_JWT = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080"
+    "http://localhost:8080",
+    "https://0513-152-200-195-66.ngrok-free.app",
+    "http://localhost:5173"
 ]
 
 """ AUTH_USER_MODEL = 'accounts.User'
