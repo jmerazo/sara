@@ -267,54 +267,50 @@ class EspecieForestalView(APIView):
             return ''.join(random.choice(characters) for _ in range(length))
 
         img_related = ImagesSpeciesRelated()
-        # Agrega el specie_id a la instancia de ImagesSpeciesRelated
         img_related.specie_id = random_id
+
+        # Crea un diccionario para mapear los tipos de imagen con sus respectivos nombres de columna
+        image_columns = {
+            'img_general': 'imgGeneral',
+            'img_leafs': 'imgLeaf',
+            'img_fruits': 'imgFruit',
+            'img_flowers': 'imgFlower',
+            'img_seeds': 'imgSeed',
+            'img_stem': 'imgStem',
+            'img_landscape_one': 'imgLandScapeOne',
+            'img_landscape_two': 'imgLandScapeTwo',
+            'img_landscape_three': 'imgLandScapeThree',
+        }
+
+        # Crear un diccionario para almacenar las rutas de las imágenes
+        image_paths = {}
 
         # Recorre las imágenes y realiza la copia con nombres aleatorios
         for img_type, img_data in img_types.items():
             if img_data:
-                # Genera un nombre alfanumérico aleatorio para el archivo
                 random_filename = generate_random_filename(5)
-                
-                # Obtiene la extensión del archivo
                 file_extension = ".jpeg"  # Reemplaza con la extensión de archivo adecuada
 
-                # Construye la ruta de destino en la subcarpeta correspondiente
                 destination_path = os.path.join(sub_dir, img_type, f"{img_type}_{random_filename}{file_extension}")
-
-                # Asegúrate de que la carpeta exista o créala si no existe
                 os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
-                # Decodifica los datos base64 y guarda la imagen en formato JPEG
                 img_data = img_data.split(';base64,')[-1]
                 img_data_bytes = base64.b64decode(img_data)
 
                 with open(destination_path, 'wb') as dest_file:
                     dest_file.write(img_data_bytes)
 
-                image_columns = {
-                    'img_general': 'imgGeneral',
-                    'img_leafs': 'imgLeaf',
-                    'img_fruits': 'imgFruit',
-                    'img_flowers': 'imgFlower',
-                    'img_seeds': 'imgSeed',
-                    'img_stem': 'imgStem',
-                    'img_landscape_one': 'imgLandScapeOne',
-                    'img_landscape_two': 'imgLandScapeTwo',
-                    'img_landscape_three': 'imgLandScapeThree',
-                }
-
-                # Iterar a través del diccionario y asignar las rutas de las imágenes a la instancia de ImagesSpeciesRelated
-                for column_name, img_type in image_columns.items():
-                    if img_types[img_type]:  # Verificar si la imagen está cargada
-                        setattr(img_related, column_name, destination_path)
-                
+                image_paths[img_type] = destination_path
                 print(f"Archivo copiado a: {destination_path}")
 
-                # Guardar la instancia en la base de datos solo si al menos un campo tiene una imagen cargada
-                """ if any(getattr(img_related, column) for column in image_columns): """
-        
-        img_related.save()     
+        # Asignar las rutas al modelo ImagesSpeciesRelated
+        for column_name, img_type in image_columns.items():
+            if img_type in image_paths:
+                setattr(img_related, column_name, image_paths[img_type])
+
+        # Guardar la instancia en la base de datos solo si al menos una imagen fue cargada
+        if any(getattr(img_related, column) for column in image_columns):
+            img_related.save()
 
         """ # Crea una instancia de ImagesSpeciesRelated con los datos
         img_related = ImagesSpeciesRelated(
