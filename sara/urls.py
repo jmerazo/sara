@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from catalogo.views import CustomTokenObtainPairView
 from django.conf import settings
 from django.conf.urls.static import static
+from . import views
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -23,6 +24,7 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
+   path('', views.index, name='index'),
    path('admin/', admin.site.urls),
    path('api/', include('catalogo.urls')),
    path('api/auth/accounts', include('allauth.urls')),

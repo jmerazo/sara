@@ -196,6 +196,7 @@ class EspecieForestalView(APIView):
             except Exception as e:
                 return Response({"error": str(e)})  # Devuelve un mensaje de error en caso de excepción
     
+    
     @transaction.atomic
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
@@ -204,7 +205,7 @@ class EspecieForestalView(APIView):
 
         existing_specie = EspecieForestal.objects.filter(cod_especie=ce).first()
         if existing_specie:
-            return Response({'error': f'El código de espeie {ce} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'El código de especie {ce} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
         while True:
             random_id = generate_random_id(8)
@@ -213,9 +214,14 @@ class EspecieForestalView(APIView):
             if existing_code is None:
                 # El ID no existe en la base de datos, se puede utilizar
                 break
-        
-        cod_especie_img= adjusted_data['cod_especie']
+
+        cod_especie_img = adjusted_data['cod_especie']
         nom_comunes_img = adjusted_data['nom_comunes']
+
+        base_dir = 'images'
+        sub_dir = os.path.join(base_dir, f"{cod_especie_img}_{nom_comunes_img}")
+        os.makedirs(sub_dir, exist_ok=True)  # Asegúrate de que la carpeta principal exista
+
         imgGeneral = adjusted_data['imageInputGeneral']
         imgLeaf = adjusted_data['imageInputLeaf']
         imgFlower = adjusted_data['imageInputFlower']
@@ -226,51 +232,23 @@ class EspecieForestalView(APIView):
         imgLandScapeTwo = adjusted_data['imageInputLandScapeTwo']
         imgLandScapeThree = adjusted_data['imageInputLandScapeThree']
 
-        # Crear la carpeta principal con el código de especie y nombre común
-        base_dir = 'images'
-        sub_dir = os.path.join(base_dir, f"{cod_especie_img}_{nom_comunes_img}")
-
-        os.makedirs(sub_dir, exist_ok=True)  # Asegúrate de que la carpeta principal exista
-
-        # Crear carpetas para cada tipo de imagen
-        img_types = {
-            'imgGeneral': imgGeneral,
-            'imgLeaf': imgLeaf,
-            'imgFlower': imgFlower,
-            'imgFruit': imgFruit,
-            'imgSeed': imgSeed,
-            'imgStem': imgStem,
-            'imgLandScapeOne': imgLandScapeOne,
-            'imgLandScapeTwo': imgLandScapeTwo,
-            'imgLandScapeThree': imgLandScapeThree,
-        }
-
-        # Mapea cada nombre de imagen a un nombre más manejable
-        img_names = {
-            'imgGeneral': 'imgGeneral',
-            'imgLeaf': 'imgLeaf',
-            'imgFlower': 'imgFlower',
-            'imgFruit': 'imgFruit',
-            'imgSeed': 'imgSeed',
-            'imgStem': 'imgStem',
-            'imgLandScapeOne': 'imgLandScapeOne',
-            'imgLandScapeTwo': 'imgLandScapeTwo',
-            'imgLandScapeThree': 'imgLandScapeThree',
-        }
-
-        # Longitud de la cadena alfanumérica
-        length = 5
-
-        # Función para generar un nombre alfanumérico aleatorio
-        def generate_random_filename(length):
-            characters = string.ascii_letters + string.digits
-            return ''.join(random.choice(characters) for _ in range(length))
-
         img_related = ImagesSpeciesRelated()
         img_related.specie_id = random_id
 
-        # Crea un diccionario para mapear los tipos de imagen con sus respectivos nombres de columna
         image_columns = {
+            'img_general': imgGeneral,
+            'img_leafs': imgLeaf,
+            'img_fruits': imgFruit,
+            'img_flowers': imgFlower,
+            'img_seeds': imgSeed,
+            'img_stem': imgStem,
+            'img_landscape_one': imgLandScapeOne,
+            'img_landscape_two': imgLandScapeTwo,
+            'img_landscape_three': imgLandScapeThree,
+        }
+
+        # Arreglo adicional para validar nombres de archivo
+        valid_image_names = {
             'img_general': 'imgGeneral',
             'img_leafs': 'imgLeaf',
             'img_fruits': 'imgFruit',
@@ -282,17 +260,21 @@ class EspecieForestalView(APIView):
             'img_landscape_three': 'imgLandScapeThree',
         }
 
-        # Crear un diccionario para almacenar las rutas de las imágenes
-        image_paths = {}
+        # Función para generar un nombre alfanumérico aleatorio
+        def generate_random_filename(length):
+            characters = string.ascii_letters + string.digits
+            return ''.join(random.choice(characters) for _ in range(length))
 
-        # Recorre las imágenes y realiza la copia con nombres aleatorios
-        for img_type, img_data in img_types.items():
+        img_related = ImagesSpeciesRelated()
+        img_related.specie_id = random_id
+
+        for column_name, img_data in image_columns.items():
             if img_data:
-                random_filename = generate_random_filename(5)
+                random_filename = generate_random_filename(8)
                 file_extension = ".jpeg"  # Reemplaza con la extensión de archivo adecuada
 
-                destination_path = os.path.join(sub_dir, img_type, f"{img_type}_{random_filename}{file_extension}")
-                os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                valid_image_name = valid_image_names[column_name]
+                destination_path = os.path.join(sub_dir, f"{valid_image_name}_{random_filename}{file_extension}")
 
                 img_data = img_data.split(';base64,')[-1]
                 img_data_bytes = base64.b64decode(img_data)
@@ -300,35 +282,10 @@ class EspecieForestalView(APIView):
                 with open(destination_path, 'wb') as dest_file:
                     dest_file.write(img_data_bytes)
 
-                image_paths[img_type] = destination_path
-                print(f"Archivo copiado a: {destination_path}")
+                setattr(img_related, column_name, destination_path)
+                print(f"Imagen asignada a {column_name}")
 
-        # Asignar las rutas al modelo ImagesSpeciesRelated
-        for column_name, img_type in image_columns.items():
-            if img_type in image_paths:
-                setattr(img_related, column_name, image_paths[img_type])
-
-        # Guardar la instancia en la base de datos solo si al menos una imagen fue cargada
-        if any(getattr(img_related, column) for column in image_columns):
-            img_related.save()
-
-        """ # Crea una instancia de ImagesSpeciesRelated con los datos
-        img_related = ImagesSpeciesRelated(
-            specie_id=random_id,
-            img_general=f"{sub_dir}/{img_types['imgGeneral']}/{img_types['imgGeneral']}_{cod_especie_img}_{nom_comunes_img}",
-            img_leafs=f"{sub_dir}/{img_types['imgLeaf']}/{img_types['imgLeaf']}_{cod_especie_img}_{nom_comunes_img}",
-            img_fruits=f"{sub_dir}/{img_types['imgFruit']}/{img_types['imgFruit']}_{cod_especie_img}_{nom_comunes_img}",
-            img_flowers=f"{sub_dir}/{img_types['imgFlower']}/{img_types['imgFlower']}_{cod_especie_img}_{nom_comunes_img}",
-            img_seeds=f"{sub_dir}/{img_types['imgSeed']}/{img_types['imgSeed']}_{cod_especie_img}_{nom_comunes_img}",
-            img_stem=f"{sub_dir}/{img_types['imgStem']}/{img_types['imgStem']}_{cod_especie_img}_{nom_comunes_img}",
-            img_landscape_one=f"{sub_dir}/{img_types['imgLandScapeOne']}/{img_types['imgLandScapeOne']}_{cod_especie_img}_{nom_comunes_img}",
-            img_landscape_two=f"{sub_dir}/{img_types['imgLandScapeTwo']}/{img_types['imgLandScapeTwo']}_{cod_especie_img}_{nom_comunes_img}",
-            img_landscape_three=f"{sub_dir}/{img_types['imgLandScapeThree']}/{img_types['imgLandScapeThree']}_{cod_especie_img}_{nom_comunes_img}",
-        )
-
-        # Guarda la instancia en la base de datos
-        img_related.save() """
-
+        img_related.save()
 
         serializer = EspecieForestalSerializer(data=adjusted_data)
         if serializer.is_valid():
