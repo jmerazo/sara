@@ -19,7 +19,7 @@ urlpatterns = [
         'get' : 'list'
     })),
     path('especie_forestal/suggestion/<str:types>', suggestion_type_view),
-    path('especie_forestal/search/nombre_comun/<str:nombre>', BuscarEspecieView.as_view()),
+    path('especie_forestal/search/nombre_comun/<int:code>', BuscarEspecieView.as_view()),
     path('especie_forestal/search/familia/<str:familia>', BuscarFamiliaView.as_view()),
     path('especie_forestal/familias', FamiliasView.as_view()),
     path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view()),

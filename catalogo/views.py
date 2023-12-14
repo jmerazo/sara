@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, generics, permissions
 from PIL import Image
 from io import BytesIO
+from collections import namedtuple
 from django.db import connection, transaction
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -429,12 +430,69 @@ class SuggestionTypeView(APIView):
 
 suggestion_type_view = SuggestionTypeView.as_view()
 
-class BuscarEspecieView(APIView):
+class BuscarEspeciezView(APIView):
     def get(self, request, nombre, format=None):        
         search = EspecieForestal.objects.filter(nom_comunes__icontains=nombre).first()
         serializer = EspecieForestalSerializer(search)
-        
+
         return Response(serializer.data)
+
+class BuscarEspecieView(APIView):
+    def get(self, request, code, format=None):
+        sql_query = """
+        SELECT 
+            ef.ShortcutID,
+            ef.cod_especie,
+            ef.nom_comunes,
+            ef.otros_nombres,
+            ef.nombre_cientifico,
+            ef.sinonimos,
+            ef.familia,
+            i.img_general,
+            ef.distribucion,
+            ef.habito,
+            ef.follaje,
+            ef.forma_copa,
+            ef.tipo_hoja,
+            ef.disposicion_hojas,
+            ef.hojas,
+            i.img_leafs,
+            ef.flor,
+            i.img_flowers,
+            ef.frutos,
+            i.img_fruits,
+            ef.semillas,
+            i.img_seeds,
+            ef.tallo,
+            i.img_stem,
+            ef.raiz,
+            i.img_landscape_one, 
+            i.img_landscape_two, 
+            i.img_landscape_three
+        FROM especie_forestal AS ef 
+        LEFT JOIN img_species AS i ON ef.ShortcutID = i.specie_id
+        WHERE ef.cod_especie = %s
+        """
+
+        # Ejecutar la consulta SQL personalizada con el parámetro 'nombre'
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query, [code])
+            results = cursor.fetchone()
+
+         # Crear un namedtuple para manejar los datos
+        fields = ["ShortcutID", "cod_especie", "nom_comunes", "otros_nombres", "nombre_cientifico", "sinonimos",
+              "familia", "img_general", "distribucion", "habito", "follaje", "forma_copa", "tipo_hoja",
+              "disposicion_hojas", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
+              "tallo", "img_stem", "raiz", "img_landscape_one", "img_landscape_two", "img_landscape_three"]
+        EspecieNamedTuple = namedtuple('EspecieNamedTuple', fields)
+
+        # Convertir los resultados en un objeto namedtuple
+        especie = EspecieNamedTuple(*results)
+
+        # Crear un diccionario de los datos en el formato deseado
+        formatted_result = especie._asdict()
+
+        return Response(formatted_result)
     
 class BuscarFamiliaView(APIView):
     def get(self, request, familia, format=None):        
