@@ -870,7 +870,7 @@ class SamplesView(APIView):
             FROM 
                 muestras AS m 
             LEFT JOIN 
-                evaluacion_as AS ea ON m.nro_placa = ea.numero_placa 
+                evaluacion_as AS ea ON m.nro_placa = ea.ShortcutIDEV 
             LEFT JOIN 
                 especie_forestal AS ef ON ef.cod_especie = ea.cod_especie;
         """
