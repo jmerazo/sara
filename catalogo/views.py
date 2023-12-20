@@ -680,18 +680,18 @@ class ReportSpecieDataView(APIView):
     def get(self, request, format=None):
         query = """
         SELECT
-            ef.cod_especie,
+            ea.cod_especie,
             ef.nom_comunes,
             ef.nombre_cientifico,
-            COUNT(DISTINCT e.ShortcutIDEV) AS evaluados,
-            SUM(CASE WHEN m.ShortcutIDEV IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
-            SUM(CASE WHEN mu.nro_placa IS NOT NULL THEN 1 ELSE 0 END) AS muestras
-        FROM especie_forestal AS ef
-        LEFT JOIN evaluacion_as AS e ON ef.cod_especie = e.cod_especie
-        LEFT JOIN monitoreo AS m ON e.ShortcutIDEV = m.ShortcutIDEV
-        LEFT JOIN muestras AS mu ON e.ShortcutIDEV = mu.nro_placa
-        WHERE e.numero_placa IS NOT NULL AND e.numero_placa != ''
-        GROUP BY ef.cod_especie, ef.nom_comunes, ef.nombre_cientifico;
+            COUNT(DISTINCT ea.ShortcutIDEV) AS evaluados,
+            SUM(CASE WHEN mn.ShortcutIDEV IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
+            COUNT(DISTINCT mu.idmuestra) AS muestras
+        FROM evaluacion_as AS ea
+        LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+        LEFT JOIN monitoreo AS mn ON mn.ShortcutIDEV = ea.ShortcutIDEV
+        LEFT JOIN muestras AS mu ON mu.nro_placa = ea.ShortcutIDEV
+        WHERE ea.numero_placa IS NOT NULL AND ea.numero_placa != ''
+        GROUP BY ea.cod_especie, ef.nom_comunes, ef.nombre_cientifico;
         """
         
         with connection.cursor() as cursor:
