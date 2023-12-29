@@ -716,7 +716,33 @@ class SearchCandidatesSpecieView(APIView):
     def get(self, request, nom, format=None):
         # Define la consulta SQL con un marcador de posición para nom
         sql = """
-            SELECT ea.ShortcutIDEV, ea.numero_placa, ea.cod_expediente, ea.cod_especie, ea.fecha_evaluacion, ea.departamento, ea.municipio, ea.altitud, ea.altura_total, ea.altura_comercial, ea.cobertura, ea.cober_otro, ea.entorno_individuo, ea.entorno_otro, ea.especies_forestales_asociadas, ea.dominancia_if, ea.forma_fuste, ea.dominancia, ea.alt_bifurcacion, ea.estado_copa, ea.posicion_copa, ea.fitosanitario, ea.presencia, ea.resultado, ea.evaluacion, ea.observaciones
+            SELECT 
+            ea.ShortcutIDEV, 
+            ea.numero_placa, 
+            ea.cod_expediente, 
+            ea.cod_especie, 
+            ea.fecha_evaluacion, 
+            ea.departamento, 
+            ea.municipio, 
+            ea.altitud, 
+            ea.altura_total, 
+            ea.altura_comercial, 
+            ea.cobertura, 
+            ea.cober_otro, 
+            ea.entorno_individuo, 
+            ea.entorno_otro, 
+            ea.especies_forestales_asociadas, 
+            ea.dominancia_if, 
+            ea.forma_fuste, 
+            ea.dominancia, 
+            ea.alt_bifurcacion, 
+            ea.estado_copa, 
+            ea.posicion_copa, 
+            ea.fitosanitario, 
+            ea.presencia, 
+            ea.resultado, 
+            ea.evaluacion, 
+            ea.observaciones
             FROM evaluacion_as AS ea
             INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
             WHERE ef.nom_comunes = '%s';

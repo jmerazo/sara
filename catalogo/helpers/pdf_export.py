@@ -1,120 +1,144 @@
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import Image, Flowable
-from reportlab.lib import utils
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, PageTemplate, Paragraph, Spacer, Image, Frame, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from rest_framework.views import APIView
 from datetime import datetime
 from django.http import HttpResponse
-from ..serializers import EspecieForestalSerializer
-from ..models import EspecieForestal
+from django.db.models import F
+from django.db import connection
+import os
 
-# Crear un estilo personalizado para las celdas de la tabla
-cell_style = getSampleStyleSheet()['Normal']
-cell_style.alignment = 0  # Alinear a la izquierda
-cell_style.wordWrap = 'CJK'  # Ajustar contenido para no desbordar
-col_widths = [100, 400]  # Ancho de las columnas en puntos
+# Registro de fuentes
+font_path = os.path.join(os.path.dirname(__file__), 'resources', 'Montserrat', 'Montserrat-Regular.ttf')
+pdfmetrics.registerFont(TTFont('Montserrat', font_path))
 
-# Crear un estilo personalizado para el título en negrita
-title_style = ParagraphStyle(name='TitleStyle')
-title_style.fontName = 'Helvetica-Bold'  # Cambia la fuente si es necesario
-title_style.alignment = 0  # Alinear a la izquierda
-title_style.leading = 14  # Espaciado entre líneas
-title_style.textColor = 'black'  # Cambia el color del texto si es necesario
-title_style.fontSize = 10  # Cambia el tamaño de la fuente si es necesario
+font_path_bold = os.path.join(os.path.dirname(__file__), 'resources', 'Montserrat', 'Montserrat-Bold.ttf')
+pdfmetrics.registerFont(TTFont('Montserrat-Bold', font_path_bold))
 
-class ImageWithText(Flowable):
-    def __init__(self, image_path, text, width, height, style):
-        Flowable.__init__(self)
-        self.image_path = image_path
-        self.text = text
-        self.width = width
-        self.height = height
-        self.style = style
+font_path_italic = os.path.join(os.path.dirname(__file__), 'resources', 'Montserrat', 'Montserrat-Italic.ttf')
+pdfmetrics.registerFont(TTFont('Montserrat-Italic', font_path_italic))
 
-    def wrap(self, available_width, available_height):
-        self.width = available_width
-        self.height = available_height
-        self.image_width = 50  # Ancho de la imagen
-        self.total_width = self.image_width + 10  # Espacio entre la imagen y el texto
-
-    def draw(self):
-        self.canv.saveState()
-        
-        # Dibujar la imagen
-        self.canv.drawImage(self.image_path, x=self._x, y=self._y, width=self.image_width, height=self.height)
-        
-        # Dibujar el texto
-        self.canv.setFont(self.style.fontName, self.style.fontSize)
-        self.canv.drawString(self._x + self.image_width + 10, self._y, self.text)
-        
-        self.canv.restoreState()
+font_path_bolditalic = os.path.join(os.path.dirname(__file__), 'resources', 'Montserrat', 'Montserrat-BoldItalic.ttf')
+pdfmetrics.registerFont(TTFont('Montserrat-BoldItalic', font_path_bolditalic))
 
 class ExportSpecies(APIView):
     def get(self, request, code, *args, **kwargs):
-        specie = EspecieForestal.objects.filter(cod_especie=code).first()
-        specieData = EspecieForestalSerializer(specie).data
+        #Consulta SQL información
+        query = f"""
+            SELECT ef.cod_especie, ef.nom_comunes, ef.otros_nombres, ie.img_general, ef.nombre_cientifico_especie, ef.nombre_autor_especie, ef.sinonimos, ef.familia, ef.distribucion, ef.habito, ef.hojas, ie.img_leafs, ef.flor, ie.img_flowers, ef.frutos, ie.img_fruits, ef.semillas, ie.img_seeds, ef.tallo, ie.img_stem, ef.raiz, ie.img_landscape_one
+            FROM especie_forestal AS ef
+            LEFT JOIN img_species AS ie 
+            ON ef.ShortcutID = ie.specie_id
+            WHERE ef.cod_especie = '{code}';
+        """
 
-        current_date = datetime.now().strftime("%Y-%m-%d")
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            try:
+                rows = cursor.fetchall()
+                if rows:
+                    specieData = dict(zip([col[0] for col in cursor.description], rows[0]))
+                    current_date = datetime.now().strftime("%Y-%m-%d") # Fecha del documento
 
-        file_name = f"{specieData['nom_comunes']}_{specieData['cod_especie']}_{current_date}.pdf"
+                    file_name = f"{specieData['nom_comunes']}_{specieData['cod_especie']}_{current_date}.pdf" #Nombre del arhivo PDF
+                    buffer = BytesIO() 
+                    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter)) # Crear archivo pdf
+                    elements = [] 
+                    # Definir una plantilla de página
+                    page_template = PageTemplate(frames=[
+                        Frame(inch, inch, 6.5 * inch, 9 * inch, id='normal'),  # Marco principal
+                        Frame(inch, inch, 6.5 * inch, 0.5 * inch, id='footer', showBoundary=1),  # Marco para el pie de página
+                    ]) 
 
-        # Crear un objeto BytesIO para almacenar el PDF en memoria
-        buffer = BytesIO()
+                    doc.addPageTemplates([page_template])  
 
-        # Lógica para generar el archivo PDF
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
+                    # Crear el estilo para el título
+                    title_style = ParagraphStyle(
+                        name='TitleStyle',
+                        fontSize=18,
+                        textColor=colors.black,
+                        alignment=1,
+                        spaceAfter=12,
+                    )
 
-        # Agregar contenido al PDF
-        elements = []
+                    # Crear el título con nombres concatenados y formatos diferentes
+                    title_text = [
+                        f'<font name="Montserrat-BoldItalic"><i>{specieData["nombre_cientifico_especie"]}</i></font> '
+                        f'<font name="Montserrat-Bold">{specieData["nombre_autor_especie"]}</font>',
+                    ]
 
-        # Agregar un encabezado
-        header_text = "Reporte de Especies Forestales"
-        header = Paragraph(header_text)
-        elements.append(header)
+                    title = Paragraph(" ".join(title_text), title_style)
 
-        # Ruta de la imagen que deseas agregar al PDF
-        image_path = 'ruta_de_la_imagen.jpg'
+                    # Agregar el título al contenido
+                    elements.append(title)
+                    elements.append(Spacer(1, 12))
 
-        image = Image(image_path, width=100, height=100)  # Puedes ajustar el ancho y el alto según tus necesidades
-        elements.append(image)
+                    # Crear un estilo para el contenido de texto
+                    content_style = ParagraphStyle(
+                        name='ContentStyle',
+                        fontSize=12,
+                        textColor=colors.black,
+                        leading=14  # Espacio entre líneas
+                    )
 
-        # Crear una lista de tuplas para los datos de la tabla
-        table_data = []
+                    # Crear un marco para la primera columna
+                    frame1 = Frame(30, 50, 500, 700, showBoundary=True)  # (x, y, ancho, alto)
+                    elements.append(frame1)
 
-        def add_table_row(label, value):
-            if value is not None and value.strip() != "":
-                label_paragraph = Paragraph(f"<b>{label}:</b>", title_style)
-                value_paragraph = Paragraph(value, cell_style)
-                table_data.append((label_paragraph, value_paragraph))
+                    # Crear párrafos para el texto en la columna derecha
+                    nombre_comun_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Nombre común:</b></font> <font name="Montserrat">{specieData["nom_comunes"]}</font>', content_style)
+                    otros_nombres_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Otros nombres:</b></font> <font name="Montserrat">{specieData["otros_nombres"]}</font>', content_style)
+                    nombre_cientifico_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Nombre científico:</b></font> {" ".join(title_text)}', content_style)
+                    sinonimos_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Sinónimos:</b></font> <font name="Montserrat">{specieData["sinonimos"]}</font>', content_style)
+                    familia_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Familia:</b></font> <font name="Montserrat">{specieData["familia"]}</font>', content_style)
+                    distribucion_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Distribución:</b></font> <font name="Montserrat">{specieData["distribucion"]}</font>', content_style)
+                    habito_paragraph = Paragraph(f'<font name="Montserrat-Bold"><b>Hábito:</b></font> <font name="Montserrat">{specieData["habito"]}</font>', content_style)
+                    
+                    imageGeneral = Image(specieData['img_general'], width=451, height=225)
+                    frame1.addFromList(imageGeneral, doc)
 
-        # Agregar filas de datos a la tabla
-        add_table_row("Nombre común", specieData.get('nom_comunes', ''))
-        add_table_row("Otros nombres", specieData.get('otros_nombres', ''))
-        add_table_row("Nombre científico", specieData.get('nombre_cientifico', ''))
-        add_table_row("Sinonimos", specieData.get('sinonimos', ''))
-        add_table_row("Familia", specieData.get('familia', ''))
-        add_table_row("Distribución", specieData.get('distribucion', ''))
-        add_table_row("Hojas", specieData.get('hojas', ''))
-        add_table_row("Flor", specieData.get('flor', ''))
-        add_table_row("Frutos", specieData.get('frutos', ''))
-        add_table_row("Semillas", specieData.get('semillas', ''))
-        add_table_row("Tallo", specieData.get('tallo', ''))
-        add_table_row("Raíz", specieData.get('raiz', ''))
+                    frame2 = Frame(300, 50, 250, 700, showBoundary=True)  # (x, y, ancho, alto)
+                    elements.append(frame2)
+                    frame2.addFromList(nombre_comun_paragraph, doc)
 
-        # Crear la tabla con los datos
-        especies_table = Table(table_data, colWidths=col_widths)
-        especies_table.setStyle([('STYLE', (0, 0), (-1, -1), cell_style)])
-        elements.append(especies_table)
+                    text_elements = [
+                        nombre_comun_paragraph,
+                        otros_nombres_paragraph,
+                        nombre_cientifico_paragraph,
+                        sinonimos_paragraph,
+                        familia_paragraph,
+                        distribucion_paragraph,
+                        habito_paragraph,
+                    ]
 
-        # Construir el PDF
-        doc.build(elements)
+                    """ elements.append(imageGeneral)
+                    elements.append(nombre_comun_paragraph)
+                    elements.append(otros_nombres_paragraph)
+                    elements.append(nombre_cientifico_paragraph)
+                    elements.append(sinonimos_paragraph)
+                    elements.append(familia_paragraph)
+                    elements.append(distribucion_paragraph)
+                    elements.append(habito_paragraph) """
 
-        # Obtener el contenido del BytesIO y devolverlo como respuesta
-        pdf_content = buffer.getvalue()
-        buffer.close()
+                    # Crear el PDF
+                    doc.build(elements)
+                    pdf_content = buffer.getvalue()
+                    buffer.close()
 
-        response = HttpResponse(pdf_content, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-        return response
+                    # Create an HTTP response with the PDF
+                    response = HttpResponse(content_type='application/pdf')
+                    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+                    response.write(pdf_content)
+                    return response
+
+                else:
+                    return HttpResponse("No data found for this species code", status=404)
+
+            except Exception as e:
+                print(str(e))  # Maneja cualquier excepción que pueda ocurrir durante la ejecución de la consulta SQL
+                return HttpResponse
