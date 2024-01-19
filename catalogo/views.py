@@ -446,6 +446,8 @@ class BuscarEspecieView(APIView):
             ef.nom_comunes,
             ef.otros_nombres,
             ef.nombre_cientifico,
+            ef.nombre_cientifico_especie,
+            ef.nombre_autor_especie,
             ef.sinonimos,
             ef.familia,
             i.img_general,
@@ -480,7 +482,7 @@ class BuscarEspecieView(APIView):
             results = cursor.fetchone()
 
          # Crear un namedtuple para manejar los datos
-        fields = ["ShortcutID", "cod_especie", "nom_comunes", "otros_nombres", "nombre_cientifico", "sinonimos",
+        fields = ["ShortcutID", "cod_especie", "nom_comunes", "otros_nombres", "nombre_cientifico", "nombre_cientifico_especie", "nombre_autor_especie", "sinonimos",
               "familia", "img_general", "distribucion", "habito", "follaje", "forma_copa", "tipo_hoja",
               "disposicion_hojas", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
               "tallo", "img_stem", "raiz", "img_landscape_one", "img_landscape_two", "img_landscape_three"]

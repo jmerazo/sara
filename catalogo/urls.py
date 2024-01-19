@@ -6,6 +6,7 @@ from .reports.monitoring import MonitoringReport, MonitoringReportLocates, Monit
 from .reports.samples import SamplesReport
 from .administration.users import UsersView, UsersStateView
 from .helpers.locates import DepartmentsView, CitiesView
+from .page.general import UpdateCountVisitsView, topSpeciesView
 
 
 urlpatterns = [
@@ -52,8 +53,11 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view()),
 
+    # PAGE
     path('page/content', PageView.as_view(), name='page-list'),
     path('page/content/<int:pk>', PageView.as_view(), name='page-detail'),
+    path('page/count/<int:code>', UpdateCountVisitsView.as_view(), name='count-visit'),
+    path('page/top_species', topSpeciesView.as_view(), name='top_species'),
 
     path('users/', UsersView.as_view()),
     path('users/<int:pk>', UsersView.as_view()),

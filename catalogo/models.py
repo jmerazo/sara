@@ -79,13 +79,14 @@ class EspecieForestal(models.Model):
     semillas = models.TextField(blank=True, null=True)
     tallo = models.TextField(blank=True, null=True)
     raiz = models.TextField(blank=True, null=True)
+    visitas = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'especie_forestal'
 
     def __str__(self):
-        return f"Nombre común: {self.nom_comunes}, Nombre científico: {self.nombre_cientifico} ,Código de especie: {self.cod_especie}"
+        return f"Nombre común: {self.nom_comunes}, Nombre científico: {self.nombre_cientifico_especie},Código de especie: {self.cod_especie}"
 
 class Glossary(models.Model):
     id = models.IntegerField(primary_key=True, blank=False)
