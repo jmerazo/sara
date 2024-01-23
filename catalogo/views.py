@@ -20,8 +20,10 @@ from .serializers import EspecieForestalSerializer, CandidateTreesSerializer,Nom
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from django.http import JsonResponse
 
 def save_image(image, cod_especie, nom_comunes, image_type):
     # Carpeta principal para las imágenes
@@ -50,108 +52,60 @@ def generate_random_id(length):
             random_id = ''.join(random.choice(characters) for _ in range(length))
             return random_id
 
-
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        
+
         if response.status_code == 200:
-            refresh = response.data.get('refresh')
-            token = RefreshToken(refresh)
-            user_id = token.payload.get('user_id')  # Obtén el ID del usuario desde el payload del token
-            
+            access_token = response.data['access']
+            refresh_token = response.data['refresh']
+
+            # Decodifica el token para obtener el user_id
+            token = AccessToken(access_token)
+            user_id = token['user_id']
+
+            user_data = {}
             try:
-                user_instance = Users.objects.get(id=user_id)  # Utiliza CustomUser en lugar de User
-                # Accede a los campos adicionales de CustomUser
-                email = user_instance.email
-                document_type = user_instance.document_type
-                document_number = user_instance.document_number
-                cellphone = user_instance.cellphone
-                entity = user_instance.entity
-                profession = user_instance.profession
-                rol = user_instance.rol
-                first_name = user_instance.first_name
-                last_name = user_instance.last_name
-                state=user_instance.state
-                is_staff=user_instance.is_staff
-                is_superuser=user_instance.is_superuser
-                # Agrega los campos al response.data
+                user_instance = Users.objects.get(id=user_id)  # Obtén la instancia del usuario
+                # Construye el user_data aquí...
                 user_data = {
-                    'rol': rol,
-                    'email': email,
-                    'document_type': document_type,
-                    'document_number': document_number,
-                    'cellphone': cellphone,
-                    'entity': entity,
-                    'profession': profession,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'state': state,
-                    'is_staff': is_staff,
-                    'is_superuser': is_superuser
+                    'rol': user_instance.rol,
+                    'email': user_instance.email,
+                    'document_type': user_instance.document_type,
+                    'document_number': user_instance.document_number,
+                    'cellphone': user_instance.cellphone,
+                    'entity': user_instance.entity,
+                    'profession': user_instance.profession,
+                    'first_name': user_instance.first_name,
+                    'last_name': user_instance.last_name,
+                    'state': user_instance.state,
+                    'is_staff': user_instance.is_staff,
+                    'is_superuser': user_instance.is_superuser
                 }
-                print('User data: ', user_data)
-                # Devuelve una respuesta JSON con el diccionario de datos
-                return Response({
-                    'access': response.data['access'],
-                    'refresh': response.data['refresh'],
-                    'user_data': user_data,  # Agrega los datos del usuario
-                })
-                
             except Users.DoesNotExist:
-                pass  # Si el usuario no existe, simplemente continua sin hacer nada
-        
-        return response
+                pass  # Maneja el caso en que el usuario no existe
 
-class LoginView(generics.CreateAPIView):
-    permission_classes = (permissions.AllowAny,)
-    # serializer_class = (permissions.AllowAny,)
+            # Construye la respuesta con tokens y datos del usuario
+            new_response = JsonResponse({
+                'success': 'Tokens set',
+                'access': access_token,  # Incluye el token de acceso
+                'refresh': refresh_token,  # Incluye el token de actualización
+                'user_data': user_data  # Incluye los datos del usuario
+            })
 
-    def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
+            # Configura las cookies (opcional, dependiendo de tu enfoque de autenticación)
+            new_response.set_cookie(
+                'access_token', access_token, httponly=True, 
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
+            )
+            new_response.set_cookie(
+                'refresh_token', refresh_token, httponly=True, 
+                max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
+            )
 
-        user = authenticate(request, email=email, password=password)
-
-        if user is not None:
-            login(request, user)
-            user_profile = user.userprofile  # Obtén el perfil asociado
-
-            # Obtén el rol y tipo de usuario del perfil
-            email = user_profile.email
-            username = user_profile.username
-            document_type = user_profile.document_type
-            document_number = user_profile.document_number
-            cellphone = user_profile.cellphone
-            entity = user_profile.entity
-            profession = user_profile.profession
-            rol = user_profile.rol
-            first_name = user_profile.first_name
-            last_name = user_profile.last_name
-
-            return Response({
-                'user': user.to_dict(),
-                'profile': {
-                    'email': email,
-                    'document_type': document_type,
-                    'document_number': document_number,
-                    'cellphone': cellphone,
-                    'entity': entity,
-                    'profession': profession,
-                    'rol': rol,
-                    'first_name': first_name,
-                    'last_name': last_name
-                }
-            }, status=200)
+            return new_response
         else:
-            return Response({'error': 'Invalid email or password'}, status=401)
-        
-class LogoutView(generics.DestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def post(self, request):
-        logout(request)
-        return Response({'success': 'Successfully logged out'}, status=200)
+            return response  # Devuelve la respuesta original si el status code no es 200
 
 class CurrentUser(viewsets.ModelViewSet):
      def get_queryset(self):
@@ -543,8 +497,9 @@ class GlossaryView(APIView):
 
         return Response(serializer.data)
 
-# VISTA INDIVIDUOS EVALUADOS    
+# VISTA INDIVIDUOS EVALUADOS
 class GeoCandidateTreesView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, format=None): 
         # Realizar la consulta SQL
         sql_query = """
@@ -771,6 +726,7 @@ class SearchCandidatesSpecieView(APIView):
             return Response(queryset)
 
 class MonitoringsView(APIView):
+    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         # Consulta SQL directa
         query = """

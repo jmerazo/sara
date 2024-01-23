@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchCandidatesSpecieView, MonitoringsView, SearchMonitoringCandidateView, ReportSpecieDataView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, LoginView, LogoutView, PageView, SamplesView
+from .views import EspecieForestalView, NombresComunesView, CandidatesTreesView, SearchCandidatesSpecieView, MonitoringsView, SearchMonitoringCandidateView, ReportSpecieDataView, SearchMonitoringSpecieView, FamiliaView, NombreCientificoView, suggestion_type_view, BuscarEspecieView, BuscarFamiliaView, FamiliasView, ScientificNameView, GlossaryView, GeoCandidateTreesView, AverageCandidateTreesView, PageView, SamplesView
 from .helpers.pdf_export import ExportSpecies
 from .helpers.excel_export import ExportCandidateTrees
 from .reports.monitoring import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal
@@ -25,14 +25,14 @@ urlpatterns = [
     path('especie_forestal/familias', FamiliasView.as_view()),
     path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view()),
     path('glossary', GlossaryView.as_view()),
-    path('candidate/geolocation', GeoCandidateTreesView.as_view()),
+    path('candidate/geolocation', GeoCandidateTreesView.as_view()), # Protegida por datos sensibles
     path('candidate/average', AverageCandidateTreesView.as_view()),
 
     path('especie_forestal/export/<int:code>', ExportSpecies.as_view(), name='export-species'),
     path('candidate/export/all', ExportCandidateTrees.as_view(), name='export-candidates'),
 
     # REPORTE DE MONITOREOS MENSUALES POR MUNICIPIO, DEPARTAMENTO Y GENERAL
-    path('monitoring/report/month', MonitoringReport.as_view(), name='monitoring-report'),
+    path('monitoring/report/month', MonitoringReport.as_view(), name='monitoring-report'), 
     path('monitoring/report/month/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
     path('monitoring/report/general/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
 
@@ -49,9 +49,6 @@ urlpatterns = [
     path('candidates/trees', CandidatesTreesView.as_view()), # Lista los individuos evaluados totales
     path('specie/report/data', ReportSpecieDataView.as_view()), # Genera el reporte de cantidad de individuos evaluados, monitoreos y muestras por especie
     path('specie/search/candidates/<str:nom>', SearchCandidatesSpecieView.as_view()), # Busca los individuos evaluados de cada especie en base a su nombre común
-
-    path('auth/login/', LoginView.as_view()),
-    path('auth/logout/', LogoutView.as_view()),
 
     # PAGE
     path('page/content', PageView.as_view(), name='page-list'),

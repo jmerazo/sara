@@ -11,14 +11,13 @@ from calendar import monthrange
 from django.db import connection
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
 
 from ..models import CandidateTrees, Monitoring
 # Endpoint 
 # - monitores realizados mes, pendientes, totales, por municipio, por departamento
 
 class MonitoringReport(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         now = datetime.now().date()
         first_day = now.replace(day=1)
