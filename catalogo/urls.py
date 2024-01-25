@@ -25,7 +25,7 @@ urlpatterns = [
     path('especie_forestal/familias', FamiliasView.as_view()),
     path('especie_forestal/search/scientificname/<str:scientific>', ScientificNameView.as_view()),
     path('glossary', GlossaryView.as_view()),
-    path('candidate/geolocation', GeoCandidateTreesView.as_view()), # Protegida por datos sensibles
+    path('candidate/geolocation', GeoCandidateTreesView.as_view()), # Protegida por datos sensibles // PROTECT
     path('candidate/average', AverageCandidateTreesView.as_view()),
 
     path('especie_forestal/export/<int:code>', ExportSpecies.as_view(), name='export-species'),
@@ -36,17 +36,17 @@ urlpatterns = [
     path('monitoring/report/month/locates', MonitoringReportLocates.as_view(), name='monitoring-rl'),
     path('monitoring/report/general/total', MonitoringReportTotal.as_view(), name='monitoring-tl'),
 
-    path('monitoring/report/data', MonitoringsView.as_view()), # Exporta todos los datos de monitoreos
+    path('monitoring/report/data', MonitoringsView.as_view()), # Exporta todos los datos de monitoreos // PROTECT
 
     # URLS: SAMPLES
     path('samples/report/general', SamplesReport.as_view()),
-    path('samples/report/data', SamplesView.as_view()), # Exporta todos los datos de las muestras
+    path('samples/report/data', SamplesView.as_view()), # Exporta todos los datos de las muestras // PROTECT
 
     # CONSULTA DE MONITOREOS POR INDIVIDUO
     path('candidates/search/monitorings/<id>', SearchMonitoringCandidateView.as_view()), # genera el listado de monitoreos del individuo consultado
     path('monitoring/search/specie/<int:code>', SearchMonitoringSpecieView.as_view()), # genera el listado de monitoreos por la especie consultada
 
-    path('candidates/trees', CandidatesTreesView.as_view()), # Lista los individuos evaluados totales
+    path('candidates/trees', CandidatesTreesView.as_view()), # Lista los individuos evaluados totales // PROTECT
     path('specie/report/data', ReportSpecieDataView.as_view()), # Genera el reporte de cantidad de individuos evaluados, monitoreos y muestras por especie
     path('specie/search/candidates/<str:nom>', SearchCandidatesSpecieView.as_view()), # Busca los individuos evaluados de cada especie en base a su nombre común
 

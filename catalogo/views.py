@@ -536,6 +536,7 @@ class GeoCandidateTreesView(APIView):
         return Response(geo_format)
     
 class CandidatesTreesView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, format=None): 
         queryset = CandidateTrees.objects.all()
         serializer = CandidateTreesSerializer(queryset, many=True)
@@ -683,7 +684,7 @@ class SearchCandidatesSpecieView(APIView):
             ea.municipio, 
             ea.altitud, 
             ea.altura_total, 
-            ea.altura_comercial, 
+            ea.altura_fuste, 
             ea.cobertura, 
             ea.cober_otro, 
             ea.entorno_individuo, 
@@ -831,6 +832,7 @@ class MonitoringsView(APIView):
         
 # VISTA MUESTRAS
 class SamplesView(APIView):
+    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         # Consulta SQL directa
         query = """
