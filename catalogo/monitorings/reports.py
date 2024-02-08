@@ -52,6 +52,7 @@ class MonitoringReport(APIView):
         return Response(response_data)
     
 class MonitoringReportLocates(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         now = datetime.now().date()
         first_day = now.replace(day=1)
@@ -112,12 +113,14 @@ class MonitoringReportLocates(APIView):
         return Response(response_data)
 
 class MonitoringReportTotal(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         with connection.cursor() as cursor:
             sql_query = """
                 SELECT ea.departamento, ea.municipio, COUNT(*) AS total
                 FROM monitoreo AS m
                 INNER JOIN evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV
+                WHERE ea.numero_placa IS NOT NULL
                 GROUP BY ea.departamento, ea.municipio
             """
             cursor.execute(sql_query)

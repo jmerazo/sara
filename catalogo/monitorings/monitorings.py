@@ -2,7 +2,8 @@ from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
 from django.db import connection
-from .models import Monitoring
+from .models import Monitorings
+from ..candidates.models import CandidatesTrees
 from .serializers import  MonitoringsSerializer
 from rest_framework.permissions import IsAuthenticated
 import random, string
@@ -15,7 +16,7 @@ def generate_random_id(length):
 # VISTAS MONITOREOS
 class SearchMonitoringCandidateView(APIView):
     def get(self, request, id, format=None):        
-        search = Monitoring.objects.filter(ShortcutIDEV=id)
+        search = Monitorings.objects.filter(ShortcutIDEV=id)
         serializer = MonitoringsSerializer(search, many=True)
         
         return Response(serializer.data)
@@ -23,10 +24,10 @@ class SearchMonitoringCandidateView(APIView):
 class SearchMonitoringSpecieView(APIView):
     def get(self, request, code, format=None):
         # Obtener los valores de ShortcutIDEV desde la subconsulta
-        shortcut_idevs = CandidateTrees.objects.filter(cod_especie=code).values('ShortcutIDEV')
+        shortcut_idevs = CandidatesTrees.objects.filter(cod_especie=code).values('ShortcutIDEV')
         
         # Realizar la búsqueda en la tabla Monitoring usando esos valores
-        search = Monitoring.objects.filter(ShortcutIDEV__in=shortcut_idevs)
+        search = Monitorings.objects.filter(ShortcutIDEV__in=shortcut_idevs)
         
         serializer = MonitoringsSerializer(search, many=True)
         
@@ -83,7 +84,8 @@ class MonitoringsView(APIView):
             LEFT JOIN 
                 evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV 
             LEFT JOIN 
-                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie;
+                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+            WHERE ea.numero_placa IS NOT NULL;
         """
         # Ejecutar la consulta
         with connection.cursor() as cursor:
@@ -123,8 +125,8 @@ class MonitoringsView(APIView):
     def get_object_for_delete(self, pk):
         # Este método se utiliza específicamente para la acción de eliminación.
         try:
-            return Monitoring.objects.get(pk=pk)
-        except Monitoring.DoesNotExist:
+            return Monitorings.objects.get(pk=pk)
+        except Monitorings.DoesNotExist:
             raise Http404
 
     def get(self, request, pk=None, format=None):

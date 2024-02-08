@@ -208,6 +208,7 @@ class Monitoring(models.Model):
         db_table = 'monitoreo'
 
 class Samples(models.Model):
+    idmuestra = models.CharField(primary_key=True, max_length=10)
     nro_placa = models.CharField(max_length=11, blank=True, null=True)
     fecha_coleccion = models.DateField(blank=True, null=True)
     nro_muestras = models.CharField(max_length=5, blank=True, null=True)

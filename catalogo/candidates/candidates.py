@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from django.db import connection
 from decimal import Decimal
 import random, string
-from .models import CandidateTrees
+from .models import CandidatesTrees
 from .serializers import CandidateTreesSerializer, AverageTreesSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -20,6 +20,7 @@ class GeoCandidateTreesView(APIView):
             SELECT ea.cod_especie, ea.numero_placa, ef.nom_comunes, ef.nombre_cientifico, ea.departamento, ea.municipio, ea.vereda, ea.nombre_del_predio, ea.abcisa_xy, ea.resultado 
             FROM evaluacion_as AS ea 
             INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
+            WHERE ea.numero_placa IS NOT NULL
         """
         with connection.cursor() as cursor:
             cursor.execute(sql_query)
@@ -51,7 +52,7 @@ class GeoCandidateTreesView(APIView):
     
 class CandidatesTreesView(APIView):
     def get(self, request, format=None): 
-        queryset = CandidateTrees.objects.all()
+        queryset = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
         serializer = CandidateTreesSerializer(queryset, many=True)
 
         return Response(serializer.data)
@@ -68,7 +69,7 @@ class AverageCandidateTreesView(APIView):
 
     def get(self, request, format=None): 
         try:
-            average = CandidateTrees.objects.all()
+            average = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
             averageData = AverageTreesSerializer(average, many=True).data
 
             average_format = []
@@ -79,7 +80,7 @@ class AverageCandidateTreesView(APIView):
                 altura_total_str = datos['altura_total']
                 at = self.convert_to_decimal_or_int(altura_total_str)
 
-                altura_ccial_str = datos['altura_comercial']
+                altura_ccial_str = datos['altura_fuste']
                 ac = self.convert_to_decimal_or_int(altura_ccial_str)
 
                 average_fixed = {'codigo': code_number, 'altitud': datos['altitud'], 'altura_total': at, 'altura_comercial': ac, 'cobertura': datos['cobertura']}
@@ -125,7 +126,8 @@ class SearchCandidatesSpecieView(APIView):
             ea.observaciones
             FROM evaluacion_as AS ea
             INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
-            WHERE ef.nom_comunes = '%s';
+            WHERE ef.nom_comunes = '%s'
+            AND ea.numero_placa IS NOT NULL;
         """
         """         print("SQL:", sql % nom) """
         # Ejecuta la consulta con el valor de nom
@@ -162,7 +164,7 @@ class ReportSpecieDataView(APIView):
         LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
         LEFT JOIN monitoreo AS mn ON mn.ShortcutIDEV = ea.ShortcutIDEV
         LEFT JOIN muestras AS mu ON mu.nro_placa = ea.ShortcutIDEV
-        WHERE ea.numero_placa IS NOT NULL AND ea.numero_placa != ''
+        WHERE ea.numero_placa IS NOT NULL
         GROUP BY ea.cod_especie, ef.nom_comunes, ef.nombre_cientifico;
         """
         
@@ -217,7 +219,7 @@ class SearchCandidatesSpecieView(APIView):
             ea.observaciones
             FROM evaluacion_as AS ea
             INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
-            WHERE ef.nom_comunes = '%s';
+            WHERE ef.nom_comunes = '%s' AND ea.numero_placa IS NOT NULL;
         """
         """         print("SQL:", sql % nom) """
         # Ejecuta la consulta con el valor de nom

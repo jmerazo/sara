@@ -1,21 +1,16 @@
+from ..models import Users
+from ..serializers import UsersSerializer
 from rest_framework.response import Response
 from django.db import connection, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from django.http import Http404
 from rest_framework.views import APIView
-from django.db.models import Q, F
-from ..models import Users, Departments
-from ..serializers import UsersSerializer
-import random
-import string
+from django.db.models import Q
+import random, string
 from django.utils import timezone
 from django.contrib.auth.models import Group, Permission
-from ..helpers.recaptcha import verify_recaptcha
-
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
 
 def generate_random_id(length):
             characters = string.ascii_letters + string.digits
@@ -26,7 +21,29 @@ class UsersView(APIView):
     def get_queryset(self):
         # Consulta SQL directa
         query = """
-            SELECT u.id, u.email, u.first_name, u.last_name, u.rol, u.is_active, u.document_type, u.document_number, u.entity, u.cellphone, u.department, d.name, u.city, u.device_movile, u.serial_device, u.profession, u.reason, u.state, u.is_staff, u.last_login, u.is_superuser, u.date_joined
+            SELECT 
+                u.id, 
+                u.email, 
+                u.first_name, 
+                u.last_name, 
+                u.rol, 
+                u.is_active, 
+                u.document_type, 
+                u.document_number, 
+                u.entity, 
+                u.cellphone, 
+                u.department, 
+                d.name, 
+                u.city, 
+                u.device_movile, 
+                u.serial_device, 
+                u.profession, 
+                u.reason, 
+                u.state, 
+                u.is_staff, 
+                u.last_login, 
+                u.is_superuser, 
+                u.date_joined
             FROM Users AS u
             INNER JOIN departments AS d ON u.department = d.code
         """
@@ -35,7 +52,30 @@ class UsersView(APIView):
             cursor.execute(query)
             result = cursor.fetchall()
 
-        columns = ['id', 'email', 'first_name', 'last_name', 'rol', 'is_active', 'document_type', 'document_number', 'entity', 'cellphone', 'department', 'name', 'city', 'device_movile', 'serial_device', 'profession', 'reason', 'state', 'is_staff', 'last_login', 'is_superuser', 'date_joined']
+        columns = [
+            'id', 
+            'email', 
+            'first_name', 
+            'last_name', 
+            'rol', 
+            'is_active', 
+            'document_type', 
+            'document_number', 
+            'entity', 
+            'cellphone', 
+            'department', 
+            'name', 
+            'city', 
+            'device_movile', 
+            'serial_device', 
+            'profession', 
+            'reason', 
+            'state', 
+            'is_staff', 
+            'last_login', 
+            'is_superuser', 
+            'date_joined'
+        ]
         queryset = [dict(zip(columns, row)) for row in result]
 
         return queryset
@@ -115,7 +155,6 @@ class UsersView(APIView):
             default_permission = Permission.objects.get(codename='view_user')
             user.user_permissions.add(default_permission)
 
-            """ serializer.save() """
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from django.conf import settings
-from .models import Users
+from ..models import Users
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 import random,string
@@ -57,11 +57,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 'access_token', access_token, httponly=True, 
                 max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
             )
-            new_response.set_cookie(
-                'refresh_token', refresh_token, httponly=True, 
-                max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
-            )
+            # Primero, determina el valor de max_age
+            if 'REFRESH_TOKEN_LIFETIME' in settings.SIMPLE_JWT:
+                max_age = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
+            else:
+                max_age = 3600  # Un valor por defecto, por ejemplo, 1 hora.
 
+            # Luego, utiliza este valor en la llamada a set_cookie
+            new_response.set_cookie(
+                'refresh_token', refresh_token, httponly=True, max_age=max_age
+            )
+            
             return new_response
         else:
             return response  # Devuelve la respuesta original si el status code no es 200

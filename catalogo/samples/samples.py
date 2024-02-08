@@ -3,7 +3,7 @@ from django.http import Http404
 from rest_framework.views import APIView
 from django.db import connection
 import random, string
-from .models import Samples
+from .models import Samplez
 from .serializers import SamplesSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -73,8 +73,8 @@ class SamplesView(APIView):
     def get_object_for_delete(self, pk):
         # Este método se utiliza específicamente para la acción de eliminación.
         try:
-            return Samples.objects.get(pk=pk)
-        except Samples.DoesNotExist:
+            return Samplez.objects.get(pk=pk)
+        except Samplez.DoesNotExist:
             raise Http404
 
     def get(self, request, pk=None, format=None):

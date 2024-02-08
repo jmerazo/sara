@@ -16,14 +16,14 @@ class ExportCandidateTrees(APIView):
         workbook = xlsxwriter.Workbook(response, {'in_memory': True})
         worksheet = workbook.add_worksheet()
 
-        candidates = CandidateTrees.objects.all()
+        candidates = CandidateTrees.objects.exclude(numero_placa__isnull=True)
         candidate_data = CandidateTreesSerializer(candidates, many=True).data
 
         # Formato para encabezados en negrita y con borde
         bold_format = workbook.add_format({'bold': True, 'border': 1})
 
         # Encabezados de columna
-        headers = ['PLACA', 'CÓDIGO EXPEDIENTE', 'CÓDIGO ESPECIE', 'FECHA EVALUACIÓN', 'USUARIO EVALUADOR', 'DEPARTAMENTO', 'MUNICIPIO', 'NOMBRE DEL PREDIO', 'NOMBRE DEL PROPIETARIO', 'CORREGIMIENTO', 'VEREDA', 'CORREO', 'CELULAR', 'ALTITUD', 'LATITUD', 'GRADOS', 'MINUTOS', 'SEGUNDOS', 'LONGITUD', 'GRADOS', 'MINUTOS', 'SEGUNDOS', 'COORDENADAS GPS', 'COORDENADAS MÓVIL', 'ALTURA TOTAL', 'ALTURA COMERCIAL', 'CAP', 'COBERTURA', 'OTRA COBERTURA', 'DOMINANCIA', 'FORMA FUSTE', 'DOMINANCIA EJE', 'BIFURCACIÓN', 'ESTADO COPA', 'POSICIÓN COPA', 'ESTADO FITOSANITARIO', 'PRESENCIA PARACITAS', 'RESULTADO', 'EVALUACIÓN', 'OBSERVACIONES', 'FECHA ACTUALIZACIÓN']
+        headers = ['PLACA', 'CÓDIGO EXPEDIENTE', 'CÓDIGO ESPECIE', 'FECHA EVALUACIÓN', 'USUARIO EVALUADOR', 'DEPARTAMENTO', 'MUNICIPIO', 'NOMBRE DEL PREDIO', 'NOMBRE DEL PROPIETARIO', 'CORREGIMIENTO', 'VEREDA', 'CORREO', 'CELULAR', 'ALTITUD', 'LATITUD', 'GRADOS', 'MINUTOS', 'SEGUNDOS', 'LONGITUD', 'GRADOS', 'MINUTOS', 'SEGUNDOS', 'COORDENADAS GPS', 'COORDENADAS MÓVIL', 'ALTURA TOTAL', 'ALTURA FUSTE', 'CAP', 'COBERTURA', 'OTRA COBERTURA', 'DOMINANCIA', 'FORMA FUSTE', 'DOMINANCIA EJE', 'BIFURCACIÓN', 'ESTADO COPA', 'POSICIÓN COPA', 'ESTADO FITOSANITARIO', 'PRESENCIA PARACITAS', 'RESULTADO', 'EVALUACIÓN', 'OBSERVACIONES', 'FECHA ACTUALIZACIÓN']
         for col_num, header in enumerate(headers):
             worksheet.write(0, col_num, header, bold_format)
 
@@ -55,7 +55,7 @@ class ExportCandidateTrees(APIView):
             worksheet.write(row_num, 22, candidate['coordenadas_decimales'])
             worksheet.write(row_num, 23, candidate['abcisa_xy'])
             worksheet.write(row_num, 24, candidate['altura_total'])
-            worksheet.write(row_num, 25, candidate['altura_comercial'])
+            worksheet.write(row_num, 25, candidate['altura_fuste'])
             worksheet.write(row_num, 26, candidate['cap'])
             worksheet.write(row_num, 27, candidate['cobertura'])
             worksheet.write(row_num, 28, candidate['cober_otro'])

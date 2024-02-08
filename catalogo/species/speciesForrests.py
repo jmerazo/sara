@@ -1,7 +1,6 @@
 from rest_framework import viewsets, status
 from collections import namedtuple
 from django.db import connection, transaction
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -9,7 +8,7 @@ from rest_framework.views import APIView
 from django.db.models import Count
 from django.db import connection
 import random, string, os, base64
-from .models import EspecieForestal, ImagesSpeciesRelated
+from .models import specieForrest, ImageSpeciesRelated
 from .serializers import EspecieForestalSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -45,11 +44,11 @@ class EspecieForestalView(APIView):
     def get_object(self, pk=None):
         if pk is not None:
             try:
-                return EspecieForestal.objects.get(ShortcutID=pk)
-            except EspecieForestal.DoesNotExist:
+                return specieForrest.objects.get(ShortcutID=pk)
+            except specieForrest.DoesNotExist:
                 raise Http404
         else:
-            return EspecieForestal.objects.all()
+            return specieForrest.objects.all()
 
     def get(self, request, pk=None, format=None):
         # Realizar la consulta SQL personalizada
@@ -86,23 +85,22 @@ class EspecieForestalView(APIView):
 
         ce = adjusted_data.get('cod_especie')
 
-        existing_specie = EspecieForestal.objects.filter(cod_especie=ce).first()
+        existing_specie = specieForrest.objects.filter(cod_especie=ce).first()
         if existing_specie:
             return Response({'error': f'El código de especie {ce} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
         while True:
             random_id = generate_random_id(8)
-            existing_code = EspecieForestal.objects.filter(ShortcutID=random_id).first()
+            existing_code = specieForrest.objects.filter(ShortcutID=random_id).first()
             
             if existing_code is None:
                 # El ID no existe en la base de datos, se puede utilizar
                 break
 
         cod_especie_img = adjusted_data['cod_especie']
-        nom_comunes_img = adjusted_data['nom_comunes']
 
         base_dir = 'images'
-        sub_dir = os.path.join(base_dir, f"{cod_especie_img}_{nom_comunes_img}")
+        sub_dir = os.path.join(base_dir, cod_especie_img)
         os.makedirs(sub_dir, exist_ok=True)  # Asegúrate de que la carpeta principal exista
 
         imgGeneral = adjusted_data['imageInputGeneral']
@@ -115,7 +113,7 @@ class EspecieForestalView(APIView):
         imgLandScapeTwo = adjusted_data['imageInputLandScapeTwo']
         imgLandScapeThree = adjusted_data['imageInputLandScapeThree']
 
-        img_related = ImagesSpeciesRelated()
+        img_related = ImageSpeciesRelated()
         img_related.specie_id = random_id
 
         image_columns = {
@@ -148,7 +146,7 @@ class EspecieForestalView(APIView):
             characters = string.ascii_letters + string.digits
             return ''.join(random.choice(characters) for _ in range(length))
 
-        img_related = ImagesSpeciesRelated()
+        img_related = ImageSpeciesRelated()
         img_related.specie_id = random_id
 
         for column_name, img_data in image_columns.items():
@@ -172,7 +170,7 @@ class EspecieForestalView(APIView):
 
         serializer = EspecieForestalSerializer(data=adjusted_data)
         if serializer.is_valid():
-            specie = EspecieForestal(
+            specie = specieForrest(
                 ShortcutID = random_id,
                 cod_especie = adjusted_data['cod_especie'],
                 nom_comunes = adjusted_data['nom_comunes'],
@@ -199,7 +197,7 @@ class EspecieForestalView(APIView):
 
     
     def put(self, request, pk, format=None):
-        specie = get_object_or_404(EspecieForestal, ShortcutID=pk)
+        specie = get_object_or_404(specieForrest, ShortcutID=pk)
         adjusted_data = request.data
 
         cod_specie_currently = specie.cod_especie
@@ -227,7 +225,7 @@ class EspecieForestalView(APIView):
         
         # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
         if cod_specie_currently != cod_especie_new:
-            existing_specie = EspecieForestal.objects.exclude(ShortcutID=pk).filter(cod_especie=cod_especie_new).first()
+            existing_specie = specieForrest.objects.exclude(ShortcutID=pk).filter(cod_especie=cod_especie_new).first()
             if existing_specie:
                 return Response({'error': f'El código de espeie {cod_especie_new} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -263,48 +261,30 @@ class EspecieForestalView(APIView):
         specie.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['GET'])
-    def get_image_links(self, request, pk=None):
-        especie = self.get_object()
-        image_links = {
-            'foto_general': self._get_image_link(especie.foto_general),
-            'foto_hojas': self._get_image_link(especie.foto_hojas),
-            'foto_flor': self._get_image_link(especie.foto_flor),
-            'foto_fruto': self._get_image_link(especie.foto_fruto),
-            'foto_semillas': self._get_image_link(especie.foto_semillas),
-        }
-        return Response(image_links)
-
-    def _get_image_link(self, image_relative_path):
-        # Reutiliza la lógica para construir el enlace de descarga directa de Google Drive
-        base_drive_url = "https://drive.google.com/uc?export=download&id="
-        full_drive_url = base_drive_url + extract_file_id(image_relative_path)
-        return full_drive_url
-
 class NombresComunesView(viewsets.ModelViewSet):
-   queryset = EspecieForestal.objects.all()
+   queryset = specieForrest.objects.all()
    serializer_class = NombresComunesSerializer
 
 class FamiliaView(APIView):
     serializer_class = FamiliaSerializer
 
     def get(self, request, format=None):
-        queryset = EspecieForestal.objects.values('familia').distinct()
+        queryset = specieForrest.objects.values('familia').distinct()
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
 class NombreCientificoView(viewsets.ModelViewSet):
-   queryset = EspecieForestal.objects.all()
+   queryset = specieForrest.objects.all()
    serializer_class = NombreCientificoSerializer
 
 class SuggestionTypeView(APIView):
     def get(self, request, types, format=None):
         if types == 'familia':
-            queryset = EspecieForestal.objects.values_list('familia', flat=True)
+            queryset = specieForrest.objects.values_list('familia', flat=True)
         elif types == 'nom_comunes':
-            queryset = EspecieForestal.objects.values_list('nom_comunes', flat=True)
+            queryset = specieForrest.objects.values_list('nom_comunes', flat=True)
         elif types == 'nombre_cientifico':
-            queryset = EspecieForestal.objects.values_list('nombre_cientifico', flat=True)
+            queryset = specieForrest.objects.values_list('nombre_cientifico', flat=True)
         else:
             queryset = []
 
@@ -314,7 +294,7 @@ suggestion_type_view = SuggestionTypeView.as_view()
 
 class BuscarEspeciezView(APIView):
     def get(self, request, nombre, format=None):        
-        search = EspecieForestal.objects.filter(nom_comunes__icontains=nombre).first()
+        search = specieForrest.objects.filter(nom_comunes__icontains=nombre).first()
         serializer = EspecieForestalSerializer(search)
 
         return Response(serializer.data)
@@ -379,8 +359,8 @@ class BuscarEspecieView(APIView):
         return Response(formatted_result)
     
 class BuscarFamiliaView(APIView):
-    def get(self, request, familia, format=None):        
-        search = EspecieForestal.objects.filter(familia__icontains=familia)
+    def get(self, request, family, format=None):        
+        search = specieForrest.objects.filter(familia__icontains=family)
         serializer = EspecieForestalSerializer(search, many=True)
         
         return Response(serializer.data)
@@ -388,7 +368,7 @@ class BuscarFamiliaView(APIView):
 class FamiliasView(APIView):
     def get(self, request, format=None):
         # Obtener las familias
-        familias = EspecieForestal.objects.values('familia').annotate(total=Count('familia')).distinct()
+        familias = specieForrest.objects.values('familia').annotate(total=Count('familia')).distinct()
 
         resultado = []
 
@@ -397,7 +377,7 @@ class FamiliasView(APIView):
             familia_nombre = familia['familia']
 
             # Obtener las especies relacionadas a la familia actual
-            especies = EspecieForestal.objects.filter(familia=familia_nombre)
+            especies = specieForrest.objects.filter(familia=familia_nombre)
 
             # Crear una lista de nombres de especies
             especies_nombres = [especie.nom_comunes for especie in especies]
@@ -412,7 +392,99 @@ class FamiliasView(APIView):
     
 class ScientificNameView(APIView):
     def get(self, request, scientific, format=None):        
-        search = EspecieForestal.objects.filter(nombre_cientifico__icontains=scientific).first()
+        search = specieForrest.objects.filter(nombre_cientifico__icontains=scientific).first()
         serializer = EspecieForestalSerializer(search)
         
         return Response(serializer.data)
+
+class ReportSpecieDataView(APIView):
+    def get(self, request, format=None):
+        query = """
+        SELECT
+            ea.cod_especie,
+            ef.nom_comunes,
+            ef.nombre_cientifico,
+            COUNT(DISTINCT ea.ShortcutIDEV) AS evaluados,
+            SUM(CASE WHEN mn.ShortcutIDEV IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
+            COUNT(DISTINCT mu.idmuestra) AS muestras
+        FROM evaluacion_as AS ea
+        LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+        LEFT JOIN monitoreo AS mn ON mn.ShortcutIDEV = ea.ShortcutIDEV
+        LEFT JOIN muestras AS mu ON mu.nro_placa = ea.ShortcutIDEV
+        WHERE ea.numero_placa IS NOT NULL
+        GROUP BY ea.cod_especie, ef.nom_comunes, ef.nombre_cientifico;
+        """
+        
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            
+        data = []
+        for row in results:
+            item = {
+                'cod_especie': row[0],
+                'nom_comunes': row[1],
+                'nombre_cientifico': row[2],
+                'evaluados': row[3],
+                'monitoreos': row[4],
+                'muestras': row[5],
+            }
+            data.append(item)
+        
+        return Response(data)
+    
+class SearchCandidatesSpecieView(APIView):
+    def get(self, request, nom, format=None):
+        # Define la consulta SQL con un marcador de posición para nom
+        sql = """
+            SELECT 
+            ea.ShortcutIDEV, 
+            ea.numero_placa, 
+            ea.cod_expediente, 
+            ea.cod_especie, 
+            ea.fecha_evaluacion, 
+            ea.departamento, 
+            ea.municipio, 
+            ea.altitud, 
+            ea.altura_total, 
+            ea.altura_fuste, 
+            ea.cobertura, 
+            ea.cober_otro, 
+            ea.entorno_individuo, 
+            ea.entorno_otro, 
+            ea.especies_forestales_asociadas, 
+            ea.dominancia_if, 
+            ea.forma_fuste, 
+            ea.dominancia, 
+            ea.alt_bifurcacion, 
+            ea.estado_copa, 
+            ea.posicion_copa, 
+            ea.fitosanitario, 
+            ea.presencia, 
+            ea.resultado, 
+            ea.evaluacion, 
+            ea.observaciones
+            FROM evaluacion_as AS ea
+            INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
+            WHERE ef.nom_comunes = '%s' AND ea.numero_placa IS NOT NULL;
+        """
+
+        # Ejecuta la consulta con el valor de nom
+        with connection.cursor() as cursor:
+            cursor.execute(sql % nom)
+            result = cursor.fetchall()
+
+            columns = [column[0] for column in cursor.description if column[0] is not None]
+
+            # Filtra las filas que contienen valores NULL y sustituye 'None' por None
+            queryset = []
+            for row in result:
+                row_dict = {}
+                for idx, col in enumerate(columns):
+                    value = row[idx]
+                    if value == 'None':
+                        value = None
+                    row_dict[col] = value
+                queryset.append(row_dict)
+
+            return Response(queryset)
