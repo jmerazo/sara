@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
-from ..models import Samples
+from ..samples.models import Samples
 
 class SamplesReport(APIView):
     def get(self, request, *args, **kwargs):

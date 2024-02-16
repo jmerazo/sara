@@ -1,4 +1,6 @@
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework import status
 from django.http import Http404
 from rest_framework.views import APIView
 from django.db import connection
@@ -137,3 +139,23 @@ class MonitoringsView(APIView):
             monitorings = [monitorings]
 
         return Response(monitorings)
+    
+    def post(self, request, format=None):
+        serializer = MonitoringsSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk, format=None):
+        monitoring = get_object_or_404(Monitorings, IDmonitoreo=pk)
+        serializer = MonitoringsSerializer(monitoring, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        monitoring = get_object_or_404(Monitorings, IDmonitoreo=pk)
+        monitoring.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

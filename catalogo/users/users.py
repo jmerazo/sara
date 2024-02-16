@@ -1,5 +1,5 @@
 from ..models import Users
-from ..serializers import UsersSerializer
+from .serializers import UsersSerializer
 from rest_framework.response import Response
 from django.db import connection, transaction
 from django.shortcuts import get_object_or_404

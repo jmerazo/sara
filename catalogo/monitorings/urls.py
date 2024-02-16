@@ -8,6 +8,8 @@ urlpatterns = [
     path('report/month/locates', MonitoringReportLocates.as_view()), # (PROTECT) Retorna la cantidad mensual de monitoreos realizados, pendientes y total por municipios -- http://localhost:8000/api/monitoring/report/month/locates
     path('report/general/total', MonitoringReportTotal.as_view()),  # (PROTECT) Retorna la cantidad mensual de monitoreos realizados, pendientes y total por municipios -- http://localhost:8000/api/monitoring/report/general/total
     path('report/data', MonitoringsView.as_view()), # Exporta todos los datos de monitoreos en excel -- http://localhost:8000/api/monitoring/report/data
+    path('', MonitoringsView.as_view()),
+    path('<str:pk>', MonitoringsView.as_view()),
 
     # CONSULTA DE MONITOREOS POR INDIVIDUO
     path('candidate/search/<id>', SearchMonitoringCandidateView.as_view()), # Retorna el listado de monitoreos del individuo consultado -- http://localhost:8000/api/monitoring/search/

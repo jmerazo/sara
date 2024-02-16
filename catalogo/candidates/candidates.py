@@ -1,4 +1,6 @@
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.views import APIView
 from django.db import connection
 from decimal import Decimal
@@ -51,11 +53,35 @@ class GeoCandidateTreesView(APIView):
         return Response(geo_format)
     
 class CandidatesTreesView(APIView):
-    def get(self, request, format=None): 
-        queryset = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
-        serializer = CandidateTreesSerializer(queryset, many=True)
+    def get(self, request, pk=None, format=None): 
+        if pk:
+            # Obtener un objeto específico por pk
+            queryset = CandidatesTrees.objects.filter(ShortcutIDEV=pk)
+        else:
+            queryset = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
 
+        serializer = CandidateTreesSerializer(queryset, many=True)
         return Response(serializer.data)
+    
+    def post(self, request, format=None):
+        serializer = CandidateTreesSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk, format=None):
+        tree = get_object_or_404(CandidatesTrees, pk=pk)
+        serializer = CandidateTreesSerializer(tree, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        tree = get_object_or_404(CandidatesTrees, pk=pk)
+        tree.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class AverageCandidateTreesView(APIView):
     def convert_to_decimal_or_int(self, value):

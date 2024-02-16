@@ -3,8 +3,8 @@ from django.http import HttpResponse
 from rest_framework.views import APIView
 from datetime import datetime
 
-from ..models import CandidateTrees
-from ..serializers import CandidateTreesSerializer
+from ..candidates.models import CandidatesTrees
+from ..candidates.serializers import CandidateTreesSerializer
 
 class ExportCandidateTrees(APIView):
     def get(self, request, *args, **kwargs):
@@ -16,7 +16,7 @@ class ExportCandidateTrees(APIView):
         workbook = xlsxwriter.Workbook(response, {'in_memory': True})
         worksheet = workbook.add_worksheet()
 
-        candidates = CandidateTrees.objects.exclude(numero_placa__isnull=True)
+        candidates = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
         candidate_data = CandidateTreesSerializer(candidates, many=True).data
 
         # Formato para encabezados en negrita y con borde

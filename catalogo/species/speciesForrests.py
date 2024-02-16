@@ -8,8 +8,8 @@ from rest_framework.views import APIView
 from django.db.models import Count
 from django.db import connection
 import random, string, os, base64
-from .models import specieForrest, ImageSpeciesRelated
-from .serializers import EspecieForestalSerializer,NombresComunesSerializer, FamiliaSerializer, NombreCientificoSerializer
+from .models import specieForrest, ImageSpeciesRelated, Families
+from .serializers import EspecieForestalSerializer,NombresComunesSerializer, FamilySerializer, FamiliaSerializer, NombreCientificoSerializer
 from rest_framework.permissions import IsAuthenticated
 
 def save_image(image, cod_especie, nom_comunes, image_type):
@@ -365,16 +365,18 @@ class BuscarFamiliaView(APIView):
         
         return Response(serializer.data)
 
-class FamiliasView(APIView):
+class FamiliesView(APIView):
     def get(self, request, format=None):
         # Obtener las familias
-        familias = specieForrest.objects.values('familia').annotate(total=Count('familia')).distinct()
+        #familias = specieForrest.objects.values('familia').annotate(total=Count('familia')).distinct()
+        familias = Families.objects.all().only('name', 'description')
 
         resultado = []
 
         # Recorrer las familias
         for familia in familias:
-            familia_nombre = familia['familia']
+            familia_nombre = familia.name
+            description = familia.description
 
             # Obtener las especies relacionadas a la familia actual
             especies = specieForrest.objects.filter(familia=familia_nombre)
@@ -385,6 +387,7 @@ class FamiliasView(APIView):
             # Agregar la familia y las especies a la lista de resultados
             resultado.append({
                 'familia': familia_nombre,
+                'description' : description,
                 'especies': especies_nombres
             })
 

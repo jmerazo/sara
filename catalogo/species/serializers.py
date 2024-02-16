@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import specieForrest, ImageSpeciesRelated
+from .models import specieForrest, ImageSpeciesRelated, Families
 
 class EspecieForestalSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,3 +30,8 @@ class NombreCientificoSerializer(serializers.ModelSerializer):
 
     def get_nombre_cientifico(self, obj):
         return f"{obj.nombre_cientifico_especie} {obj.nombre_autor_especie}"
+
+class FamilySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Families
+        fields = '__all__'

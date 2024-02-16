@@ -1,18 +1,13 @@
-from rest_framework import viewsets
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from rest_framework import status, generics, permissions
-from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from django.db.models import Count, OuterRef, Subquery
 from datetime import datetime
 from collections import defaultdict
 from calendar import monthrange
 from django.db import connection
-
 from rest_framework.permissions import IsAuthenticated
-
-from ..models import CandidateTrees, Monitoring
+from ..candidates.models import CandidatesTrees
+from .models import Monitorings
 # Endpoint 
 # - monitores realizados mes, pendientes, totales, por municipio, por departamento
 
@@ -24,13 +19,13 @@ class MonitoringReport(APIView):
         end_day = now.replace(day=monthrange(now.year, now.month)[1])
 
         # Subconsulta para obtener los ShortcutIDEV de monitoreos realizados en el mes actual
-        monitoreos_realizados = Monitoring.objects.filter(
+        monitoreos_realizados = Monitorings.objects.filter(
             fecha_monitoreo__gte=first_day,
             fecha_monitoreo__lte=end_day
         ).values('ShortcutIDEV')
 
         # Consulta para contar los monitoreos pendientes y realizados
-        tree_counts = CandidateTrees.objects.annotate(
+        tree_counts = CandidatesTrees.objects.annotate(
             realizado=Subquery(
                 monitoreos_realizados.filter(ShortcutIDEV=OuterRef('ShortcutIDEV'))
                 .values('ShortcutIDEV')
@@ -58,12 +53,12 @@ class MonitoringReportLocates(APIView):
         first_day = now.replace(day=1)
         end_day = now.replace(day=monthrange(now.year, now.month)[1])
 
-        monitoreos_realizados = Monitoring.objects.filter(
+        monitoreos_realizados = Monitorings.objects.filter(
             fecha_monitoreo__gte=first_day,
             fecha_monitoreo__lte=end_day
         ).values('ShortcutIDEV')
 
-        total_monitoreos = CandidateTrees.objects.annotate(
+        total_monitoreos = CandidatesTrees.objects.annotate(
             realizado=Subquery(
                 monitoreos_realizados.filter(ShortcutIDEV=OuterRef('ShortcutIDEV'))
                 .values('ShortcutIDEV')

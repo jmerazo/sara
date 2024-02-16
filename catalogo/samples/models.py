@@ -1,6 +1,6 @@
 from django.db import models
 
-class Samplez(models.Model):
+class Samples(models.Model):
     idmuestra = models.CharField(primary_key=True, max_length=10)
     nro_placa = models.CharField(max_length=11, blank=True, null=True)
     fecha_coleccion = models.DateField(blank=True, null=True)

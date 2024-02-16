@@ -1,9 +1,11 @@
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework import status
 from django.http import Http404
 from rest_framework.views import APIView
 from django.db import connection
 import random, string
-from .models import Samplez
+from .models import Samples
 from .serializers import SamplesSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -73,8 +75,8 @@ class SamplesView(APIView):
     def get_object_for_delete(self, pk):
         # Este método se utiliza específicamente para la acción de eliminación.
         try:
-            return Samplez.objects.get(pk=pk)
-        except Samplez.DoesNotExist:
+            return Samples.objects.get(pk=pk)
+        except Samples.DoesNotExist:
             raise Http404
 
     def get(self, request, pk=None, format=None):
@@ -85,3 +87,23 @@ class SamplesView(APIView):
             samples = [samples]
 
         return Response(samples)
+    
+    def post(self, request, format=None):
+        serializer = SamplesSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk, format=None):
+        sample = get_object_or_404(Samples, idmuestra=pk)
+        serializer = SamplesSerializer(sample, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        sample = get_object_or_404(Samples, idmuestra=pk)
+        sample.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
