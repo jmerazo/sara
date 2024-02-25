@@ -3,16 +3,20 @@ from reportlab.platypus import Paragraph, Image
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from rest_framework.views import APIView
 from datetime import datetime
 from django.http import HttpResponse
-from django.db.models import F
 from django.db import connection
 import os
+
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import FileResponse
+import io
 
 # Registro de fuentes
 font_path = os.path.join(os.path.dirname(__file__), 'resources', 'Montserrat', 'Montserrat-Regular.ttf')
@@ -90,6 +94,9 @@ class ExportSpecies(APIView):
 
                     buffer = BytesIO() 
 
+                    # Obtener estilos predeterminados
+                    styles = getSampleStyleSheet()
+
                     # Crear el canvas
                     c = canvas.Canvas(buffer, pagesize=landscape(letter))
                     width, height = landscape(letter)
@@ -109,7 +116,7 @@ class ExportSpecies(APIView):
                     # Definir el tamaño del título y el espacio (padding) después del título
                     padding_after_title = 20  # Este es el espacio después del título, ajústalo según sea necesario                    
 
-                    title_text = [f'<font name="Montserrat-BoldItalic"><i>{specieData["nombre_cientifico_especie"]}</i></font>' f'<font name="Montserrat-Bold">{specieData["nombre_autor_especie"]}</font>']
+                    title_text = [f'<i>{specieData["nombre_cientifico_especie" ]}</i>' f'{specieData["nombre_autor_especie"]}']
                     # Crear el estilo para el título
                     title_style = ParagraphStyle(
                         name='TitleStyle',
@@ -118,6 +125,16 @@ class ExportSpecies(APIView):
                         textColor=colors.black,
                         alignment=1  # Centrado
                     )
+
+                    # Modificar el estilo normal para usar Montserrat
+                    content_style = styles['Normal']
+                    content_style.fontName = 'Montserrat'
+                    content_style.fontSize = 10
+                    content_style.leading = 12
+
+                    # Crear un estilo para negritas
+                    bold_style = ParagraphStyle('Bold', parent=content_style, fontName='Montserrat-Bold')
+
 
                     title_paragraph = Paragraph(" ".join(title_text), title_style)
 
@@ -128,7 +145,7 @@ class ExportSpecies(APIView):
                     # Ajustar la posición inicial para el resto del contenido
                     y_position = height - margin - h - padding_after_title
 
-                    # Crear un estilo para el contenido de texto
+                    # Estilo para texto normal
                     content_style = ParagraphStyle(
                         name='ContentStyle',
                         fontName='Montserrat',
@@ -136,16 +153,23 @@ class ExportSpecies(APIView):
                         textColor=colors.black,
                         leading=10  # Espacio entre líneas
                     )
+
+                    # Estilo para texto en negrita (cambiar la fuente a la versión en negrita)
+                    bold_style = ParagraphStyle(
+                        'BoldStyle',
+                        parent=content_style,
+                        fontName='Montserrat-Bold'
+                    )
                     
                     # Crear párrafos para el texto en la columna derecha
                     data_specie = [
-                        f'<font name="Montserrat-Bold"><b>Nombre común:</b></font> <font name="Montserrat">{specieData["nom_comunes"]}</font>',
-                        f'<font name="Montserrat-Bold"><b>Otros nombres:</b></font> <font name="Montserrat">{specieData["otros_nombres"]}</font>',
+                        f'<font name="Montserrat-Bold"><b>Nombre común: </b></font> {specieData["nom_comunes"]}',
+                        f'<font name="Montserrat-Bold"><b>Otros nombres:</b></font> {specieData["otros_nombres"]}',
                         f'<font name="Montserrat-Bold"><b>Nombre científico:</b></font> {" ".join(title_text)}',
-                        f'<font name="Montserrat-Bold"><b>Sinónimos:</b></font> <font name="Montserrat">{specieData["sinonimos"]}</font>',
-                        f'<font name="Montserrat-Bold"><b>Familia:</b></font> <font name="Montserrat">{specieData["familia"]}</font>',
-                        f'<font name="Montserrat-Bold"><b>Distribución:</b></font> <font name="Montserrat">{specieData["distribucion"]}</font>',
-                        f'<font name="Montserrat-Bold"><b>Hábito:</b></font> <font name="Montserrat">{specieData["habito"]}</font>',
+                        f'<font name="Montserrat-Bold"><b>Sinónimos:</b></font> {specieData["sinonimos"]}',
+                        f'<font name="Montserrat-Bold"><b>Familia:</b></font> {specieData["familia"]}',
+                        f'<font name="Montserrat-Bold"><b>Distribución:</b></font> {specieData["distribucion"]}',
+                        f'<font name="Montserrat-Bold"><b>Hábito:</b></font> {specieData["habito"]}',
                     ]
 
                     #y_position = height - margin  # Ajustar la posición inicial
@@ -178,15 +202,27 @@ class ExportSpecies(APIView):
                     # Posición x para las imágenes (centradas en la columna derecha)
                     posicion_x_imagen = width / 2 + (column_width - espacio_disponible_ancho) / 2
 
+                    # Convertir la ruta de la imagen general a formato compatible con el sistema operativo actual
+                    if specieData['img_general']:
+                        img_general_path = os.path.join(*specieData['img_general'].split('\\'))
+                    else:
+                        img_general_path = None  # O manejar de otra manera si la imagen no está disponible
+
+                    # Convertir la ruta de la imagen del paisaje a formato compatible con el sistema operativo actual
+                    if specieData['img_landscape_one']:
+                        img_landscape_path = os.path.join(*specieData['img_landscape_one'].split('\\'))
+                    else:
+                        img_landscape_path = None  # O manejar de otra manera si la imagen no está disponible
+
                     # Ajustar y dibujar la primera imagen
-                    altura_img1 = ajustar_y_dibujar_imagen(specieData['img_general'], espacio_disponible_ancho, 
+                    altura_img1 = ajustar_y_dibujar_imagen(img_general_path, espacio_disponible_ancho, 
                                                             espacio_disponible_alto, posicion_x_imagen, y_position - ajuste_alineacion)
 
                     # Actualizar la posición y para la segunda imagen
                     posicion_y_imagen2 = y_position - altura_img1 - ajuste_alineacion - margin
 
                     # Ajustar y dibujar la segunda imagen
-                    ajustar_y_dibujar_imagen(specieData['img_landscape_one'], espacio_disponible_ancho, 
+                    ajustar_y_dibujar_imagen(img_landscape_path, espacio_disponible_ancho, 
                                             espacio_disponible_alto, posicion_x_imagen, posicion_y_imagen2)
                     
                     # Antes de finalizar la página, dibujar el pie de página
@@ -235,6 +271,9 @@ class ExportSpecies(APIView):
                     # Lista de imágenes para dibujar
                     imagenes = [specieData['img_leafs'], specieData['img_flowers'], specieData['img_fruits'], specieData['img_seeds'], specieData['img_stem']]
 
+                    # Convertir rutas a formato compatible con el sistema operativo actual
+                    imagenes = [os.path.join(*img_path.split('\\')) for img_path in imagenes if img_path]
+
                     # Calcular el espacio vertical total disponible para las imágenes
                     espacio_vertical_total = height - 2 * margin - h
 
@@ -266,15 +305,15 @@ class ExportSpecies(APIView):
                     pdf_content = buffer.getvalue()
                     buffer.close()
 
-                    # Create an HTTP response with the PDF
-                    response = HttpResponse(content_type='application/pdf')
-                    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-                    response.write(pdf_content)
+                    # Usar FileResponse para devolver el PDF
+                    response = FileResponse(
+                        io.BytesIO(pdf_content),
+                        as_attachment=True,
+                        filename=file_name,
+                        content_type='application/pdf'
+                    )
                     return response
 
-                else:
-                    return HttpResponse("No data found for this species code", status=404)
-
             except Exception as e:
-                print(str(e))  # Maneja cualquier excepción que pueda ocurrir durante la ejecución de la consulta SQL
-                return HttpResponse
+                print(str(e))  # Manejo de excepciones
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
