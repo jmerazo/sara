@@ -5,7 +5,7 @@ class Monitorings(models.Model):
     ShortcutIDEV = models.CharField(max_length=50)  # Field name made lowercase.
     fecha_monitoreo = models.DateField(blank=True, null=True)
     hora = models.TimeField(blank=True, null=True)
-    usuario_realiza_monitoreo = models.CharField(db_column='Usuario quien realiza el monitoreo', max_length=50, blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    user_id = models.IntegerField(max_length=50, blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     temperatura = models.CharField(max_length=10, blank=True, null=True)
     humedad = models.CharField(max_length=10, blank=True, null=True)
     precipitacion = models.CharField(max_length=13, blank=True, null=True)

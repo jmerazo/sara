@@ -8,6 +8,13 @@ from django.db import connection
 from rest_framework.permissions import IsAuthenticated
 from ..candidates.models import CandidatesTrees
 from .models import Monitorings
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from django_pandas.io import read_frame
+
 # Endpoint 
 # - monitores realizados mes, pendientes, totales, por municipio, por departamento
 
@@ -139,3 +146,96 @@ class MonitoringReportTotal(APIView):
         }
 
         return Response(response_data)
+    
+
+class TrainMonitoring(APIView):
+    def get(self, request, *args, **kwargs):
+        # Consulta SQL directa
+        query = """
+            SELECT
+                m.IDmonitoreo,
+                ea.numero_placa, 
+                ef.nom_comunes, 
+                ef.nombre_cientifico, 
+                ea.cod_especie, 
+                m.fecha_monitoreo, 
+                m.hora, 
+                m.temperatura, 
+                m.humedad, 
+                m.precipitacion, 
+                m.factor_climatico, 
+                m.observaciones_temp, 
+                m.fitosanitario, 
+                m.afectacion, 
+                m.observaciones_afec,
+                m.follaje_porcentaje,
+                m.observaciones_follaje,
+                m.flor_abierta,
+                m.flor_boton,
+                m.color_flor,
+                m.color_flor_otro,
+                m.olor_flor,
+                m.olor_flor_otro,
+                m.fauna_flor,
+                m.fauna_flor_otros,
+                m.observaciones_flor,
+                m.frutos_verdes,
+                m.estado_madurez,
+                m.color_fruto,
+                m.color_fruto_otro,
+                m.medida_peso_frutos,
+                m.peso_frutos,
+                m.fauna_frutos,
+                m.fauna_frutos_otro,
+                m.observacion_frutos,
+                m.cant_semillas,
+                m.medida_peso_sem,
+                m.peso_semillas,
+                m.observacion_semilla,
+                m.observaciones
+            FROM 
+                monitoreo AS m 
+            LEFT JOIN 
+                evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV 
+            INNER JOIN 
+                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+            WHERE ea.numero_placa IS NOT NULL;
+        """
+            
+        
+        # Codifica la consulta SQL en bytes
+        query = query.encode('utf-8')
+        
+        # Ejecuta la consulta SQL
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns = [col[0] for col in cursor.description]
+            data = cursor.fetchall()
+        
+        # Convierte los resultados en un DataFrame de pandas
+        df = pd.DataFrame(data, columns=columns)
+
+        # Continúa con el preprocesamiento de tus datos aquí
+        df['cod_especie'] = df['cod_especie'].astype('category').cat.codes
+        df.fillna(df.mean(), inplace=True)
+
+        # Definir tus características y objetivo
+        # Asegúrate de definir 'otras_columnas_no_relevantes' correctamente
+        X = df.drop(columns=['IDmonitoreo', 'observaciones_temp', 'observaciones_afec', 'observaciones_follaje', 'olor_flor_otro', 'fauna_flor_otros', 'observaciones_flor', 'color_fruto_otro', 'observacion_frutos', 'observacion_semilla', 'entorno_otro', 'observaciones'])
+        y = df['cod_especie']
+
+        # Dividir en conjunto de entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Construir y entrenar el modelo
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model.fit(X_train, y_train)
+
+        # Evaluar el modelo
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+
+        print('accuracy: ', accuracy)
+
+        # Asegúrate de devolver un objeto Response
+        return Response({'message': 'Model trained', 'accuracy': accuracy})

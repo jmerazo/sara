@@ -2,8 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
-from .serializers import PageSerializer
-from .models import Page
+from .serializers import PageSerializer, PagesSerializer, SectionSerializer
+from .models import Page, Pages, Section
 from ..species.serializers import EspecieForestalSerializer
 from django.db import connection
 from ..species.models import specieForrest
@@ -83,3 +83,69 @@ class topSpeciesView(APIView):
                     return Response([])  # Devuelve una lista vacía si no hay resultados
             except Exception as e:
                 return Response({"error": str(e)})  # Devuelve un mensaje de error en caso de excepción
+            
+class PagesView(APIView):
+    def get_object(self, pk=None):
+        if pk is not None:
+            try:
+                return Pages.objects.get(pk=pk)
+            except Pages.DoesNotExist:
+                raise Http404
+        else:
+            return Pages.objects.all()
+
+    def get(self, request, pk=None, format=None):
+        pages = self.get_object(pk)
+        
+        if isinstance(pages, Pages):
+            serializer = PagesSerializer(pages)
+        else:
+            serializer = PagesSerializer(pages, many=True)
+            
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        page = self.get_object(pk)
+        serializer = PagesSerializer(page, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        page = self.get_object(pk)
+        page.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class SectionView(APIView):
+    def get_object(self, pk=None):
+        if pk is not None:
+            try:
+                return Section.objects.get(pk=pk)
+            except Section.DoesNotExist:
+                raise Http404
+        else:
+            return Section.objects.all()
+
+    def get(self, request, pk=None, format=None):
+        sections = self.get_object(pk)
+        
+        if isinstance(sections, Section):
+            serializer = SectionSerializer(sections)
+        else:
+            serializer = SectionSerializer(sections, many=True)
+            
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        page = self.get_object(pk)
+        serializer = SectionSerializer(page, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        page = self.get_object(pk)
+        page.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -13,3 +13,29 @@ class Page(models.Model):
     class Meta:
         managed = False
         db_table = 'page'
+
+class Pages(models.Model):
+    id = models.IntegerField(primary_key=True)
+    router = models.CharField(max_length=100, blank=True, null=True)
+    title = models.CharField(max_length=150, blank=True, null=True)
+    created = models.DateTimeField(blank=True, null=True)
+    updated = models.DateTimeField(blank=True, null=True)
+    styles = models.JSONField(default=dict)
+
+    class Meta:
+        managed = False
+        db_table = 'pages'
+
+class Section(models.Model):
+    id = models.IntegerField(primary_key=True)
+    page_id = models.IntegerField(blank=False, null=False)
+    section_title = models.CharField(max_length=100, blank=True, null=True)
+    content = models.TextField(blank=True, null=True)
+    image = models.CharField(max_length=254, blank=True, null=True)
+    content_type = models.CharField(max_length=254, blank=True, null=True)
+    order = models.IntegerField(blank=True, null=True)
+    styles = models.JSONField(default=dict)
+
+    class Meta:
+        managed = False
+        db_table = 'section'
