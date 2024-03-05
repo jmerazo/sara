@@ -6,7 +6,7 @@ class CandidatesTrees(models.Model):
     cod_expediente = models.CharField(max_length=35, blank=True, null=True)
     cod_especie = models.CharField(max_length=50, blank=True, null=True)
     fecha_evaluacion = models.DateField()
-    usuario_evaluador = models.CharField(max_length=50, blank=True, null=True)
+    user_id = models.CharField(max_length=50, blank=True, null=True)
     departamento = models.CharField(max_length=60, blank=True, null=True)
     municipio = models.CharField(max_length=100, blank=True, null=True)
     nombre_del_predio = models.CharField(max_length=60, blank=True, null=True)

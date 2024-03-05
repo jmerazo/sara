@@ -9,6 +9,14 @@ from .models import Samples
 from .serializers import SamplesSerializer
 from rest_framework.permissions import IsAuthenticated
 
+from django.db.models import Value, CharField
+from django.db.models.functions import Concat
+
+from .models import Samples
+from ..candidates.models import CandidatesTrees
+from ..species.models import specieForrest
+from ..models import Users
+
 def generate_random_id(length):
             characters = string.ascii_letters + string.digits
             random_id = ''.join(random.choice(characters) for _ in range(length))
@@ -21,28 +29,26 @@ class SamplesView(APIView):
         # Consulta SQL directa
         query = """
             SELECT
-                m.idmuestra, 
-                ea.numero_placa, 
-                ef.nom_comunes, 
-                ef.nombre_cientifico, 
-                ea.cod_especie, 
-                m.fecha_coleccion, 
-                m.nro_muestras, 
-                m.colector_ppal, 
-                m.siglas_colector_ppal, 
-                m.nro_coleccion, 
-                m.voucher, 
-                m.nombres_colectores, 
-                m.codigo_muestra, 
-                m.otros_nombres, 
-                m.descripcion, 
-                m.usos 
-            FROM 
-                muestras AS m 
-            LEFT JOIN 
-                evaluacion_as AS ea ON m.nro_placa = ea.ShortcutIDEV 
-            LEFT JOIN 
-                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie;
+            m.idmuestra, 
+            ea.numero_placa, 
+            ef.nom_comunes, 
+            ef.nombre_cientifico, 
+            ea.cod_especie, 
+            m.fecha_coleccion, 
+            m.nro_muestras, 
+            CONCAT(u.first_name, ' ', u.last_name) AS colector_full_name,
+            m.siglas_colector_ppal, 
+            m.nro_coleccion, 
+            m.voucher, 
+            m.nombres_colectores, 
+            m.codigo_muestra, 
+            m.otros_nombres, 
+            m.descripcion, 
+            m.usos 
+            FROM muestras AS m 
+            LEFT JOIN evaluacion_as AS ea ON m.nro_placa = ea.ShortcutIDEV 
+            LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+            INNER JOIN Users AS u ON m.user_id = u.id;
         """
         # Ejecutar la consulta
         with connection.cursor() as cursor:

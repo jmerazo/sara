@@ -37,8 +37,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
     cellphone = models.CharField(max_length=15, blank=True, null=True)
     department = models.CharField(max_length=25, blank=True, null=True)
     city = models.IntegerField(blank=True, null=True)
-    device_movile = models.CharField(max_length=2, blank=True, null=True)
-    serial_device = models.CharField(max_length=17, blank=True, null=True)
     profession = models.CharField(max_length=150, blank=True, null=True)
     reason = models.CharField(max_length=500, blank=True, null=True)
     state = models.CharField(max_length=25, blank=True, null=True, default='REVIEW')
