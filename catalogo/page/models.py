@@ -15,7 +15,6 @@ class Page(models.Model):
         db_table = 'page'
 
 class Pages(models.Model):
-    id = models.IntegerField(primary_key=True)
     router = models.CharField(max_length=100, blank=True, null=True)
     title = models.CharField(max_length=150, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True)
@@ -27,7 +26,6 @@ class Pages(models.Model):
         db_table = 'pages'
 
 class Section(models.Model):
-    id = models.IntegerField(primary_key=True)
     page_id = models.IntegerField(blank=False, null=False)
     section_title = models.CharField(max_length=100, blank=True, null=True)
     content = models.TextField(blank=True, null=True)

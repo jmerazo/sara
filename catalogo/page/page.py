@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from .serializers import PageSerializer, PagesSerializer, SectionSerializer
 from .models import Page, Pages, Section
 from ..species.serializers import EspecieForestalSerializer
-from django.db import connection
+from django.db import connection, transaction
 from ..species.models import specieForrest
 
 # VISTA PÁGINA ACERCA OTROS            
@@ -103,6 +103,25 @@ class PagesView(APIView):
             serializer = PagesSerializer(pages, many=True)
             
         return Response(serializer.data)
+    
+    @transaction.atomic
+    def post(self, request, format=None):
+        adjusted_data = request.data.copy()
+
+        # Validación de que los campos requeridos existen
+        required_fields = ['router', 'title']
+        if not all(field in adjusted_data for field in required_fields):
+            return Response({"error": "Faltan campos requeridos."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PagesSerializer(data=adjusted_data)
+        if serializer.is_valid():
+            serializer.save()  # Utiliza el método save del serializador si es posible
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            # Respuesta detallada de los errores de validación
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     def put(self, request, pk, format=None):
         page = self.get_object(pk)
@@ -136,6 +155,24 @@ class SectionView(APIView):
             serializer = SectionSerializer(sections, many=True)
             
         return Response(serializer.data)
+    
+    @transaction.atomic
+    def post(self, request, format=None):
+        adjusted_data = request.data.copy()
+
+        # Validación de que los campos requeridos existen
+        required_fields = ['page_id', 'section_title', 'content']
+        if not all(field in adjusted_data for field in required_fields):
+            return Response({"error": "Faltan campos requeridos."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = SectionSerializer(data=adjusted_data)
+        if serializer.is_valid():
+            serializer.save()  # Utiliza el método save del serializador si es posible
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            # Respuesta detallada de los errores de validación
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
         page = self.get_object(pk)
