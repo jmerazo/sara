@@ -11,6 +11,9 @@ import random, string
 from django.utils import timezone
 from django.contrib.auth.models import Group, Permission
 from rest_framework.permissions import IsAuthenticated
+from .models import Roles, UserModules
+from ..page.models import Pages
+from .users import Users
 
 def generate_random_id(length):
             characters = string.ascii_letters + string.digits
@@ -225,3 +228,53 @@ class UsersStateView(APIView):
         user.save()  # Guardar los cambios
         serializer = UsersSerializer(user)  # Serializa el usuario actualizado
         return Response(serializer.data)
+    
+class SomeView(APIView):
+    def get(self, request):
+        # Acceder al usuario actual
+        user = request.user
+        if user.is_authenticated:
+            # Realiza operaciones con el usuario
+            return Response({"message": "Usuario autenticado"})
+        else:
+            return Response({"message": "Usuario no autenticado"})
+        
+class UserPermissionsView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        if user.is_authenticated:
+            try:
+                user_role = Users.objects.filter(email=user).first()
+                if user_role:
+                    role_name = Roles.objects.filter(id=user_role.rol_id).first()
+                    modules_with_permissions = UserModules.objects.filter(rol_id=user_role.rol_id)
+
+                    modules_data = []
+                    for module in modules_with_permissions:
+                        page = Pages.objects.get(id=module.page_id)
+                        permissions = {field.name: getattr(module, field.name) 
+                                       for field in UserModules._meta.get_fields() 
+                                       if field.name not in ['id', 'rol_id', 'page_id', 'page']}
+                        module_data = {
+                            'page_id': page.id,
+                            'page_router': page.router,
+                            'page_section' : page.section,
+                            'page_name': page.title,
+                            'page_icon': page.icon,
+                            'permissions': permissions
+                        }
+                        modules_data.append(module_data)
+
+                    return Response({
+                        "role": role_name.name,  # Asumiendo que role_name es la relación a Roles
+                        "modules": modules_data
+                    })
+                else:
+                    return Response({"message": "Usuario no encontrado"}, status=404)
+
+            except Roles.DoesNotExist:
+                return Response({"message": "Rol no encontrado"}, status=404)
+
+        else:
+            return Response({"message": "Usuario no autenticado"}, status=401)

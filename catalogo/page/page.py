@@ -7,6 +7,7 @@ from .models import Page, Pages, Section
 from ..species.serializers import EspecieForestalSerializer
 from django.db import connection, transaction
 from ..species.models import specieForrest
+from rest_framework.exceptions import NotFound
 
 # VISTA PÁGINA ACERCA OTROS            
 class PageView(APIView):
@@ -175,8 +176,12 @@ class SectionView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
-        page = self.get_object(pk)
-        serializer = SectionSerializer(page, data=request.data)
+        try:
+            section = self.get_object(pk)
+        except Http404:
+            raise NotFound(detail="Sección no encontrada.", code=404)
+        
+        serializer = SectionSerializer(section, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

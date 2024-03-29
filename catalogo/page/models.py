@@ -16,10 +16,12 @@ class Page(models.Model):
 
 class Pages(models.Model):
     router = models.CharField(max_length=100, blank=True, null=True)
+    site = models.CharField(max_length=30, blank=True, null=True)
+    section = models.CharField(max_length=40, blank=True, null=True)
     title = models.CharField(max_length=150, blank=True, null=True)
+    icon = models.CharField(max_length=250, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True)
     updated = models.DateTimeField(blank=True, null=True)
-    styles = models.JSONField(default=dict)
 
     class Meta:
         managed = False

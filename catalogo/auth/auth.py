@@ -1,5 +1,7 @@
 from rest_framework import viewsets
+from rest_framework.views import APIView
 from django.conf import settings
+from rest_framework.response import Response
 from ..models import Users
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
@@ -26,6 +28,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             user_data = {}
             try:
                 user_instance = Users.objects.get(id=user_id)  # Obtén la instancia del usuario
+                print('users: ', user_instance)
                 # Construye el user_data aquí...
                 user_data = {
                     'id' : user_id,

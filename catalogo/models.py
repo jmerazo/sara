@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin, Group, Permission
 from django.utils import timezone
+from .users.models import Roles
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -30,6 +31,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
     rol = models.CharField(max_length=100, blank=True, null=True)
+    rol_id = models.IntegerField()
     is_active = models.BooleanField(max_length=30, blank=True, null=True, default=False)
     document_type = models.CharField(max_length=40, blank=True, null=True)
     document_number = models.CharField(max_length=20, blank=True, null=True)
