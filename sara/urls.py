@@ -26,7 +26,7 @@ urlpatterns = [
    path('', views.index, name='index'),
    path('admin/', admin.site.urls),
    path('api/', include('catalogo.urls')),
-   path('api/auth/accounts', include('allauth.urls')),
+   path('api/auth/', include('allauth.urls')),
    path('api/auth/token/', CustomTokenObtainPairView.as_view()),
    path('api/auth/token/refresh/', TokenRefreshView.as_view()),
    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0)),

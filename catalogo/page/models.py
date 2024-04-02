@@ -20,6 +20,7 @@ class Pages(models.Model):
     section = models.CharField(max_length=40, blank=True, null=True)
     title = models.CharField(max_length=150, blank=True, null=True)
     icon = models.CharField(max_length=250, blank=True, null=True)
+    sub_title = models.JSONField(default=dict)
     created = models.DateTimeField(blank=True, null=True)
     updated = models.DateTimeField(blank=True, null=True)
 

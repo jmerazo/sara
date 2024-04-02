@@ -262,6 +262,7 @@ class UserPermissionsView(APIView):
                             'page_section' : page.section,
                             'page_name': page.title,
                             'page_icon': page.icon,
+                            'page_subtitle': page.sub_title,
                             'permissions': permissions
                         }
                         modules_data.append(module_data)
