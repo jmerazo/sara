@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -6,7 +7,7 @@ class Samples(models.Model):
     nro_placa = models.CharField(max_length=11, blank=True, null=True)
     fecha_coleccion = models.DateField(blank=True, null=True)
     nro_muestras = models.CharField(max_length=5, blank=True, null=True)
-    user_id = models.ForeignKey(User, on_delete=models.RESTRICT)
+    user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.RESTRICT)
     siglas_colector_ppal = models.CharField(max_length=20, blank=True, null=True)
     nro_coleccion = models.IntegerField(blank=True, null=True)
     voucher = models.CharField(max_length=20, blank=True, null=True)
