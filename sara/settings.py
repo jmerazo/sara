@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%79cuev8+)_&#ft&)f-htw7jeiadt_=+%^jhz4wp6#y9l+u6m@'
+SECRET_KEY=os.getenv('SECRET_KEY');
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -47,13 +47,18 @@ INSTALLED_APPS = [
     'rest_auth',
     'rest_auth.registration',
     'drf_yasg',
-    'catalogo'
+    'catalogo',
+    'social_django',
 ]
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
+    'social_core.backends.google.GoogleOAuth2',
 )
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('OAUTH2_KEY')  # Coloca aquí tu Client ID
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('OAUTH2_SECRET') # Coloca aquí tu Client Secret
 
 SITE_ID = 1
 

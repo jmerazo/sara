@@ -15,4 +15,5 @@ urlpatterns = [
     path('species/', include('catalogo.species.urls')),
     path('page/', include('catalogo.page.urls')),
     path('empiricalknowledge/', include('catalogo.empirical_knowledge.urls')),
+    path('auth/', include('catalogo.auth.urls')),
 ]

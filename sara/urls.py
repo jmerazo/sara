@@ -31,6 +31,7 @@ urlpatterns = [
    path('api/auth/token/refresh/', TokenRefreshView.as_view()),
    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0)),
    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
+   path('api/accounts/google/login/callback/', include('social_django.urls')),
 ]
 
 # Configurar la ruta estática para las imágenes
