@@ -48,7 +48,7 @@ class Families(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=100, blank=True, null=False)
     description = models.TextField(blank=True, null=True)
-    active = models.SmallIntegerField(max_length=1, blank=True, null=True)
+    active = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
