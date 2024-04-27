@@ -179,11 +179,6 @@ class EspecieForestalView(APIView):
                 sinonimos = adjusted_data['sinonimos'],
                 familia = adjusted_data['familia'],
                 distribucion = adjusted_data['distribucion'],
-                habito = adjusted_data['habito'],
-                follaje = adjusted_data['follaje'],
-                forma_copa = adjusted_data['forma_copa'],
-                tipo_hoja = adjusted_data['tipo_hoja'],
-                disposicion_hojas = adjusted_data['disposicion_hojas'],
                 hojas = adjusted_data['hojas'],
                 flor = adjusted_data['flor'],
                 frutos = adjusted_data['frutos'],
@@ -211,11 +206,6 @@ class EspecieForestalView(APIView):
         sinonimos = adjusted_data.get('sinonimos')
         familia = adjusted_data.get('familia')
         distribucion = adjusted_data.get('distribucion')
-        habito = adjusted_data.get('habito')
-        follaje = adjusted_data.get('follaje')
-        forma_copa = adjusted_data.get('forma_copa')
-        tipo_hoja = adjusted_data.get('tipo_hoja')
-        disposicion_hojas = adjusted_data.get('disposicion_hojas')
         hojas = adjusted_data.get('hojas')
         flor = adjusted_data.get('flor')
         frutos = adjusted_data.get('frutos')
@@ -237,11 +227,6 @@ class EspecieForestalView(APIView):
         specie.sinonimos = sinonimos
         specie.familia = familia
         specie.distribucion = distribucion
-        specie.habito = habito
-        specie.follaje = follaje
-        specie.forma_copa = forma_copa
-        specie.tipo_hoja = tipo_hoja
-        specie.disposicion_hojas = disposicion_hojas
         specie.hojas = hojas
         specie.flor = flor
         specie.frutos = frutos
@@ -314,11 +299,6 @@ class BuscarEspecieView(APIView):
             ef.familia,
             i.img_general,
             ef.distribucion,
-            ef.habito,
-            ef.follaje,
-            ef.forma_copa,
-            ef.tipo_hoja,
-            ef.disposicion_hojas,
             ef.hojas,
             i.img_leafs,
             ef.flor,
@@ -345,8 +325,7 @@ class BuscarEspecieView(APIView):
 
          # Crear un namedtuple para manejar los datos
         fields = ["ShortcutID", "cod_especie", "nom_comunes", "otros_nombres", "nombre_cientifico", "nombre_cientifico_especie", "nombre_autor_especie", "sinonimos",
-              "familia", "img_general", "distribucion", "habito", "follaje", "forma_copa", "tipo_hoja",
-              "disposicion_hojas", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
+              "familia", "img_general", "distribucion", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
               "tallo", "img_stem", "raiz", "img_landscape_one", "img_landscape_two", "img_landscape_three"]
         EspecieNamedTuple = namedtuple('EspecieNamedTuple', fields)
 
@@ -407,7 +386,7 @@ class ReportSpecieDataView(APIView):
             ea.cod_especie,
             ef.nom_comunes,
             ef.nombre_cientifico,
-            COUNT(DISTINCT ea.ShortcutIDEV) AS evaluados,
+            COUNT(DISTINCT CASE WHEN ea.estado_placa <> 'Archivado' THEN ea.ShortcutIDEV ELSE NULL END) AS evaluados,
             SUM(CASE WHEN mn.ShortcutIDEV IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
             COUNT(DISTINCT mu.idmuestra) AS muestras
         FROM evaluacion_as AS ea
@@ -428,12 +407,11 @@ class ReportSpecieDataView(APIView):
                 'cod_especie': row[0],
                 'nom_comunes': row[1],
                 'nombre_cientifico': row[2],
-                'evaluados': row[3],
-                'monitoreos': row[4],
-                'muestras': row[5],
+                'evaluados': int(row[3]),
+                'monitoreos': int(row[4]),
+                'muestras': int(row[5]),
             }
             data.append(item)
-        
         return Response(data)
     
 class SearchCandidatesSpecieView(APIView):

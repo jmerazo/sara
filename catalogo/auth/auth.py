@@ -43,8 +43,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         auth_type = request.data.get('auth_type', 'local')  # Recupera el tipo de autenticación
         
         if auth_type == 'google':
-            # Este bloque maneja la autenticación de Google
-            return self.handle_google_auth(request)
+            # Utiliza el serializer personalizado para Google
+            serializer = CustomTokenObtainPairSerializer(data=request.data, context={'request': request})
+            if serializer.is_valid():
+                return self.handle_google_auth(request, serializer.validated_data['code'])
+            else:
+                return JsonResponse(serializer.errors, status=400)
         else:
             # Este bloque maneja la autenticación local utilizando JWT
             return self.handle_local_auth(request, *args, **kwargs)
