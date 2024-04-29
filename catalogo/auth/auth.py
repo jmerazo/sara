@@ -10,6 +10,7 @@ from django.http import JsonResponse
 import os, requests
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import urllib.parse
 
 def generate_random_id(length):
             characters = string.ascii_letters + string.digits
@@ -98,11 +99,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             'redirect_uri': redirect_uri,
             'grant_type': 'authorization_code'
         }
-
+        
+        # Codificar los datos manualmente
+        encoded_data = urllib.parse.urlencode(data)
         print('i am here data: ', data)
 
         try:
-            response = requests.post(token_url, headers=headers, data=data)
+            response = requests.post(token_url, headers=headers, data=encoded_data)
             response.raise_for_status()
             token_data = response.json()
             access_token = token_data.get('access_token')
