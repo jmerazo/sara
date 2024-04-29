@@ -17,41 +17,64 @@ def generate_random_id(length):
             return random_id
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super(CustomTokenObtainPairSerializer, self).__init__(*args, **kwargs)
+        # Verificar si authType está presente y ajustar los campos necesarios
+        auth_type = self.initial_data.get('authType', 'local')
+        if auth_type == 'google':
+            self.fields['email'].required = False
+            self.fields['password'].required = False
+        else:
+            self.fields['email'].required = True
+            self.fields['password'].required = True
+
     email = serializers.EmailField(required=False)
     password = serializers.CharField(required=False)
     code = serializers.CharField(required=False)
 
     def validate(self, attrs):
-        auth_type = self.context['request'].data.get('auth_type', 'local')
-
+        auth_type = self.context.get('authType', 'local')
+        print('Auth Type in serializer:', auth_type)
         if auth_type == 'google':
             code = attrs.get('code')
             if not code:
                 raise serializers.ValidationError({"code": "Code is required for Google authentication."})
+            return attrs
         else:
             email = attrs.get('email')
             password = attrs.get('password')
             if not email or not password:
-                raise serializers.ValidationError({"email": "This field is required.", "password": "This field is required."})
-
-        return attrs
+                raise serializers.ValidationError({"email": "Email is required", "password": "Password is required"})
+            return super().validate(attrs)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    #serializer_class = CustomTokenObtainPairSerializer
+    serializer_class = CustomTokenObtainPairSerializer
+
     @csrf_exempt
     def post(self, request, *args, **kwargs):
-        auth_type = request.data.get('auth_type', 'local')  # Recupera el tipo de autenticación
-        
-        if auth_type == 'google':
-            # Utiliza el serializer personalizado para Google
-            serializer = CustomTokenObtainPairSerializer(data=request.data, context={'request': request})
-            if serializer.is_valid():
+         # Preparar los datos incluyendo explícitamente 'authType'
+        data = request.data.copy()
+        data['authType'] = data.get('authType', 'local')
+
+        # Pasar explícitamente el 'authType' en el contexto del serializador
+        context = self.get_serializer_context()
+        context['authType'] = data['authType']
+
+        serializer = self.get_serializer(data=data, context=context)
+        print('data login: ', request.data)
+
+        if serializer.is_valid():
+            auth_type = data['authType']
+            print('authType login: ', auth_type)
+            if auth_type == 'google':
+                print('i am here login google')
                 return self.handle_google_auth(request, serializer.validated_data['code'])
             else:
-                return JsonResponse(serializer.errors, status=400)
+                print('i am here local login')
+                return self.handle_local_auth(request)
         else:
-            # Este bloque maneja la autenticación local utilizando JWT
-            return self.handle_local_auth(request, *args, **kwargs)
+            print('Error serializer', serializer)
+            return JsonResponse(serializer.errors, status=400)
 
     def handle_local_auth(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -59,12 +82,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return self.enrich_response_with_user_data(response)
         return response
 
-    def handle_google_auth(self, request):
-        code = request.data.get('code')
+    def handle_google_auth(self, request, code):
         client_id = os.getenv('OAUTH2_KEY')
         client_secret = os.getenv('OAUTH2_SECRET')
         redirect_uri = os.getenv('OAUTH2_REDIRECT_URI')
         token_url = 'https://oauth2.googleapis.com/token'
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
         
         data = {
             'code': code,
@@ -74,15 +99,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             'grant_type': 'authorization_code'
         }
 
+        print('i am here data: ', data)
+
         try:
-            response = requests.post(token_url, data=data)
+            response = requests.post(token_url, headers=headers, data=data)
             response.raise_for_status()
             token_data = response.json()
             access_token = token_data.get('access_token')
 
             # Aquí deberías obtener información del usuario desde Google, si necesario
             user_data = self.get_user_data_from_google(access_token)
-
+            print('i am here user_data: ', user_data)
             return JsonResponse({
                 'access': access_token,
                 'user_data': user_data,
