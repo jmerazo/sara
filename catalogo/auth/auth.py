@@ -35,7 +35,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         auth_type = self.context.get('authType', 'local')
-        print('Auth Type in serializer:', auth_type)
         if auth_type == 'google':
             code = attrs.get('code')
             if not code:
@@ -47,6 +46,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if not email or not password:
                 raise serializers.ValidationError({"email": "Email is required", "password": "Password is required"})
             return super().validate(attrs)
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -62,16 +68,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         context['authType'] = data['authType']
 
         serializer = self.get_serializer(data=data, context=context)
-        print('data login: ', request.data)
 
         if serializer.is_valid():
             auth_type = data['authType']
-            print('authType login: ', auth_type)
             if auth_type == 'google':
-                print('i am here login google')
                 return self.handle_google_auth(request, serializer.validated_data['code'])
             else:
-                print('i am here local login')
                 return self.handle_local_auth(request)
         else:
             print('Error serializer', serializer)
@@ -88,9 +90,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         client_secret = os.getenv('OAUTH2_SECRET')
         redirect_uri = os.getenv('OAUTH2_REDIRECT_URI')
         token_url = 'https://oauth2.googleapis.com/token'
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         
         data = {
             'code': code,
@@ -102,27 +102,90 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         
         # Codificar los datos manualmente
         encoded_data = urllib.parse.urlencode(data)
-        print('i am here data: ', data)
 
         try:
             response = requests.post(token_url, headers=headers, data=encoded_data)
+            if response.status_code != 200:
+                print("Failed to retrieve access token:", response.status_code)
+                print("Response:", response.text)  # Imprime la respuesta textual para ver el mensaje de error detallado
             response.raise_for_status()
             token_data = response.json()
             access_token = token_data.get('access_token')
-
+            
             # Aquí deberías obtener información del usuario desde Google, si necesario
-            user_data = self.get_user_data_from_google(access_token)
-            print('i am here user_data: ', user_data)
-            return JsonResponse({
-                'access': access_token,
+            user_data_from_google  = self.get_user_data_from_google(access_token)
+            email = user_data_from_google['email']
+
+            # Verificar el usuario en la base de datos local
+            user = Users.objects.filter(email=email).first()
+            if not user:
+                return JsonResponse({'error': 'User does not exist'}, status=404)
+
+            # Generar tokens locales
+            tokens = get_tokens_for_user(user)
+
+            if user:
+                # Preparar el user_data para devolver
+                user_data = {
+                    'id': user.id,
+                    'rol': user.rol,
+                    'email': user.email,
+                    'document_type': user.document_type,
+                    'document_number': user.document_number,
+                    'cellphone': user.cellphone,
+                    'entity': user.entity,
+                    'profession': user.profession,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'state': user.state,
+                    'is_staff': user.is_staff,
+                    'is_superuser': user.is_superuser,
+                    'google_given_name': user_data_from_google.get('given_name', ''),
+                    'google_family_name': user_data_from_google.get('family_name', ''),
+                    'google_email': user_data_from_google.get('email', ''),
+                    'google_picture': user_data_from_google.get('picture', ''),
+                    'google_locale': user_data_from_google.get('locale', '')
+                }
+
+            new_response = JsonResponse({
+                'success': 'Tokens set',
+                'access': tokens['access'],
+                'refresh': tokens['refresh'],
+                'google_access': access_token,
                 'user_data': user_data,
                 'status': 'success'
             })
+        
+            # Configura las cookies (opcional, dependiendo de tu enfoque de autenticación)
+            new_response.set_cookie(
+                'access_token', access_token, httponly=True, 
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
+            )
+            # Primero, determina el valor de max_age
+            if 'REFRESH_TOKEN_LIFETIME' in settings.SIMPLE_JWT:
+                max_age = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
+            else:
+                max_age = 3600  # Un valor por defecto, por ejemplo, 1 hora.
+
+            # Luego, utiliza este valor en la llamada a set_cookie
+            new_response.set_cookie(
+                'refresh_token', tokens['refresh'], httponly=True, max_age=max_age
+            )
+
+            return new_response
 
         except requests.exceptions.RequestException as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)  # Captura otros errores posibles
+    
+    def get_user_data_from_google(self, access_token):
+        """Obtiene los datos del usuario desde Google API."""
+        google_info_url = 'https://www.googleapis.com/oauth2/v3/userinfo'
+        headers = {'Authorization': f'Bearer {access_token}'}
+        response = requests.get(google_info_url, headers=headers)
+        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa.
+        return response.json()
 
     def enrich_response_with_user_data(self, response):
         access_token = response.data['access']
