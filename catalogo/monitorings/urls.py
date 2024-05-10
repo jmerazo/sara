@@ -1,6 +1,6 @@
 from django.urls import path
 from .monitorings import MonitoringsView, SearchMonitoringCandidateView, SearchMonitoringSpecieView
-from .reports import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal, TrainMonitoring
+from .reports import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal, TrainMonitoring, reportFruitAndFlower
 
 urlpatterns = [
     # REPORTE DE MONITOREOS MENSUALES POR MUNICIPIO, DEPARTAMENTO Y GENERAL
@@ -16,4 +16,5 @@ urlpatterns = [
     # CONSULTA DE MONITOREOS POR INDIVIDUO
     path('candidate/search/<id>', SearchMonitoringCandidateView.as_view()), # Retorna el listado de monitoreos del individuo consultado -- http://localhost:8000/api/monitoring/search/
     path('specie/search/<int:code>', SearchMonitoringSpecieView.as_view()), # Retorna el listado de monitoreos por la especie consultada -- http://localhost:8000/api/monitoring/specie/search/code_especie
+    path('report/dataFlowerAndFruit', reportFruitAndFlower.as_view()), # Retorna los datos de flores y frutos
 ]

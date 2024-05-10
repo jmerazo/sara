@@ -239,3 +239,23 @@ class TrainMonitoring(APIView):
 
         # Asegúrate de devolver un objeto Response
         return Response({'message': 'Model trained', 'accuracy': accuracy})
+    
+class reportFruitAndFlower(APIView):
+    def get(self, request, format=None): 
+        query = """
+        SELECT m.IDmonitoreo, m.ShortcutIDEV, m.fecha_monitoreo, ea.cod_especie, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, m.flor_abierta, m.frutos_verdes
+        FROM monitoreo AS m
+        INNER JOIN evaluacion_as AS ea ON ea.ShortcutIDEV = m.ShortcutIDEV
+        INNER JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+        WHERE m.flor_abierta IS NOT NULL AND m.frutos_verdes IS NOT NULL;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+
+        # Crear una lista de diccionarios, cada uno representando una fila del resultado
+        queryset = [{columns[index]: value for index, value in enumerate(row)} for row in results]
+
+        return Response(queryset)

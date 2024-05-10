@@ -14,6 +14,7 @@ urlpatterns = [
     path('monitoring/', include('catalogo.monitorings.urls')),
     path('species/', include('catalogo.species.urls')),
     path('page/', include('catalogo.page.urls')),
+    path('nurseries/', include('catalogo.nurseries.urls')),
     path('empiricalknowledge/', include('catalogo.empirical_knowledge.urls')),
     path('auth/', include('catalogo.auth.urls')),
 ]
