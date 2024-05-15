@@ -3,7 +3,7 @@ from ..species.models import specieForrest
 from ..models import Users
 
 class Nurseries(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     nombre_vivero = models.CharField(max_length=100, blank=True, null=True)
     nit = models.CharField(max_length=20, blank=True, null=True)
     representante_legal = models.ForeignKey(Users, on_delete=models.RESTRICT)
@@ -21,7 +21,7 @@ class Nurseries(models.Model):
         db_table = 'viveros'
 
 class UserNurseries(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     vivero = models.ForeignKey(Nurseries, on_delete=models.RESTRICT)
     especie_forestal = models.ForeignKey(specieForrest, on_delete=models.RESTRICT)
     tipo_venta = models.CharField(max_length=100, blank=True, null=True)
