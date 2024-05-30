@@ -297,8 +297,9 @@ class BuscarEspecieView(APIView):
             ef.nombre_autor_especie,
             ef.sinonimos,
             ef.familia,
-            i.img_general,
             ef.distribucion,
+            i.img_general,
+            ef.descripcion_general,
             ef.hojas,
             i.img_leafs,
             ef.flor,
@@ -307,9 +308,9 @@ class BuscarEspecieView(APIView):
             i.img_fruits,
             ef.semillas,
             i.img_seeds,
-            ef.tallo,
+            ef.usos_maderables,            
+            ef.usos_no_maderables,
             i.img_stem,
-            ef.raiz,
             i.img_landscape_one, 
             i.img_landscape_two, 
             i.img_landscape_three
@@ -325,8 +326,8 @@ class BuscarEspecieView(APIView):
 
          # Crear un namedtuple para manejar los datos
         fields = ["ShortcutID", "cod_especie", "nom_comunes", "otros_nombres", "nombre_cientifico", "nombre_cientifico_especie", "nombre_autor_especie", "sinonimos",
-              "familia", "img_general", "distribucion", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
-              "tallo", "img_stem", "raiz", "img_landscape_one", "img_landscape_two", "img_landscape_three"]
+              "familia", "distribucion", "img_general", "descripcion_general", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
+              "usos_maderables", "usos_no_maderables", "img_stem", "img_landscape_one", "img_landscape_two", "img_landscape_three"]
         EspecieNamedTuple = namedtuple('EspecieNamedTuple', fields)
 
         # Convertir los resultados en un objeto namedtuple

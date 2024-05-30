@@ -11,13 +11,13 @@ class specieForrest(models.Model):
     sinonimos = models.TextField(blank=True, null=True)
     familia = models.CharField(max_length=60, blank=True, null=True)
     distribucion = models.TextField(blank=True, null=True)
-    habito = models.CharField(max_length=100, blank=True, null=True)
+    descripcion_general = models.TextField(blank=True, null=True)
     hojas = models.TextField(blank=True, null=True)
     flor = models.TextField(blank=True, null=True)
     frutos = models.TextField(blank=True, null=True)
     semillas = models.TextField(blank=True, null=True)
-    tallo = models.TextField(blank=True, null=True)
-    raiz = models.TextField(blank=True, null=True)
+    usos_maderables = models.TextField(blank=True, null=True)
+    usos_no_maderables = models.TextField(blank=True, null=True)
     visitas = models.IntegerField(blank=True, null=True)
 
     class Meta:
