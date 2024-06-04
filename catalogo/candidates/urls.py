@@ -1,5 +1,5 @@
 from django.urls import path
-from .candidates import CandidatesTreesView, GeoCandidateTreesView, AverageCandidateTreesView
+from .candidates import CandidatesTreesView, GeoCandidateTreesView, AverageCandidateTreesView, CandidatesSpecieUserView
 from ..helpers.excel_export import ExportCandidateTrees
 
 
@@ -9,4 +9,5 @@ urlpatterns = [
     path('trees', CandidatesTreesView.as_view()), # (PROTECT) Lista los individuos evaluados totales -- http://localhost:8000/api/candidates/trees
     path('trees/<str:pk>', CandidatesTreesView.as_view()), # (PROTECT) Lista los individuos evaluados totales -- http://localhost:8000/api/candidates/trees
     path('export/all', ExportCandidateTrees.as_view()), # (PROTECT) Exporta en excel los individuos evaluados totales -- http://localhost:8000/api/candidates/export/all
+    path('user/<int:user_id>', CandidatesSpecieUserView.as_view()),
 ]
