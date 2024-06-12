@@ -53,10 +53,10 @@ class GeoCandidateTreesView(APIView):
         return Response(geo_format)
     
 class CandidatesTreesView(APIView):
-    def get(self, request, pk=None, format=None): 
-        if pk:
+    def get(self, request, np=None, format=None): 
+        if np:
             # Obtener un objeto específico por pk
-            queryset = CandidatesTrees.objects.filter(ShortcutIDEV=pk)
+            queryset = CandidatesTrees.objects.filter(ShortcutIDEV=np)
         else:
             queryset = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
 
@@ -70,16 +70,16 @@ class CandidatesTreesView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def put(self, request, pk, format=None):
-        tree = get_object_or_404(CandidatesTrees, pk=pk)
+    def put(self, request, np, format=None):
+        tree = get_object_or_404(CandidatesTrees, numero_placa=np)
         serializer = CandidateTreesSerializer(tree, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def delete(self, request, pk, format=None):
-        tree = get_object_or_404(CandidatesTrees, pk=pk)
+    def delete(self, request, np, format=None):
+        tree = get_object_or_404(CandidatesTrees, pk=np)
         tree.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
