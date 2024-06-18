@@ -8,6 +8,7 @@ from django.db import connection
 from rest_framework.permissions import IsAuthenticated
 from ..candidates.models import CandidatesTrees
 from .models import Monitorings
+from django.views.decorators.csrf import csrf_exempt
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -54,7 +55,6 @@ class MonitoringReport(APIView):
         return Response(response_data)
     
 class MonitoringReportLocates(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         now = datetime.now().date()
         first_day = now.replace(day=1)
@@ -115,7 +115,6 @@ class MonitoringReportLocates(APIView):
         return Response(response_data)
 
 class MonitoringReportTotal(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         with connection.cursor() as cursor:
             sql_query = """
@@ -145,8 +144,7 @@ class MonitoringReportTotal(APIView):
             'municipios': dict(municipio_totals)
         }
 
-        return Response(response_data)
-    
+        return Response(response_data)    
 
 class TrainMonitoring(APIView):
     def get(self, request, *args, **kwargs):

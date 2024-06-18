@@ -24,7 +24,6 @@ def generate_random_id(length):
         
 # VISTA MUESTRAS
 class SamplesView(APIView):
-    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         # Consulta SQL directa
         query = """

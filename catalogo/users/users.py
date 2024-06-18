@@ -240,10 +240,11 @@ class SomeView(APIView):
             return Response({"message": "Usuario no autenticado"})
         
 class UserPermissionsView(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request):
-        user = request.user
-        if user.is_authenticated:
+        """ user = request.user """
+        user = request.GET.get('email')
+        print('user email: ', user)
+        if user:
             try:
                 user_role = Users.objects.filter(email=user).first()
                 if user_role:
