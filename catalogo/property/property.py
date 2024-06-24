@@ -15,7 +15,7 @@ class PropertyView(APIView):
                 SELECT p.id, u.first_name, u.last_name, p.nombre_predio, d.name AS departamento_name, c.name AS ciudad_name
                 FROM predios AS p
                 INNER JOIN Users AS u ON u.id = p.p_user_id
-                INNER JOIN departments AS d ON d.id = p.p_departamento_id
+                INNER JOIN departments AS d ON d.code = p.p_departamento_id
                 INNER JOIN cities AS c ON c.id = p.p_municipio_id
                 WHERE p.id = %s;
             """
@@ -25,7 +25,7 @@ class PropertyView(APIView):
                 SELECT p.id, u.first_name, u.last_name, p.nombre_predio, d.name AS departamento_name, c.name AS ciudad_name
                 FROM predios AS p
                 INNER JOIN Users AS u ON u.id = p.p_user_id
-                INNER JOIN departments AS d ON d.id = p.p_departamento_id
+                INNER JOIN departments AS d ON d.code = p.p_departamento_id
                 INNER JOIN cities AS c ON c.id = p.p_municipio_id;
             """
             params = []
@@ -64,6 +64,33 @@ class PropertyView(APIView):
         nurseries.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+class PropertyUserIdView(APIView):
+    def get(self, request, pk=None, format=None):
+        if pk:
+            query = """
+                SELECT p.id, u.first_name, u.last_name, p.nombre_predio, d.name AS departamento_name, c.name AS ciudad_name
+                FROM predios AS p
+                INNER JOIN Users AS u ON u.id = p.p_user_id
+                INNER JOIN departments AS d ON d.code = p.p_departamento_id
+                INNER JOIN cities AS c ON c.id = p.p_municipio_id
+                WHERE p.p_user_id = %s;
+            """
+            params = [pk]
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+
+        # Procesar los resultados para convertirlos en una lista de diccionarios
+        predios = []
+        for row in results:
+            predio = dict(zip(columns, row))
+            predios.append(predio)
+
+        # Retornar la respuesta en formato JSON
+        return Response(predios, status=status.HTTP_200_OK)
+    
 class UserPropertyFileView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
@@ -73,7 +100,7 @@ class UserPropertyFileView(APIView):
                 INNER JOIN especie_forestal AS ef ON ef.cod_especie = uep.ep_especie_cod
                 INNER JOIN Users AS u ON u.id = uep.ep_usuario_id
                 INNER JOIN predios AS p ON p.id = uep.ep_predio_id
-                WHERE uep.id = %s;
+                WHERE uep.ep_usuario_id = %s;
             """
             params = [pk]
         else:
@@ -101,6 +128,7 @@ class UserPropertyFileView(APIView):
         return Response(user_predios, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
+        print('data property: ', request.data)
         serializer = UserPropertyFileSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

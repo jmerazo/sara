@@ -3,18 +3,12 @@ from django.db import models
 class Monitorings(models.Model):
     IDmonitoreo = models.CharField(primary_key=True, max_length=50)  # Field name made lowercase.
     ShortcutIDEV = models.CharField(max_length=50)  # Field name made lowercase.
-    numero_placa = models.CharField(max_length=50, blank=True, null=True)
     fecha_monitoreo = models.DateField(blank=True, null=True)
     hora = models.TimeField(blank=True, null=True)
     ubicacion_actual = models.CharField(max_length=255, blank=True, null=True)
     validacion_ubicacion = models.CharField(max_length=255, blank=True, null=True)
     user_id = models.IntegerField(blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    first_name = models.CharField(max_length=255, blank=True, null=True)
-    last_name = models.CharField(max_length=255, blank=True, null=True)
     cod_especie = models.CharField(max_length=50, blank=True, null=True)
-    habitos = models.CharField(max_length=255, blank=True, null=True)
-    nom_comunes = models.CharField(max_length=255, blank=True, null=True)
-    nombre_cientifico = models.CharField(max_length=255, blank=True, null=True)
     temperatura = models.CharField(max_length=10, blank=True, null=True)
     humedad = models.CharField(max_length=10, blank=True, null=True)
     precipitacion = models.CharField(max_length=13, blank=True, null=True)

@@ -77,8 +77,8 @@ class Glossary(models.Model):
     
 
 class Departments(models.Model):
-    id = models.IntegerField(primary_key=True)
-    code = models.IntegerField(blank=True, null=True)
+    id = models.IntegerField()
+    code = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:

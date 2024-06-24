@@ -53,7 +53,7 @@ class MonitoringsView(APIView):
                 u.first_name,
                 u.last_name,
                 ea.cod_especie,
-                ea.habitos, 
+                ef.habitos, 
                 ef.nom_comunes, 
                 ef.nombre_cientifico,                  
                 m.temperatura, 

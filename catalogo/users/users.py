@@ -160,51 +160,49 @@ class UsersView(APIView):
     def put(self, request, pk, format=None):
         user = get_object_or_404(Users, id=pk)
         adjusted_data = request.data
-        """ print('data user: ', adjusted_data) """
-        print('user: ', user)
 
-        # Aquí puedes realizar las validaciones y actualizaciones necesarias.
-        # Por ejemplo, para actualizar el email y el número de documento:
-        email = adjusted_data.get('email')
-        document_number = adjusted_data.get('document_number')
-        first_name = adjusted_data.get('first_name')
-        last_name = adjusted_data.get('last_name')
-        rol = adjusted_data.get('rol')
-        document_type = adjusted_data.get('document_type')
-        entity = adjusted_data.get('entity')
-        cellphone = adjusted_data.get('cellphone')
-        department = adjusted_data.get('department')
-        city = adjusted_data.get('city')
-        profession = adjusted_data.get('profession')
+        # Actualizar solo los campos que están presentes en adjusted_data
+        if 'email' in adjusted_data:
+            email = adjusted_data['email']
+            # Validar que el nuevo email no exista en otros usuarios
+            if Users.objects.exclude(id=pk).filter(email=email).exists():
+                return Response({'error': f'El correo electrónico {email} ya está registrado en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.email = email
 
+        if 'document_number' in adjusted_data:
+            document_number = adjusted_data['document_number']
+            # Validar que el nuevo número de documento no exista en otros usuarios
+            if Users.objects.exclude(id=pk).filter(document_number=document_number).exists():
+                return Response({'error': f'El número de documento {document_number} ya está registrado en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.document_number = document_number
+
+        if 'first_name' in adjusted_data:
+            user.first_name = adjusted_data['first_name']
+        if 'last_name' in adjusted_data:
+            user.last_name = adjusted_data['last_name']
+        if 'rol' in adjusted_data:
+            user.rol = adjusted_data['rol']
+        if 'document_type' in adjusted_data:
+            user.document_type = adjusted_data['document_type']
+        if 'entity' in adjusted_data:
+            user.entity = adjusted_data['entity']
+        if 'cellphone' in adjusted_data:
+            user.cellphone = adjusted_data['cellphone']
+        if 'department' in adjusted_data:
+            user.department = adjusted_data['department']
+        if 'city' in adjusted_data:
+            user.city = adjusted_data['city']
+        if 'profession' in adjusted_data:
+            user.profession = adjusted_data['profession']
         if 'is_active' in adjusted_data:
-            is_active = adjusted_data['is_active']
-            user.is_active = is_active
-        
-        # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
-        existing_user = Users.objects.exclude(id=pk).filter(Q(email=email) | Q(document_number=document_number)).first()
-        if existing_user:
-            return Response({'error': f'El correo electrónico {email} o número de documento {document_number} ya están registrados en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.is_active = adjusted_data['is_active']
 
-        # Actualizamos los campos del usuario
-        user.email = email
-        user.document_number = document_number
-        user.first_name = first_name
-        user.last_name = last_name
-        user.rol = rol
-        user.document_type = document_type
-        user.entity = entity
-        user.cellphone = cellphone
-        user.department = department
-        user.city = city
-        user.profession = profession
+        # Guardar los cambios
+        user.save()
 
-        # Aquí debes continuar actualizando los demás campos según tus necesidades
-
-        user.save()  # Guardar los cambios
-
-        serializer = UsersSerializer(user)  # Serializa el usuario actualizado
-        return Response(serializer.data)
+        # Serializar el usuario actualizado y devolver la respuesta
+        serializer = UsersSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk, format=None):
         user = self.get_object_for_delete(pk)
