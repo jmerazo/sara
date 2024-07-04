@@ -4,7 +4,7 @@ from ..models import Users, Departments, Cities
 
 class Property(models.Model):
     id = models.IntegerField(primary_key=True, null=True)
-    p_user = models.ForeignKey(Users, on_delete=models.RESTRICT)
+    p_user = models.ForeignKey(Users, on_delete=models.RESTRICT, null=True)
     nombre_predio = models.CharField(max_length=100, blank=True, null=True)
     p_departamento = models.ForeignKey(Departments, on_delete=models.RESTRICT)
     p_municipio = models.ForeignKey(Cities, on_delete=models.RESTRICT)

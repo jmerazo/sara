@@ -22,7 +22,7 @@ class GeoCandidateTreesView(APIView):
             SELECT ea.cod_especie, ea.numero_placa, ef.nom_comunes, ef.nombre_cientifico, ea.departamento, ea.municipio, ea.vereda, ea.nombre_del_predio, ea.abcisa_xy, ea.resultado 
             FROM evaluacion_as AS ea 
             INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
-            WHERE ea.numero_placa IS NOT NULL
+            WHERE ea.numero_placa IS NOT NULL AND abcisa_xy IS NOT NULL
         """
         with connection.cursor() as cursor:
             cursor.execute(sql_query)

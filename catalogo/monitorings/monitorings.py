@@ -139,6 +139,7 @@ class MonitoringsView(APIView):
                 m.largo_semilla_minimo,
                 m.ancho_semila_minimo,
                 m.observacion_semilla,
+                m.cobertura,
                 m.entorno,
                 m.entorno_otro,
                 m.observaciones
@@ -255,6 +256,7 @@ class MonitoringsView(APIView):
             'largo_semilla_minimo',
             'ancho_semila_minimo',
             'observacion_semilla',
+            'cobertura',
             'entorno',
             'entorno_otro',
             'observaciones'

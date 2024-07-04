@@ -2,7 +2,9 @@ from django.db import models
 
 class CandidatesTrees(models.Model):
     ShortcutIDEV = models.CharField(primary_key=True, max_length=60, null=True)
+    identificador = models.CharField(max_length=10, blank=True, null=True)
     numero_placa = models.IntegerField(blank=True, null=True)
+    remanente = models.SmallIntegerField(blank=True, null=True)
     cod_expediente = models.CharField(max_length=35, blank=True, null=True)
     cod_especie = models.CharField(max_length=50, blank=True, null=True)
     fecha_evaluacion = models.DateField(null=True)
@@ -26,6 +28,7 @@ class CandidatesTrees(models.Model):
     s_long = models.CharField(max_length=4, blank=True, null=True)
     coordenadas_decimales = models.CharField(max_length=150, blank=True, null=True)
     abcisa_xy = models.CharField(max_length=255, blank=True, null=True)
+    tipo_individuo = models.CharField(max_length=30, blank=True, null=True)
     altura_total = models.CharField(max_length=15, blank=True, null=True)
     altura_fuste = models.CharField(max_length=15, blank=True, null=True)
     cap = models.CharField(max_length=15, blank=True, null=True)

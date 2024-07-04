@@ -17,3 +17,8 @@ class UserNurseriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserNurseries
         fields = ['id', 'vivero', 'especie_forestal', 'tipo_venta', 'unidad_medida', 'cantidad_stock', 'ventas_realizadas', 'observaciones', 'activo']
+
+class UsersNurseriesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserNurseries
+        fields = '__all__'
