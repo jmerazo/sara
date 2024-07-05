@@ -31,6 +31,7 @@ class NurseriesView(APIView):
             row_dict = {columns[index]: value for index, value in enumerate(row)}
             vivero_id = row_dict['vivero_id']
 
+            # Verificar si el vivero ya existe en el diccionario, de lo contrario, agregarlo
             if vivero_id not in viveros:
                 viveros[vivero_id] = {
                     'id': row_dict['id'],
@@ -48,7 +49,8 @@ class NurseriesView(APIView):
                     'activo': row_dict['activo'],
                     'especies': []
                 }
-            
+
+            # Agregar la especie forestal a la lista de especies del vivero
             especie = {
                 'especie_forestal_id': row_dict['especie_forestal_id'],
                 'nom_comunes': row_dict['nom_comunes'],
@@ -58,11 +60,14 @@ class NurseriesView(APIView):
                 'unidad_medida': row_dict['unidad_medida'],
                 'cantidad_stock': row_dict['cantidad_stock'],
                 'ventas_realizadas': row_dict['ventas_realizadas'],
-                'observaciones': row_dict['observaciones']
+                'observaciones': row_dict['observaciones'],
+                'fecha_registro': row_dict['fecha_registro'],
+                'fecha_actualizacion': row_dict['fecha_actualizacion']
             }
 
             viveros[vivero_id]['especies'].append(especie)
 
+        # Retornar los datos en formato de respuesta
         return Response(list(viveros.values()))
 
     def post(self, request, format=None):
