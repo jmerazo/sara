@@ -10,7 +10,7 @@ class CandidatesTrees(models.Model):
     cod_especie = models.CharField(max_length=50, blank=True, null=True)
     fecha_evaluacion = models.DateField(null=True)
     user_id = models.CharField(max_length=50, blank=True, null=True)
-    property_id = models.ForeignKey(Property, on_delete=models.RESTRICT)
+    property = models.ForeignKey(Property, on_delete=models.RESTRICT)
     departamento = models.CharField(max_length=60, blank=True, null=True)
     municipio = models.CharField(max_length=100, blank=True, null=True)
     nombre_del_predio = models.CharField(max_length=60, blank=True, null=True)
