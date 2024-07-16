@@ -18,6 +18,7 @@ class specieForrest(models.Model):
     semillas = models.TextField(blank=True, null=True)
     usos_maderables = models.TextField(blank=True, null=True)
     usos_no_maderables = models.TextField(blank=True, null=True)
+    taxon_key = models.IntegerField(blank=True, null=True)
     visitas = models.IntegerField(blank=True, null=True)
 
     class Meta:
