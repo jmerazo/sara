@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Users
+from ..models import Users, Roles
 from django.contrib.auth.hashers import make_password
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -7,6 +7,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = Users
         fields = '__all__'
         extra_kwargs = {'password': {'write_only': True}}
+
+class RolesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Roles
+        fields = '__all__'
 
 class UsersSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

@@ -43,7 +43,7 @@ def firebase_login(request):
             # Preparar el user_data para devolver
             user_data = {
                 'id': user.id,
-                'rol': user.rol,
+                'role': user.role,
                 'email': user.email,
                 'document_type': user.document_type,
                 'document_number': user.document_number,

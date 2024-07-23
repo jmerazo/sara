@@ -30,7 +30,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=150, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
-    rol = models.CharField(max_length=100, blank=True, null=True)
+    role = models.CharField(max_length=100, blank=True, null=True)
     rol_id = models.IntegerField()
     is_active = models.BooleanField(max_length=30, blank=True, null=True, default=False)
     document_type = models.CharField(max_length=40, blank=True, null=True)

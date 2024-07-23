@@ -53,6 +53,7 @@ class CandidatesTrees(models.Model):
     resultado = models.IntegerField(null=True)
     evaluacion = models.CharField(max_length=145, blank=True, null=True)
     observaciones = models.CharField(max_length=255, blank=True, null=True)
+    validated = models.CharField(max_length=15, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

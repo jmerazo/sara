@@ -1,5 +1,5 @@
 from django.urls import path
-from .property import PropertyView, UserPropertyFileView, PropertyUserIdView
+from .property import PropertyView, UserPropertyFileView, PropertyUserIdView, MonitoringPropertyView
 
 urlpatterns = [
     # PAGE
@@ -7,5 +7,6 @@ urlpatterns = [
     path('<int:pk>', PropertyView.as_view()),
     path('search/<int:pk>', PropertyUserIdView.as_view()),
     path('users', UserPropertyFileView.as_view()),
-    path('users/<int:pk>', UserPropertyFileView.as_view())
+    path('users/<int:pk>', UserPropertyFileView.as_view()),
+    path('users/monitoring', MonitoringPropertyView.as_view()) # Retorna listado de usuarios y meta de monitoreos por especie -- http://localhost:8000/api/property/users/monitoring
 ]

@@ -20,6 +20,9 @@ class UserPropertyFile(models.Model):
     cantidad_individuos = models.IntegerField(blank=True, null=True)
     cant_productiva = models.IntegerField(blank=True, null=True)
     cant_remanente = models.IntegerField(blank=True, null=True)
+    cant_cosechable= models.IntegerField(blank=True, null=True)
+    cant_no_cosechable= models.IntegerField(blank=True, null=True)
+    cant_monitoreos= models.IntegerField(blank=True, null=True)
     ep_predio = models.ForeignKey(Property, on_delete=models.RESTRICT)
     expediente = models.CharField(max_length=50, blank=True, null=True)
 

@@ -1,5 +1,5 @@
 from ..models import Users
-from .serializers import UsersSerializer
+from .serializers import UsersSerializer, RolesSerializer
 from rest_framework.response import Response
 from django.db import connection, transaction
 from django.shortcuts import get_object_or_404
@@ -29,7 +29,7 @@ class UsersView(APIView):
                 u.email, 
                 u.first_name, 
                 u.last_name, 
-                u.rol, 
+                u.role, 
                 u.is_active, 
                 u.document_type, 
                 u.document_number, 
@@ -58,7 +58,7 @@ class UsersView(APIView):
             'email', 
             'first_name', 
             'last_name', 
-            'rol', 
+            'role', 
             'is_active', 
             'document_type', 
             'document_number', 
@@ -278,3 +278,10 @@ class UserPermissionsView(APIView):
 
         else:
             return Response({"message": "Usuario no autenticado"}, status=401)
+        
+class RolesView(APIView):
+    def get(self, request, format=None): 
+        queryset = Roles.objects.all()
+        serializer = RolesSerializer(queryset, many=True)
+
+        return Response(serializer.data)
