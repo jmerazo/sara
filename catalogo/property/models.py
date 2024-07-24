@@ -15,16 +15,19 @@ class Property(models.Model):
 
 class UserPropertyFile(models.Model):
     id = models.IntegerField(primary_key=True, null=True)
-    ep_especie_cod = models.IntegerField(null=True)
-    ep_usuario = models.ForeignKey(Users, on_delete=models.RESTRICT)
-    cantidad_individuos = models.IntegerField(blank=True, null=True)
-    cant_productiva = models.IntegerField(blank=True, null=True)
-    cant_remanente = models.IntegerField(blank=True, null=True)
-    cant_cosechable= models.IntegerField(blank=True, null=True)
-    cant_no_cosechable= models.IntegerField(blank=True, null=True)
-    cant_monitoreos= models.IntegerField(blank=True, null=True)
-    ep_predio = models.ForeignKey(Property, on_delete=models.RESTRICT)
     expediente = models.CharField(max_length=50, blank=True, null=True)
+    resolucion = models.CharField(max_length=50, blank=True, null=True)
+    ep_usuario = models.ForeignKey(Users, on_delete=models.RESTRICT)
+    ep_predio = models.ForeignKey(Property, on_delete=models.RESTRICT)
+    ep_especie_cod = models.IntegerField(null=True)
+    tamano_UMF = models.IntegerField(blank=True, null=True)
+    cantidad_solicitada = models.IntegerField(blank=True, null=True)
+    cantidad_remanentes = models.IntegerField(blank=True, null=True)
+    cantidad_aprovechable = models.IntegerField(blank=True, null=True)
+    cant_monitoreos = models.IntegerField(blank=True, null=True)
+    PCM = models.IntegerField(blank=True, null=True)
+    PRM = models.IntegerField(blank=True, null=True)
+    PRN = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

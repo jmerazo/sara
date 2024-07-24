@@ -95,7 +95,7 @@ class UserPropertyFileView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
             query = """
-                SELECT uep.id, uep.ep_especie_cod, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, uep.ep_usuario_id, u.first_name, u.last_name, uep.cantidad_individuos, uep.cant_productiva, uep.cant_remanente, uep.cant_cosechable, uep.cant_no_cosechable, uep.cant_monitoreos, uep.ep_predio_id, p.nombre_predio, uep.expediente
+                SELECT uep.id, uep.ep_especie_cod, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, uep.ep_usuario_id, u.first_name, u.last_name, p.nombre_predio, uep.expediente, uep.resolucion, uep.tamano_UMF, uep.cantidad_solicitada, uep.cabtidad_remanentes, uep.cantidad_aprovechable, uep.cant_monitoreos, uep.PCM, uep.PRM, uep.PRN
                 FROM usuario_expediente_predio AS uep
                 INNER JOIN especie_forestal AS ef ON ef.cod_especie = uep.ep_especie_cod
                 INNER JOIN Users AS u ON u.id = uep.ep_usuario_id
@@ -105,7 +105,7 @@ class UserPropertyFileView(APIView):
             params = [pk]
         else:
             query = """
-                SELECT uep.id, uep.ep_especie_cod, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, uep.ep_usuario_id, u.first_name, u.last_name, uep.cantidad_individuos, uep.cant_productiva, uep.cant_remanente, uep.cant_cosechable, uep.cant_no_cosechable, uep.cant_monitoreos, uep.ep_predio_id, p.nombre_predio, uep.expediente
+                SELECT uep.id, uep.ep_especie_cod, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, uep.ep_usuario_id, u.first_name, u.last_name, p.nombre_predio, uep.expediente, uep.resolucion, uep.tamano_UMF, uep.cantidad_solicitada, uep.cabtidad_remanentes, uep.cantidad_aprovechable, uep.cant_monitoreos, uep.PCM, uep.PRM, uep.PRN
                 FROM usuario_expediente_predio AS uep
                 INNER JOIN especie_forestal AS ef ON ef.cod_especie = uep.ep_especie_cod
                 INNER JOIN Users AS u ON u.id = uep.ep_usuario_id
@@ -152,17 +152,20 @@ class MonitoringPropertyView(APIView):
     def get(self, request, format=None):
         query = """
                 SELECT 
-                    uep.id, 
-                    uep.ep_especie_cod, 
+                    uep.id,
+                    uep.expediente,
+                    uep.resolucion, 
                     uep.ep_usuario_id, 
-                    uep.cantidad_individuos, 
-                    uep.cant_productiva, 
-                    uep.cant_remanente,
-                    uep.cant_cosechable, 
-                    uep.cant_no_cosechable,  
-                    uep.monitoreos, 
-                    uep.ep_predio_id, 
-                    uep.expediente, 
+                    uep.ep_predio_id,
+                    uep.ep_especie_cod,
+                    uep.tamano_UMF,
+                    uep.cantidad_solicitada,
+                    uep.cantidad_remanentes,
+                    uep.cantidad_aprovechables,
+                    uep.cant_monitoreos,
+                    uep.PCM,
+                    uep.PRM,
+                    uep.PRN,                                      
                     IFNULL(m.cant_monitoreos_r, 0) AS cant_monitoreos_r,
                     (uep.cant_monitoreos - IFNULL(m.cant_monitoreos_r, 0)) AS diferencia_monitoreos
                 FROM 
