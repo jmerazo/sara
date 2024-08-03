@@ -1,41 +1,37 @@
 from django.db import models
 
 class SpecieForrest(models.Model):
-    id = models.CharField(primary_key=True, max_length=60)
-    cod_especie = models.IntegerField(unique=True)
-    nom_comunes = models.CharField(max_length=100, blank=True, null=True) # DELETE
-    vernacularName = models.CharField(max_length=100, blank=True, null=True)
-    otros_nombres = models.CharField(max_length=250, blank=True, null=True)
-    nombre_cientifico = models.CharField(max_length=150, blank=True, null=True)
-    nombre_cientifico_especie = models.CharField(max_length=150, blank=True, null=True) # DELETE
-    scientificName = models.CharField(max_length=150, blank=True, null=True)
-    nombre_autor_especie = models.CharField(max_length=150, blank=True, null=True)
-    scientificNameAuthorship = models.CharField(max_length=150, blank=True, null=True)
-    kingdom = models.CharField(max_length=50, blank=True, null=True)
-    phylum = models.CharField(max_length=50, blank=True, null=True)
-    clas = models.CharField(max_length=50, blank=True, null=True, db_column='class')
-    order = models.CharField(max_length=50, blank=True, null=True)
-    sinonimos = models.TextField(blank=True, null=True)
-    familia = models.CharField(max_length=60, blank=True, null=True)
-    family = models.CharField(max_length=60, blank=True, null=True)
-    genus = models.CharField(max_length=50, blank=True, null=True)
-    distribucion = models.TextField(blank=True, null=True)
-    descripcion_general = models.TextField(blank=True, null=True)
-    habitos = models.CharField(max_length=30, blank=True, null=True)
-    hojas = models.TextField(blank=True, null=True)
-    flor = models.TextField(blank=True, null=True)
-    frutos = models.TextField(blank=True, null=True)
-    semillas = models.TextField(blank=True, null=True)
-    usos_maderables = models.TextField(blank=True, null=True)
-    usos_no_maderables = models.TextField(blank=True, null=True)
-    floracion = models.TextField(blank=True, null=True)
-    fructificacion = models.TextField(blank=True, null=True)
-    ecologia = models.TextField(blank=True, null=True)
-    specificEpithet = models.CharField(max_length=100, blank=True, null=True)
-    infraspecificEpithet = models.CharField(max_length=100, blank=True, null=True)
-    taxonRank = models.CharField(max_length=50, blank=True, null=True)
-    taxon_key = models.IntegerField(blank=True, null=True)
-    views = models.IntegerField(blank=True, null=True)
+    id = models.CharField(primary_key=True, max_length=60) # identificador
+    code_specie = models.IntegerField(unique=True) # código especie
+    vernacularName = models.CharField(max_length=100, blank=True, null=True) # nombre común
+    otherNames = models.CharField(max_length=250, blank=True, null=True) # otros nombres
+    nombre_cientifico = models.CharField(max_length=150, blank=True, null=True) 
+    scientificName = models.CharField(max_length=150, blank=True, null=True) # nombre cientifico
+    scientificNameAuthorship = models.CharField(max_length=150, blank=True, null=True) # nombre autor
+    kingdom = models.CharField(max_length=50, blank=True, null=True) # reino
+    phylum = models.CharField(max_length=50, blank=True, null=True) # filo
+    clas = models.CharField(max_length=50, blank=True, null=True, db_column='class') # clase
+    order = models.CharField(max_length=50, blank=True, null=True) # orden
+    synonyms = models.TextField(blank=True, null=True) # sinonimos
+    family = models.CharField(max_length=60, blank=True, null=True) # familia
+    genus = models.CharField(max_length=50, blank=True, null=True) # genero
+    distribution = models.TextField(blank=True, null=True) # distribución
+    descriptionGeneral = models.TextField(blank=True, null=True) # descripción general
+    habit = models.CharField(max_length=30, blank=True, null=True) # habito
+    leaves = models.TextField(blank=True, null=True) # hojas
+    flowers = models.TextField(blank=True, null=True) # flores
+    fruits = models.TextField(blank=True, null=True) # frutos
+    seeds = models.TextField(blank=True, null=True) # semillas
+    woodUses = models.TextField(blank=True, null=True) # usos maderables
+    nonTimberUsers = models.TextField(blank=True, null=True) # usos no maderables
+    bloom = models.TextField(blank=True, null=True) # floración
+    fructification = models.TextField(blank=True, null=True) # fructificación
+    ecology = models.TextField(blank=True, null=True) # ecologia
+    specificEpithet = models.CharField(max_length=100, blank=True, null=True) # epíteto específico
+    infraspecificEpithet = models.CharField(max_length=100, blank=True, null=True) # epíteto infragenérico
+    taxonRank = models.CharField(max_length=50, blank=True, null=True) # categoría del taxón
+    taxon_key = models.IntegerField(blank=True, null=True) # id gbif
+    views = models.IntegerField(blank=True, null=True) # vistas
 
     class Meta:
         managed = False

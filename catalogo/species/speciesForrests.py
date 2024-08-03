@@ -53,33 +53,14 @@ class SpecieForrestView(APIView):
             return SpecieForrest.objects.all()
 
     def get(self, request, pk=None, format=None):
-        # Realizar la consulta SQL personalizada
-        query = """
-            SELECT * 
-            FROM especie_forestal AS ef 
-            LEFT JOIN img_species AS i ON ef.ShortcutID = i.specie_id;
-        """
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            try:
-                rows = cursor.fetchall()
-                if rows:
-                    columns = [col[0] for col in cursor.description]
-
-                    # Procesar los datos obtenidos de la consulta SQL personalizada
-                    species_data = []
-                    for row in rows:
-                        data = {}
-                        for col, value in zip(columns, row):
-                            data[col] = value
-                        species_data.append(data)
-
-                    return Response(species_data)  # Devuelve directamente los datos obtenidos
-                else:
-                    return Response([])  # Devuelve una lista vacía si no hay resultados
-            except Exception as e:
-                return Response({"error": str(e)})  # Devuelve un mensaje de error en caso de excepción
-    
+        if pk is not None:
+            species = get_object_or_404(SpecieForrest, pk=pk)
+            serializer = SpecieForrestSerializer(species)
+            return Response(serializer.data)
+        else:
+            species_list = SpecieForrest.objects.prefetch_related('images').all()
+            serializer = SpecieForrestSerializer(species_list, many=True)
+            return Response(serializer.data)   
     
     @transaction.atomic
     def post(self, request, format=None):

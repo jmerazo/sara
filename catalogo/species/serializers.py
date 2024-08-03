@@ -24,24 +24,24 @@ class SpecieForrestTopSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SpecieForrest
-        fields = ['cod_especie', 'nom_comunes', 'images']
+        fields = ['code_specie', 'vernacularName', 'images']
 
 class NombresComunesSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecieForrest
-        fields = ['nom_comunes']
+        fields = ['vernacularName']
 
 class FamiliaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecieForrest
-        fields = ['familia']
+        fields = ['family']
 
 class NombreCientificoSerializer(serializers.ModelSerializer):
     nombre_cientifico = serializers.SerializerMethodField()
 
     class Meta:
         model = SpecieForrest
-        fields = ['cod_especie', 'nombre_cientifico_especie', 'nombre_autor_especie', 'nombre_cientifico']
+        fields = ['code_specie', 'scientificName', 'scientificNameAuthorship', 'nombre_cientifico']
 
     def get_nombre_cientifico(self, obj):
         return f"{obj.nombre_cientifico_especie} {obj.nombre_autor_especie}"
