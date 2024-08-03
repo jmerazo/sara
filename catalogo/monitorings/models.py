@@ -1,14 +1,15 @@
 from django.db import models
+from ..candidates.models import CandidatesTrees
+from ..models import Users
 
 class Monitorings(models.Model):
-    IDmonitoreo = models.CharField(primary_key=True, max_length=50)  # Field name made lowercase.
-    ShortcutIDEV = models.CharField(max_length=50)  # Field name made lowercase.
+    id = models.CharField(primary_key=True, max_length=60)
+    evaluacion = models.ForeignKey(CandidatesTrees, on_delete=models.RESTRICT)  # Field name made lowercase.
     fecha_monitoreo = models.DateField(blank=True, null=True)
     hora = models.TimeField(blank=True, null=True)
     ubicacion_actual = models.CharField(max_length=255, blank=True, null=True)
     validacion_ubicacion = models.CharField(max_length=255, blank=True, null=True)
-    user_id = models.IntegerField(blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    cod_especie = models.CharField(max_length=50, blank=True, null=True)
+    user = models.ForeignKey(Users, on_delete=models.RESTRICT)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     temperatura = models.CharField(max_length=10, blank=True, null=True)
     humedad = models.CharField(max_length=10, blank=True, null=True)
     precipitacion = models.CharField(max_length=13, blank=True, null=True)
@@ -21,11 +22,11 @@ class Monitorings(models.Model):
     eje_x = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True)
     eje_y = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True)
     eje_z = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True)
+    cantidad_anillos_tallo = models.IntegerField(blank=True, null=True)
     fitosanitario = models.CharField(max_length=7, blank=True, null=True)
     estado_fisico_palma = models.CharField(max_length=255, blank=True, null=True)
     afectacion = models.CharField(max_length=500, blank=True, null=True)
     observaciones_afec = models.CharField(max_length=200, blank=True, null=True)
-    cantidad_anillos_tallo = models.IntegerField(blank=True, null=True)
     cantidad_hojas_corona = models.IntegerField(blank=True, null=True)
     estado_fisico_tallo = models.CharField(max_length=255, blank=True, null=True)
     estado_sanitario_palma = models.CharField(max_length=255, blank=True, null=True)
@@ -98,4 +99,4 @@ class Monitorings(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'monitoreo'
+        db_table = 'monitoreo_c'

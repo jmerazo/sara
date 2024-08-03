@@ -1,21 +1,29 @@
-from rest_framework import viewsets
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.views import APIView
+import urllib.parse
+import os, requests
+import random,string
 from django.conf import settings
-from ..models import Users
+from rest_framework import viewsets
+from django.http import JsonResponse
+from rest_framework import serializers
+from rest_framework.views import APIView
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-import random,string
-from django.http import JsonResponse
-import os, requests
-from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-import urllib.parse
+
+from ..models import Users
 
 def generate_random_id(length):
             characters = string.ascii_letters + string.digits
             random_id = ''.join(random.choice(characters) for _ in range(length))
             return random_id
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
@@ -46,13 +54,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if not email or not password:
                 raise serializers.ValidationError({"email": "Email is required", "password": "Password is required"})
             return super().validate(attrs)
-
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -312,68 +313,3 @@ class OAuth2Call(APIView):
 
         except requests.RequestException as e:
             return JsonResponse({'error': str(e)}, status=400)
-        
-class CustomTokenObtainPair(TokenObtainPairView):
-    @csrf_exempt
-    def post(self, request, *args, **kwargs):
-        auth_type = request.data.get('auth_type', 'local')
-        response = super().post(request, *args, **kwargs)
-
-        if response.status_code == 200:
-            access_token = response.data['access']
-            refresh_token = response.data['refresh']
-
-            # Decodifica el token para obtener el user_id
-            token = AccessToken(access_token)
-            user_id = token['user_id']
-
-            user_data = {}
-            try:
-                user_instance = Users.objects.get(id=user_id)  # Obtén la instancia del usuario
-                print('users: ', user_instance)
-                # Construye el user_data aquí...
-                user_data = {
-                    'id' : user_id,
-                    'role': user_instance.role,
-                    'email': user_instance.email,
-                    'document_type': user_instance.document_type,
-                    'document_number': user_instance.document_number,
-                    'cellphone': user_instance.cellphone,
-                    'entity': user_instance.entity,
-                    'profession': user_instance.profession,
-                    'first_name': user_instance.first_name,
-                    'last_name': user_instance.last_name,
-                    'state': user_instance.state,
-                    'is_staff': user_instance.is_staff,
-                    'is_superuser': user_instance.is_superuser
-                }
-            except Users.DoesNotExist:
-                pass  # Maneja el caso en que el usuario no existe
-
-            # Construye la respuesta con tokens y datos del usuario
-            new_response = JsonResponse({
-                'success': 'Tokens set',
-                'access': access_token,  # Incluye el token de acceso
-                'refresh': refresh_token,  # Incluye el token de actualización
-                'user_data': user_data  # Incluye los datos del usuario
-            })
-
-            # Configura las cookies (opcional, dependiendo de tu enfoque de autenticación)
-            new_response.set_cookie(
-                'access_token', access_token, httponly=True, 
-                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
-            )
-            # Primero, determina el valor de max_age
-            if 'REFRESH_TOKEN_LIFETIME' in settings.SIMPLE_JWT:
-                max_age = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
-            else:
-                max_age = 3600  # Un valor por defecto, por ejemplo, 1 hora.
-
-            # Luego, utiliza este valor en la llamada a set_cookie
-            new_response.set_cookie(
-                'refresh_token', refresh_token, httponly=True, max_age=max_age
-            )
-            
-            return new_response
-        else:
-            return response  # Devuelve la respuesta original si el status code no es 200

@@ -1,16 +1,18 @@
-from rest_framework import viewsets, status
+from rest_framework import status
 from collections import namedtuple
 from django.db import connection, transaction
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from rest_framework.views import APIView
-from django.db.models import Count
+from django.db.models import Count, Sum, Case, When, IntegerField, Q
+from django.db.models import Prefetch
 from django.db import connection
 import random, string, os, base64
-from .models import specieForrest, ImageSpeciesRelated, Families
-from .serializers import EspecieForestalSerializer,NombresComunesSerializer, FamilySerializer, FamiliaSerializer, NombreCientificoSerializer
-from rest_framework.permissions import IsAuthenticated
+
+from ..candidates.models import CandidatesTrees
+from .models import SpecieForrest, ImageSpeciesRelated, Families
+from .serializers import SpecieForrestSerializer
 
 def save_image(image, cod_especie, nom_comunes, image_type):
     # Carpeta principal para las imágenes
@@ -40,15 +42,15 @@ def generate_random_id(length):
             return random_id
 
 # VISTAS ESPECIES FORESTALES
-class EspecieForestalView(APIView):
+class SpecieForrestView(APIView):
     def get_object(self, pk=None):
         if pk is not None:
             try:
-                return specieForrest.objects.get(ShortcutID=pk)
-            except specieForrest.DoesNotExist:
+                return SpecieForrest.objects.get(ShortcutID=pk)
+            except SpecieForrest.DoesNotExist:
                 raise Http404
         else:
-            return specieForrest.objects.all()
+            return SpecieForrest.objects.all()
 
     def get(self, request, pk=None, format=None):
         # Realizar la consulta SQL personalizada
@@ -85,13 +87,13 @@ class EspecieForestalView(APIView):
 
         ce = adjusted_data.get('cod_especie')
 
-        existing_specie = specieForrest.objects.filter(cod_especie=ce).first()
+        existing_specie = SpecieForrest.objects.filter(cod_especie=ce).first()
         if existing_specie:
             return Response({'error': f'El código de especie {ce} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
         while True:
             random_id = generate_random_id(8)
-            existing_code = specieForrest.objects.filter(ShortcutID=random_id).first()
+            existing_code = SpecieForrest.objects.filter(ShortcutID=random_id).first()
             
             if existing_code is None:
                 # El ID no existe en la base de datos, se puede utilizar
@@ -168,9 +170,9 @@ class EspecieForestalView(APIView):
 
         img_related.save()
 
-        serializer = EspecieForestalSerializer(data=adjusted_data)
+        serializer = SpecieForrestSerializer(data=adjusted_data)
         if serializer.is_valid():
-            specie = specieForrest(
+            specie = SpecieForrest(
                 ShortcutID = random_id,
                 cod_especie = adjusted_data['cod_especie'],
                 nom_comunes = adjusted_data['nom_comunes'],
@@ -192,7 +194,7 @@ class EspecieForestalView(APIView):
 
     
     def put(self, request, pk, format=None):
-        specie = get_object_or_404(specieForrest, ShortcutID=pk)
+        specie = get_object_or_404(SpecieForrest, ShortcutID=pk)
         adjusted_data = request.data
 
         cod_specie_currently = specie.cod_especie
@@ -215,7 +217,7 @@ class EspecieForestalView(APIView):
         
         # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
         if cod_specie_currently != cod_especie_new:
-            existing_specie = specieForrest.objects.exclude(ShortcutID=pk).filter(cod_especie=cod_especie_new).first()
+            existing_specie = SpecieForrest.objects.exclude(ShortcutID=pk).filter(cod_especie=cod_especie_new).first()
             if existing_specie:
                 return Response({'error': f'El código de espeie {cod_especie_new} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -238,7 +240,7 @@ class EspecieForestalView(APIView):
 
         specie.save()  # Guardar los cambios
 
-        serializer = EspecieForestalSerializer(specie)  # Serializa el usuario actualizado
+        serializer = SpecieForrestSerializer(specie)  # Serializa el usuario actualizado
         return Response(serializer.data)
 
     def delete(self, request, pk, format=None):
@@ -246,156 +248,101 @@ class EspecieForestalView(APIView):
         specie.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class NombresComunesView(viewsets.ModelViewSet):
-   queryset = specieForrest.objects.all()
-   serializer_class = NombresComunesSerializer
-
-class FamiliaView(APIView):
-    serializer_class = FamiliaSerializer
-
-    def get(self, request, format=None):
-        queryset = specieForrest.objects.values('familia').distinct()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data)
-
-class NombreCientificoView(viewsets.ModelViewSet):
-   queryset = specieForrest.objects.all()
-   serializer_class = NombreCientificoSerializer
-
-class SuggestionTypeView(APIView):
-    def get(self, request, types, format=None):
-        if types == 'familia':
-            queryset = specieForrest.objects.values_list('familia', flat=True)
-        elif types == 'nom_comunes':
-            queryset = specieForrest.objects.values_list('nom_comunes', flat=True)
-        elif types == 'nombre_cientifico':
-            queryset = specieForrest.objects.values_list('nombre_cientifico', flat=True)
-        else:
-            queryset = []
-
-        return Response(list(queryset))
-
-suggestion_type_view = SuggestionTypeView.as_view()
-
-class BuscarEspeciezView(APIView):
-    def get(self, request, nombre, format=None):        
-        search = specieForrest.objects.filter(nom_comunes__icontains=nombre).first()
-        serializer = EspecieForestalSerializer(search)
-
-        return Response(serializer.data)
-
-class BuscarEspecieView(APIView):
+class SearchSpecieForrestView(APIView):
     def get(self, request, code, format=None):
-        sql_query = """
-        SELECT 
-            ef.ShortcutID,
-            ef.cod_especie,
-            ef.nom_comunes,
-            ef.otros_nombres,
-            ef.nombre_cientifico,
-            ef.nombre_cientifico_especie,
-            ef.nombre_autor_especie,
-            ef.sinonimos,
-            ef.familia,
-            ef.distribucion,
-            i.img_general,
-            ef.descripcion_general,
-            ef.hojas,
-            i.img_leafs,
-            ef.flor,
-            i.img_flowers,
-            ef.frutos,
-            i.img_fruits,
-            ef.semillas,
-            i.img_seeds,
-            ef.usos_maderables,            
-            ef.usos_no_maderables,
-            i.img_stem,
-            i.img_landscape_one, 
-            i.img_landscape_two, 
-            i.img_landscape_three
-        FROM especie_forestal AS ef 
-        LEFT JOIN img_species AS i ON ef.ShortcutID = i.specie_id
-        WHERE ef.cod_especie = %s
-        """
+        # Obtener la especie con sus imágenes relacionadas
+        especie = get_object_or_404(SpecieForrest.objects.prefetch_related('images'), cod_especie=code)
+        
+        # Obtener la primera imagen relacionada o None si no hay imágenes
+        imagenes = especie.images.first()
 
-        # Ejecutar la consulta SQL personalizada con el parámetro 'nombre'
-        with connection.cursor() as cursor:
-            cursor.execute(sql_query, [code])
-            results = cursor.fetchone()
-
-         # Crear un namedtuple para manejar los datos
-        fields = ["ShortcutID", "cod_especie", "nom_comunes", "otros_nombres", "nombre_cientifico", "nombre_cientifico_especie", "nombre_autor_especie", "sinonimos",
-              "familia", "distribucion", "img_general", "descripcion_general", "hojas", "img_leafs", "flor", "img_flowers", "frutos", "img_fruits", "semillas", "img_seeds",
-              "usos_maderables", "usos_no_maderables", "img_stem", "img_landscape_one", "img_landscape_two", "img_landscape_three"]
-        EspecieNamedTuple = namedtuple('EspecieNamedTuple', fields)
-
-        # Convertir los resultados en un objeto namedtuple
-        especie = EspecieNamedTuple(*results)
-
-        # Crear un diccionario de los datos en el formato deseado
-        formatted_result = especie._asdict()
-
-        return Response(formatted_result)
+        especie_data = {
+            "id": especie.id,
+            "cod_especie": especie.cod_especie,
+            "nom_comunes": especie.nom_comunes,
+            "otros_nombres": especie.otros_nombres,
+            "nombre_cientifico": especie.nombre_cientifico,
+            "nombre_cientifico_especie": especie.nombre_cientifico_especie,
+            "nombre_autor_especie": especie.nombre_autor_especie,
+            "sinonimos": especie.sinonimos,
+            "familia": especie.familia,
+            "distribucion": especie.distribucion,
+            "img_general": imagenes.img_general if imagenes else None,
+            "descripcion_general": especie.descripcion_general,
+            "hojas": especie.hojas,
+            "img_leafs": imagenes.img_leafs if imagenes else None,
+            "flor": especie.flor,
+            "img_flowers": imagenes.img_flowers if imagenes else None,
+            "frutos": especie.frutos,
+            "img_fruits": imagenes.img_fruits if imagenes else None,
+            "semillas": especie.semillas,
+            "img_seeds": imagenes.img_seeds if imagenes else None,
+            "usos_maderables": especie.usos_maderables,
+            "usos_no_maderables": especie.usos_no_maderables,
+            "img_stem": imagenes.img_stem if imagenes else None,
+            "img_landscape_one": imagenes.img_landscape_one if imagenes else None,
+            "img_landscape_two": imagenes.img_landscape_two if imagenes else None,
+            "img_landscape_three": imagenes.img_landscape_three if imagenes else None,
+        }
+        
+        return Response(especie_data)
     
-class BuscarFamiliaView(APIView):
+class SearchFamilyView(APIView):
     def get(self, request, family, format=None):        
-        search = specieForrest.objects.filter(familia__icontains=family)
-        serializer = EspecieForestalSerializer(search, many=True)
+        search = SpecieForrest.objects.filter(familia__icontains=family)
+        serializer = SpecieForrestSerializer(search, many=True)
         
         return Response(serializer.data)
 
 class FamiliesView(APIView):
     def get(self, request, format=None):
-        # Obtener las familias
-        #familias = specieForrest.objects.values('familia').annotate(total=Count('familia')).distinct()
+        # Obtener todas las familias con solo los campos necesarios
         familias = Families.objects.all().only('name', 'description')
 
         resultado = []
+
+        # Crear un diccionario para cachear las especies por familia
+        especies_dict = {}
+        especies = SpecieForrest.objects.all().only('nom_comunes', 'familia')
+        for especie in especies:
+            familia_nombre = especie.familia
+            if familia_nombre not in especies_dict:
+                especies_dict[familia_nombre] = []
+            especies_dict[familia_nombre].append(especie.nom_comunes)
 
         # Recorrer las familias
         for familia in familias:
             familia_nombre = familia.name
             description = familia.description
 
-            # Obtener las especies relacionadas a la familia actual
-            especies = specieForrest.objects.filter(familia=familia_nombre)
-
-            # Crear una lista de nombres de especies
-            especies_nombres = [especie.nom_comunes for especie in especies]
+            # Obtener las especies relacionadas a la familia actual desde el diccionario cacheado
+            especies_nombres = especies_dict.get(familia_nombre, [])
 
             # Agregar la familia y las especies a la lista de resultados
             resultado.append({
                 'familia': familia_nombre,
-                'description' : description,
+                'description': description,
                 'especies': especies_nombres
             })
 
         return Response(resultado)
-    
-class ScientificNameView(APIView):
-    def get(self, request, scientific, format=None):        
-        search = specieForrest.objects.filter(nombre_cientifico__icontains=scientific).first()
-        serializer = EspecieForestalSerializer(search)
-        
-        return Response(serializer.data)
 
 class ReportSpecieDataView(APIView):
     def get(self, request, format=None):
         query = """
         SELECT
-            ea.cod_especie,
+            ea.cod_especie_id,
             ef.nom_comunes,
             ef.nombre_cientifico,
             COUNT(DISTINCT CASE WHEN ea.estado_placa <> 'Archivado' THEN ea.ShortcutIDEV ELSE NULL END) AS evaluados,
-            SUM(CASE WHEN mn.ShortcutIDEV IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
+            SUM(CASE WHEN mn.ShortcutIDEV_id IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
             COUNT(DISTINCT mu.idmuestra) AS muestras
         FROM evaluacion_as AS ea
-        LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
-        LEFT JOIN monitoreo AS mn ON mn.ShortcutIDEV = ea.ShortcutIDEV
-        LEFT JOIN muestras AS mu ON mu.nro_placa = ea.ShortcutIDEV
+        LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
+        LEFT JOIN monitoreo AS mn ON mn.ShortcutIDEV_id = ea.ShortcutIDEV
+        LEFT JOIN muestras AS mu ON mu.nro_placa_id = ea.ShortcutIDEV
         WHERE ea.numero_placa IS NOT NULL
-        GROUP BY ea.cod_especie, ef.nom_comunes, ef.nombre_cientifico;
+        GROUP BY ea.cod_especie_id, ef.nom_comunes, ef.nombre_cientifico;
         """
         
         with connection.cursor() as cursor:
@@ -423,7 +370,7 @@ class SearchCandidatesSpecieView(APIView):
             ea.ShortcutIDEV, 
             ea.numero_placa, 
             ea.cod_expediente, 
-            ea.cod_especie, 
+            ea.cod_especie_id, 
             ea.fecha_evaluacion, 
             ea.departamento, 
             ea.municipio, 
@@ -447,7 +394,7 @@ class SearchCandidatesSpecieView(APIView):
             ea.evaluacion, 
             ea.observaciones
             FROM evaluacion_as AS ea
-            INNER JOIN especie_forestal AS ef ON ea.cod_especie = ef.cod_especie
+            INNER JOIN especie_forestal AS ef ON ea.cod_especie_id = ef.cod_especie
             WHERE ef.nom_comunes = '%s' AND ea.numero_placa IS NOT NULL;
         """
 

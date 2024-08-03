@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import  GlossaryView
+from .utils.utils import GlossaryView
 from .helpers.locates import DepartmentsView, CitiesView
 
 urlpatterns = [

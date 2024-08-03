@@ -1,15 +1,16 @@
 from django.db import models
 from ..property.models import Property
+from ..species.models import SpecieForrest
+from ..models import Users
 
 class CandidatesTrees(models.Model):
-    ShortcutIDEV = models.CharField(primary_key=True, max_length=60, null=True)
+    id = models.CharField(primary_key=True, max_length=60)
     identificador = models.CharField(max_length=10, blank=True, null=True)
     numero_placa = models.IntegerField(blank=True, null=True)
-    remanente = models.SmallIntegerField(blank=True, null=True)
     cod_expediente = models.CharField(max_length=35, blank=True, null=True)
-    cod_especie = models.CharField(max_length=50, blank=True, null=True)
+    cod_especie = models.ForeignKey(SpecieForrest, on_delete=models.RESTRICT, db_column='cod_especie_id')
     fecha_evaluacion = models.DateField(null=True)
-    user_id = models.CharField(max_length=50, blank=True, null=True)
+    user = models.ForeignKey(Users, on_delete=models.RESTRICT)
     property = models.ForeignKey(Property, on_delete=models.RESTRICT)
     departamento = models.CharField(max_length=60, blank=True, null=True)
     municipio = models.CharField(max_length=100, blank=True, null=True)
@@ -53,10 +54,11 @@ class CandidatesTrees(models.Model):
     resultado = models.IntegerField(null=True)
     evaluacion = models.CharField(max_length=145, blank=True, null=True)
     observaciones = models.CharField(max_length=255, blank=True, null=True)
+    estado_placa = models.CharField(max_length=25, blank=True, null=True)
     validated = models.CharField(max_length=15, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = False
-        db_table = 'evaluacion_as'
+        db_table = 'evaluacion_as_c'

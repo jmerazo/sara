@@ -1,7 +1,7 @@
-import firebase_admin
-from firebase_admin import credentials, auth
 import os
+import firebase_admin
 from dotenv import load_dotenv
+from firebase_admin import credentials, auth
 
 load_dotenv()
 

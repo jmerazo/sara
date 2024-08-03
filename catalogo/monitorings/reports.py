@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import F
 from django.db.models import Count, OuterRef, Subquery
 from datetime import datetime
 from collections import defaultdict
@@ -8,7 +9,8 @@ from django.db import connection
 from rest_framework.permissions import IsAuthenticated
 from ..candidates.models import CandidatesTrees
 from .models import Monitorings
-from django.views.decorators.csrf import csrf_exempt
+
+from .models import Monitorings
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -120,7 +122,7 @@ class MonitoringReportTotal(APIView):
             sql_query = """
                 SELECT ea.departamento, ea.municipio, COUNT(*) AS total
                 FROM monitoreo AS m
-                INNER JOIN evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV
+                INNER JOIN evaluacion_as AS ea ON m.ShortcutIDEV_id = ea.ShortcutIDEV
                 WHERE ea.numero_placa IS NOT NULL
                 GROUP BY ea.departamento, ea.municipio
             """
@@ -241,10 +243,10 @@ class TrainMonitoring(APIView):
 class reportFruitAndFlower(APIView):
     def get(self, request, format=None): 
         query = """
-        SELECT m.IDmonitoreo, m.ShortcutIDEV, m.fecha_monitoreo, ea.cod_especie, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, m.flor_abierta, m.frutos_verdes
+        SELECT m.IDmonitoreo, m.ShortcutIDEV_id, m.fecha_monitoreo, ea.cod_especie_id, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, m.flor_abierta, m.frutos_verdes
         FROM monitoreo AS m
-        INNER JOIN evaluacion_as AS ea ON ea.ShortcutIDEV = m.ShortcutIDEV
-        INNER JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+        INNER JOIN evaluacion_as AS ea ON ea.ShortcutIDEV = m.ShortcutIDEV_id
+        INNER JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
         WHERE m.flor_abierta IS NOT NULL AND m.frutos_verdes IS NOT NULL;
         """
 

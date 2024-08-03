@@ -37,13 +37,12 @@ class SearchMonitoringSpecieView(APIView):
         return Response(serializer.data)
 
 class MonitoringsView(APIView):
-    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         # Consulta SQL directa
         query = """
             SELECT
                 m.IDmonitoreo,
-                m.ShortcutIDEV,
+                m.ShortcutIDEV_id,
                 ea.numero_placa,
                 m.fecha_monitoreo,
                 m.hora,
@@ -52,7 +51,7 @@ class MonitoringsView(APIView):
                 m.user_id,
                 u.first_name,
                 u.last_name,
-                ea.cod_especie,
+                ea.cod_especie_id,
                 ef.habitos, 
                 ef.nom_comunes, 
                 ef.nombre_cientifico,                  
@@ -145,9 +144,9 @@ class MonitoringsView(APIView):
             FROM 
                 monitoreo AS m 
             LEFT JOIN 
-                evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV 
+                evaluacion_as AS ea ON m.ShortcutIDEV_id = ea.ShortcutIDEV 
             LEFT JOIN 
-                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
             LEFT JOIN
                 Users AS u ON u.id = m.user_id
             WHERE ea.numero_placa IS NOT NULL;
@@ -168,7 +167,7 @@ class MonitoringsView(APIView):
             'user_id',
             'first_name',
             'last_name',
-            'cod_especie',
+            'cod_especie_id',
             'habitos',
             'nom_comunes',
             'nombre_cientifico',
@@ -322,7 +321,7 @@ class MonitoringsUserView(APIView):
                 ea.numero_placa, 
                 ef.nom_comunes, 
                 ef.nombre_cientifico, 
-                ea.cod_especie, 
+                ea.cod_especie_id, 
                 m.fecha_monitoreo, 
                 m.hora, 
                 m.temperatura, 
@@ -363,7 +362,7 @@ class MonitoringsUserView(APIView):
             LEFT JOIN 
                 evaluacion_as AS ea ON m.ShortcutIDEV = ea.ShortcutIDEV 
             LEFT JOIN 
-                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
             WHERE ea.numero_placa IS NOT NULL AND m.user_id = %s;
         """
         # Ejecutar la consulta con el parámetro
@@ -373,7 +372,7 @@ class MonitoringsUserView(APIView):
 
         columns = [
             'IDmonitoreo', 'user_id', 'numero_placa', 'nom_comunes', 'nombre_cientifico',
-            'cod_especie', 'fecha_monitoreo', 'hora', 'temperatura', 'humedad',
+            'cod_especie_id', 'fecha_monitoreo', 'hora', 'temperatura', 'humedad',
             'precipitacion', 'factor_climatico', 'observaciones_temp', 'fitosanitario',
             'afectacion', 'observaciones_afec', 'follaje_porcentaje',
             'observaciones_follaje', 'flor_abierta', 'flor_boton', 'color_flor',

@@ -1,10 +1,5 @@
 from rest_framework import serializers
-from .models import Glossary, Departments, Cities, Users
-
-class GlossarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Glossary
-        fields = '__all__'
+from .models import Departments, Cities, Users
 
 class DepartmentsSerializer(serializers.ModelSerializer):
     class Meta:

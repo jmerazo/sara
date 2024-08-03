@@ -1,6 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin, Group, Permission
-from django.utils import timezone
+from django.contrib.auth.models import BaseUserManager
 from ..page.models import Pages
 
 class CustomUserManager(BaseUserManager):
@@ -40,11 +39,3 @@ class UserModules(models.Model):
     class Meta:
         managed = True
         db_table = 'users_modules'
-
-class Roles(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=35, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'roles'

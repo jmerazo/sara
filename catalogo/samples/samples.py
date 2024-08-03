@@ -6,15 +6,12 @@ from rest_framework.views import APIView
 from django.db import connection
 import random, string
 from .models import Samples
-from .serializers import SamplesSerializer
+from .serializers import SamplesSerializer, SamplesCreateSerializer
 from rest_framework.permissions import IsAuthenticated
-
-from django.db.models import Value, CharField
-from django.db.models.functions import Concat
 
 from .models import Samples
 from ..candidates.models import CandidatesTrees
-from ..species.models import specieForrest
+from ..species.models import SpecieForrest
 from ..models import Users
 
 def generate_random_id(length):
@@ -32,7 +29,7 @@ class SamplesView(APIView):
             ea.numero_placa, 
             ef.nom_comunes, 
             ef.nombre_cientifico, 
-            ea.cod_especie, 
+            ea.cod_especie_id, 
             m.fecha_coleccion, 
             m.nro_muestras, 
             CONCAT(u.first_name, ' ', u.last_name) AS colector_full_name,
@@ -45,8 +42,8 @@ class SamplesView(APIView):
             m.descripcion, 
             m.usos 
             FROM muestras AS m 
-            LEFT JOIN evaluacion_as AS ea ON m.nro_placa = ea.ShortcutIDEV 
-            LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie
+            LEFT JOIN evaluacion_as AS ea ON m.nro_placa_id = ea.ShortcutIDEV 
+            LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
             INNER JOIN Users AS u ON m.user_id = u.id;
         """
         # Ejecutar la consulta
@@ -94,7 +91,7 @@ class SamplesView(APIView):
         return Response(samples)
     
     def post(self, request, format=None):
-        serializer = SamplesSerializer(data=request.data)
+        serializer = SamplesCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -102,7 +99,7 @@ class SamplesView(APIView):
     
     def put(self, request, pk, format=None):
         sample = get_object_or_404(Samples, idmuestra=pk)
-        serializer = SamplesSerializer(sample, data=request.data)
+        serializer = SamplesCreateSerializer(sample, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

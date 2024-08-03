@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin, Group, Permission
 from django.utils import timezone
-from .users.models import Roles
+from .utils.models import Rol
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -23,27 +23,47 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('El superusuario debe tener is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
+    
+class Departments(models.Model):
+    id = models.IntegerField()
+    code = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'departments'
+
+class Cities(models.Model):
+    id = models.IntegerField(primary_key=True)
+    code = models.CharField(max_length=10, blank=True, null=True)
+    name = models.CharField(max_length=60, blank=True, null=True)
+    department = models.ForeignKey(Departments, on_delete=models.RESTRICT)
+
+    class Meta:
+        managed = False
+        db_table = 'cities'
 
 class Users(AbstractBaseUser, PermissionsMixin):
-    id = models.AutoField(primary_key=True)
     email = models.EmailField(max_length=100, unique=True)
     password = models.CharField(max_length=150, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
     role = models.CharField(max_length=100, blank=True, null=True)
-    rol_id = models.IntegerField()
+    rol = models.ForeignKey(Rol, on_delete=models.RESTRICT)
     is_active = models.BooleanField(max_length=30, blank=True, null=True, default=False)
     document_type = models.CharField(max_length=40, blank=True, null=True)
     document_number = models.CharField(max_length=20, blank=True, null=True)
     entity = models.CharField(max_length=100, blank=True, null=True)
     cellphone = models.CharField(max_length=15, blank=True, null=True)
-    department = models.CharField(max_length=25, blank=True, null=True)
-    city = models.IntegerField(blank=True, null=True)
+    department = models.ForeignKey(Departments, on_delete=models.RESTRICT)
+    city = models.ForeignKey(Cities, on_delete=models.RESTRICT)
     profession = models.CharField(max_length=150, blank=True, null=True)
     reason = models.CharField(max_length=500, blank=True, null=True)
     state = models.CharField(max_length=25, blank=True, null=True, default='REVIEW')
+    token = models.CharField(max_length=254, blank=True, null=True)
+    verificated = models.BooleanField(null=True, blank=True)
     is_staff = models.BooleanField(default=False)
-    last_login = models.DateTimeField(default=timezone.now)
+    last_login = models.DateTimeField(default=timezone.now, blank=True, null=True)
     is_superuser = models.SmallIntegerField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
@@ -61,36 +81,3 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-
-class Glossary(models.Model):
-    id = models.IntegerField(primary_key=True, blank=False)
-    word = models.CharField(max_length=100)
-    definition = models.TextField()
-
-    class Meta:
-        managed = False
-        db_table = 'glossary'
-
-    def __str__(self):
-        return f"ID: {self.id}, Word: {self.word}, Definition: {self.definition}"
-    
-
-class Departments(models.Model):
-    id = models.IntegerField()
-    code = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=100, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'departments'
-
-class Cities(models.Model):
-    id = models.IntegerField(primary_key=True)
-    code = models.CharField(max_length=10, blank=True, null=True)
-    name = models.CharField(max_length=60, blank=True, null=True)
-    department_id = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'cities'

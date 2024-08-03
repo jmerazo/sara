@@ -1,11 +1,12 @@
-from django.http import JsonResponse
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
-from firebase_admin import auth
-from .firebase import cred  # Asegúrate de importar la configuración de Firebase
-from rest_framework_simplejwt.tokens import RefreshToken
-from ..models import Users
 import json
+from .firebase import cred
+from firebase_admin import auth
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from ..models import Users
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)

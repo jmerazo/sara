@@ -4,9 +4,10 @@ from django.http import Http404
 from rest_framework.views import APIView
 from .serializers import PageSerializer, PagesSerializer, SectionSerializer
 from .models import Page, Pages, Section
-from ..species.serializers import EspecieForestalSerializer
+from ..species.serializers import SpecieForrestSerializer, SpecieForrestTopSerializer
+from django.db.models import F
 from django.db import connection, transaction
-from ..species.models import specieForrest
+from ..species.models import SpecieForrest
 from rest_framework.exceptions import NotFound
 
 # VISTA PÁGINA ACERCA OTROS            
@@ -45,45 +46,21 @@ class PageView(APIView):
 
 class UpdateCountVisitsView(APIView):
     def get(self, request, code, format=None):
-        especie = specieForrest.objects.filter(cod_especie=code).first()
+        especie = SpecieForrest.objects.filter(cod_especie=code).first()
         if especie is None:
             return Response({'error': 'EspecieForestal no encontrada'}, status=404)
 
         especie.visitas += 1
         especie.save()
 
-        serializer = EspecieForestalSerializer(especie)
+        serializer = SpecieForrestSerializer(especie)
         return Response(serializer.data)
     
-class topSpeciesView(APIView):
+class TopSpeciesView(APIView):
     def get(self, request, pk=None, format=None):
-        query = """
-            SELECT ef.cod_especie, ef.nom_comunes, i.img_general, ef.visitas 
-            FROM especie_forestal AS ef 
-            LEFT JOIN img_species AS i ON ef.ShortcutID = i.specie_id
-            ORDER BY ef.visitas DESC
-            LIMIT 4;
-        """
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            try:
-                rows = cursor.fetchall()
-                if rows:
-                    columns = [col[0] for col in cursor.description]
-
-                    # Procesar los datos obtenidos de la consulta SQL personalizada
-                    species_data = []
-                    for row in rows:
-                        data = {}
-                        for col, value in zip(columns, row):
-                            data[col] = value
-                        species_data.append(data)
-
-                    return Response(species_data)  # Devuelve directamente los datos obtenidos
-                else:
-                    return Response([])  # Devuelve una lista vacía si no hay resultados
-            except Exception as e:
-                return Response({"error": str(e)})  # Devuelve un mensaje de error en caso de excepción
+        queryset = SpecieForrest.objects.prefetch_related('images').order_by('-views')[:4]
+        serializer = SpecieForrestTopSerializer(queryset, many=True)
+        return Response(serializer.data)
             
 class PagesView(APIView):
     def get_object(self, pk=None):

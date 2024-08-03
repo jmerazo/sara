@@ -1,5 +1,30 @@
 from rest_framework import serializers
 from .models import CandidatesTrees
+from ..species.models import SpecieForrest
+from ..species.serializers import SpecieForrestSerializer
+from ..property.models import Property
+from ..property.serializers import PropertySerializer
+from ..models import Users
+from ..users.serializers import UsersSerializer
+
+# RETORNA DATOS DE LA TABLA EVALUACION_AS -> CORRESPONDE A CANDIDATOS
+class CandidateTreesSerializer(serializers.ModelSerializer):
+    cod_especie = SpecieForrestSerializer()
+    user = UsersSerializer()
+    property = PropertySerializer()
+    
+    class Meta:
+        model = CandidatesTrees
+        fields = '__all__'
+
+class CandidateTreesCreateSerializer(serializers.ModelSerializer):
+    cod_especie = serializers.PrimaryKeyRelatedField(queryset=SpecieForrest.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=Users.objects.all())
+    property = serializers.PrimaryKeyRelatedField(queryset=Property.objects.all())
+
+    class Meta:
+        model = CandidatesTrees
+        fields = '__all__'
 
 class GeoCandidateTreesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,9 +40,3 @@ class TreesVerifyMonitoringSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidatesTrees
         fields = ['ShortcutIDEV', 'numero_placa', 'cod_especie', 'fecha_evaluacion', 'usuario_evaluador', 'departamento', 'municipio']
-
-# RETORNA DATOS DE LA TABLA EVALUACION_AS -> CORRESPONDE A CANDIDATOS
-class CandidateTreesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CandidatesTrees
-        fields = '__all__'
