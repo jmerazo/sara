@@ -1,6 +1,6 @@
 from django.urls import path
 from .users import UsersView, UsersStateView, UserPermissionsView, SomeView, RolesView
-from ..helpers.verifyEmail import verifyEmail
+from ..helpers.Email import verifyEmail
 
 urlpatterns = [
     path('', UsersView.as_view()),

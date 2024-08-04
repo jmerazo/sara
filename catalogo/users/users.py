@@ -17,7 +17,7 @@ from ..utils.models import Rol
 from ..page.models import Pages
 from ..models import Users
 from ..helpers.jwt import generate_jwt
-from ..helpers.verifyEmail import send_email
+from ..helpers.Email import send_email, send_verification_email
 
 
 class UsersView(APIView):
@@ -63,11 +63,11 @@ class UsersView(APIView):
         password = request.data.get('password')
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
-        """ document_type = request.data.get('document_type')
-        document_number = request.data.get('document_number') """
-        """ cellphone = request.data.get('cellphone')
+        document_type = request.data.get('document_type')
+        document_number = request.data.get('document_number')
+        cellphone = request.data.get('cellphone')
         department = request.data.get('department')
-        city = request.data.get('city') """
+        city = request.data.get('city')
         adjusted_data['rol'] = 4
         adjusted_data['is_active'] = 0
         adjusted_data['state'] = 'REVIEW'
@@ -91,9 +91,7 @@ class UsersView(APIView):
             user.token = token
             user.save()
             
-            verification_url = f"{settings.FRONTEND_URL}/verify-email/{token}"
-            email_body = f'Hola {user.first_name},\n\nPor favor, verifica tu cuenta haciendo clic en el siguiente enlace:\n{verification_url}\n\nGracias.'
-            send_email('Verificación de cuenta', email_body, user.email)
+            send_verification_email(user, token)  # Envía el correo de verificación
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -110,29 +108,22 @@ class UsersView(APIView):
                 return Response({'error': f'El correo electrónico {email} ya está registrado en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
             user.email = email
 
-        """ if 'document_number' in adjusted_data:
-            document_number = adjusted_data['document_number']
-            # Validar que el nuevo número de documento no exista en otros usuarios
-            if Users.objects.exclude(id=pk).filter(document_number=document_number).exists():
-                return Response({'error': f'El número de documento {document_number} ya está registrado en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
-            user.document_number = document_number """
-
         if 'first_name' in adjusted_data:
             user.first_name = adjusted_data['first_name']
         if 'last_name' in adjusted_data:
             user.last_name = adjusted_data['last_name']
         if 'rol' in adjusted_data:
             user.rol = adjusted_data['rol']
-        """ if 'document_type' in adjusted_data:
-            user.document_type = adjusted_data['document_type'] """
+        if 'document_type' in adjusted_data:
+            user.document_type = adjusted_data['document_type']
         if 'entity' in adjusted_data:
             user.entity = adjusted_data['entity']
-        """ if 'cellphone' in adjusted_data:
+        if 'cellphone' in adjusted_data:
             user.cellphone = adjusted_data['cellphone']
         if 'department' in adjusted_data:
             user.department = adjusted_data['department']
         if 'city' in adjusted_data:
-            user.city = adjusted_data['city'] """
+            user.city = adjusted_data['city']
         if 'profession' in adjusted_data:
             user.profession = adjusted_data['profession']
         if 'is_active' in adjusted_data:

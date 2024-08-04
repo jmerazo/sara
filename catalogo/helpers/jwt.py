@@ -1,14 +1,18 @@
 import jwt
+import os
 from django.conf import settings
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.utils.dateformat import format
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def verify_jwt(token):
     try:
-        payload = jwt.decode(token, settings.JWT_AUTH['JWT_SECRET_KEY'], algorithms=[settings.JWT_AUTH['JWT_ALGORITHM']])
+        payload = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=[os.getenv('ALGORITHM')])
         return payload
     except jwt.ExpiredSignatureError:
         return None
@@ -28,7 +32,11 @@ def unique_id():
     return format(localtime(), 'U') + format(datetime.now(), 'YmdHis')
 
 def generate_jwt(id):
-    token = jwt.encode({'id': id, 'exp': datetime.utcnow() + timedelta(days=30)}, settings.JWT_SECRET, algorithm='HS256')
+    token = jwt.encode(
+        {'id': id}, 
+        os.getenv('JWT_SECRET'), 
+        algorithm=os.getenv('ALGORITHM')
+    )
     return token
 
 def formatter_date(date):

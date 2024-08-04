@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificación de cuenta</title>
+    <style>
+        .container {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .button {
+            background-color: #0d4c30;
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .logo {
+            max-width: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="cid:logo" alt="Logo" class="logo">
+        <h2>Hola {{ first_name }},</h2>
+        <p>Estamos felices de que te hayas registrado. Para comenzar a explorar la aplicación, por favor verifica tu dirección de correo electrónico.</p>
+        <a href="{{ verification_url }}" style="color: #ffffff; text-decoration: none;" class="button">Verificar ahora</a>
+        <p>Bienvenido a nuestro servicio!</p>
+        <p>El equipo de Sara</p>
+        <p>¿Recibiste este correo sin registrarte? <a href="https:/sara.corpoamazonia.gov.co/auth" style="color: #0d4c30; text-decoration: none;">Haz clic aquí</a>.</p>
+    </div>
+</body>
+</html>
