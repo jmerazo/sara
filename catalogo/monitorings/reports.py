@@ -122,7 +122,7 @@ class MonitoringReportTotal(APIView):
             sql_query = """
                 SELECT ea.departamento, ea.municipio, COUNT(*) AS total
                 FROM monitoreo AS m
-                INNER JOIN evaluacion_as AS ea ON m.ShortcutIDEV_id = ea.ShortcutIDEV
+                INNER JOIN evaluacion_as_c AS ea ON m.id = ea.id
                 WHERE ea.numero_placa IS NOT NULL
                 GROUP BY ea.departamento, ea.municipio
             """

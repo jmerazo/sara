@@ -232,41 +232,12 @@ class SpecieForrestView(APIView):
 class SearchSpecieForrestView(APIView):
     def get(self, request, code, format=None):
         # Obtener la especie con sus imágenes relacionadas
-        especie = get_object_or_404(SpecieForrest.objects.prefetch_related('images'), cod_especie=code)
+        specie = get_object_or_404(SpecieForrest.objects.prefetch_related('images'), code_specie=code)
         
-        # Obtener la primera imagen relacionada o None si no hay imágenes
-        imagenes = especie.images.first()
-
-        especie_data = {
-            "id": especie.id,
-            "cod_especie": especie.cod_especie,
-            "nom_comunes": especie.nom_comunes,
-            "otros_nombres": especie.otros_nombres,
-            "nombre_cientifico": especie.nombre_cientifico,
-            "nombre_cientifico_especie": especie.nombre_cientifico_especie,
-            "nombre_autor_especie": especie.nombre_autor_especie,
-            "sinonimos": especie.sinonimos,
-            "familia": especie.familia,
-            "distribucion": especie.distribucion,
-            "img_general": imagenes.img_general if imagenes else None,
-            "descripcion_general": especie.descripcion_general,
-            "hojas": especie.hojas,
-            "img_leafs": imagenes.img_leafs if imagenes else None,
-            "flor": especie.flor,
-            "img_flowers": imagenes.img_flowers if imagenes else None,
-            "frutos": especie.frutos,
-            "img_fruits": imagenes.img_fruits if imagenes else None,
-            "semillas": especie.semillas,
-            "img_seeds": imagenes.img_seeds if imagenes else None,
-            "usos_maderables": especie.usos_maderables,
-            "usos_no_maderables": especie.usos_no_maderables,
-            "img_stem": imagenes.img_stem if imagenes else None,
-            "img_landscape_one": imagenes.img_landscape_one if imagenes else None,
-            "img_landscape_two": imagenes.img_landscape_two if imagenes else None,
-            "img_landscape_three": imagenes.img_landscape_three if imagenes else None,
-        }
+        # Serializar los datos de la especie
+        serializer = SpecieForrestSerializer(specie)
         
-        return Response(especie_data)
+        return Response(serializer.data)
     
 class SearchFamilyView(APIView):
     def get(self, request, family, format=None):        
@@ -313,17 +284,17 @@ class ReportSpecieDataView(APIView):
         query = """
         SELECT
             ea.cod_especie_id,
-            ef.nom_comunes,
+            ef.vernacularName,
             ef.nombre_cientifico,
-            COUNT(DISTINCT CASE WHEN ea.estado_placa <> 'Archivado' THEN ea.ShortcutIDEV ELSE NULL END) AS evaluados,
-            SUM(CASE WHEN mn.ShortcutIDEV_id IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
-            COUNT(DISTINCT mu.idmuestra) AS muestras
-        FROM evaluacion_as AS ea
-        LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
-        LEFT JOIN monitoreo AS mn ON mn.ShortcutIDEV_id = ea.ShortcutIDEV
-        LEFT JOIN muestras AS mu ON mu.nro_placa_id = ea.ShortcutIDEV
+            COUNT(DISTINCT CASE WHEN ea.estado_placa <> 'Archivado' THEN ea.id ELSE NULL END) AS evaluados,
+            SUM(CASE WHEN mn.id IS NOT NULL THEN 1 ELSE 0 END) AS monitoreos,
+            COUNT(DISTINCT mu.id) AS muestras
+        FROM evaluacion_as_c AS ea
+        LEFT JOIN especie_forestal_c AS ef ON ef.code_specie = ea.cod_especie_id
+        LEFT JOIN monitoreo_c AS mn ON mn.id = ea.id
+        LEFT JOIN muestras_c AS mu ON mu.evaluacion_id = ea.id
         WHERE ea.numero_placa IS NOT NULL
-        GROUP BY ea.cod_especie_id, ef.nom_comunes, ef.nombre_cientifico;
+        GROUP BY ea.cod_especie_id, ef.vernacularName, ef.nombre_cientifico;
         """
         
         with connection.cursor() as cursor:

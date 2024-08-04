@@ -50,7 +50,7 @@ class GeoCandidateTreesView(APIView):
             abcisa_xy__isnull=False
         )
 
-        specie_dict = {specie.cod_especie: specie for specie in SpecieForrest.objects.all()}
+        specie_dict = {specie.code_specie: specie for specie in SpecieForrest.objects.all()}
 
         geo_format = []
         for ea in queryset:
@@ -65,20 +65,20 @@ class GeoCandidateTreesView(APIView):
                 latitud, longitud = None, None
 
             geo_fixed = {
-                'codigo': ef.cod_especie,
+                'codigo': ef.code_specie,
                 'numero_placa': ea.numero_placa,
                 'departamento': ea.departamento,
                 'municipio': ea.municipio,
-                'vereda': ea.vereda,
+                'vereda': ea.locality,
                 'nombre_del_predio': ea.nombre_del_predio,
                 'lat': latitud,
                 'lon': longitud,
                 'coordenadas': ea.abcisa_xy,
                 'resultado': ea.resultado,
-                'nombre_comun': ef.nom_comunes,
+                'nombre_comun': ef.scientificName,
                 'nombre_cientifico': ef.nombre_cientifico,
                 'taxon_key': ef.taxon_key,
-                'habito': ef.habitos
+                'habito': ef.habit
             }
             geo_format.append(geo_fixed)
             
