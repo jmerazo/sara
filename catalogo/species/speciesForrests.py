@@ -255,12 +255,12 @@ class FamiliesView(APIView):
 
         # Crear un diccionario para cachear las especies por familia
         especies_dict = {}
-        especies = SpecieForrest.objects.all().only('nom_comunes', 'familia')
+        especies = SpecieForrest.objects.all().only('vernacularName', 'family')
         for especie in especies:
-            familia_nombre = especie.familia
+            familia_nombre = especie.family
             if familia_nombre not in especies_dict:
                 especies_dict[familia_nombre] = []
-            especies_dict[familia_nombre].append(especie.nom_comunes)
+            especies_dict[familia_nombre].append(especie.vernacularName)
 
         # Recorrer las familias
         for familia in familias:

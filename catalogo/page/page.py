@@ -46,11 +46,11 @@ class PageView(APIView):
 
 class UpdateCountVisitsView(APIView):
     def get(self, request, code, format=None):
-        especie = SpecieForrest.objects.filter(cod_especie=code).first()
+        especie = SpecieForrest.objects.filter(code_specie=code).first()
         if especie is None:
-            return Response({'error': 'EspecieForestal no encontrada'}, status=404)
+            return Response({'error': 'Especie Forestal no encontrada'}, status=404)
 
-        especie.visitas += 1
+        especie.views += 1
         especie.save()
 
         serializer = SpecieForrestSerializer(especie)

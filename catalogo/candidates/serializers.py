@@ -8,11 +8,26 @@ from ..models import Users
 from ..users.serializers import UsersSerializer
 
 # RETORNA DATOS DE LA TABLA EVALUACION_AS -> CORRESPONDE A CANDIDATOS
+class SpecieForrestLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpecieForrest
+        fields = ['vernacularName', 'code_specie', 'scientificName', 'scientificNameAuthorship']
+
+class PropertyLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = ['nombre_predio', 'id']
+
+class UsersLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ['id', 'first_name', 'last_name']
+
 class CandidateTreesSerializer(serializers.ModelSerializer):
-    cod_especie = SpecieForrestSerializer()
-    user = UsersSerializer()
-    property = PropertySerializer()
-    
+    cod_especie = SpecieForrestLiteSerializer()
+    user = UsersLiteSerializer()
+    property = PropertyLiteSerializer()
+
     class Meta:
         model = CandidatesTrees
         fields = '__all__'

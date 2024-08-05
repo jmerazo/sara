@@ -25,9 +25,9 @@ class SamplesView(APIView):
         # Consulta SQL directa
         query = """
             SELECT
-            m.idmuestra, 
+            m.id, 
             ea.numero_placa, 
-            ef.nom_comunes, 
+            ef.vernacularName, 
             ef.nombre_cientifico, 
             ea.cod_especie_id, 
             m.fecha_coleccion, 
@@ -41,9 +41,9 @@ class SamplesView(APIView):
             m.otros_nombres, 
             m.descripcion, 
             m.usos 
-            FROM muestras AS m 
-            LEFT JOIN evaluacion_as AS ea ON m.nro_placa_id = ea.ShortcutIDEV 
-            LEFT JOIN especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
+            FROM muestras_c AS m 
+            LEFT JOIN evaluacion_as_c AS ea ON m.evaluacion_id = ea.id 
+            LEFT JOIN especie_forestal_c AS ef ON ef.code_specie = ea.cod_especie_id
             INNER JOIN Users AS u ON m.user_id = u.id;
         """
         # Ejecutar la consulta

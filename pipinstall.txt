@@ -1,0 +1,5 @@
+pip install django-recaptcha python-dotenv djangorestframework djangorestframework-jwt django-cors-headers django-recaptcha django-rest-auth drf-yasg social-auth-app-django mysqlclient djangorestframework-simplejwt django-filter django-pandas scikit-learn django-allauth
+
+para instalar mysqlclient en linux o macos se debe descargar los plugins de conexión:
+sudo apt update
+sudo apt install python3-dev default-libmysqlclient-dev build-essential

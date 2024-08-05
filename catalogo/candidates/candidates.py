@@ -1,9 +1,10 @@
 from rest_framework.response import Response
+from django.db.models import F
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from decimal import Decimal
-import random, string
+import random, string, time
 
 from ..species.models import SpecieForrest
 from .models import CandidatesTrees
@@ -87,11 +88,11 @@ class GeoCandidateTreesView(APIView):
 class CandidatesTreesView(APIView):
     def get(self, request, np=None, format=None): 
         if np:
-            # Obtener un objeto específico por pk
-            queryset = CandidatesTrees.objects.filter(ShortcutIDEV=np)
+            queryset = list(CandidatesTrees.objects.filter(id=np))
         else:
-            queryset = CandidatesTrees.objects.exclude(numero_placa__isnull=True)
-
+            queryset = list(CandidatesTrees.objects.exclude(numero_placa__isnull=True))
+            
+        # Serializar los datos obtenidos
         serializer = CandidateTreesSerializer(queryset, many=True)
         return Response(serializer.data)
     

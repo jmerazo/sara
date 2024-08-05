@@ -118,21 +118,18 @@ class MonitoringReportLocates(APIView):
 
 class MonitoringReportTotal(APIView):
     def get(self, request, *args, **kwargs):
-        with connection.cursor() as cursor:
-            sql_query = """
-                SELECT ea.departamento, ea.municipio, COUNT(*) AS total
-                FROM monitoreo AS m
-                INNER JOIN evaluacion_as_c AS ea ON m.id = ea.id
-                WHERE ea.numero_placa IS NOT NULL
-                GROUP BY ea.departamento, ea.municipio
-            """
-            cursor.execute(sql_query)
-            results = cursor.fetchall()
+        queryset = Monitorings.objects.filter(evaluacion__numero_placa__isnull=False) \
+            .values('evaluacion__departamento', 'evaluacion__municipio') \
+            .annotate(total=Count('id'))
 
         departamento_totals = {}
         municipio_totals = {}
 
-        for departamento, municipio, total in results:
+        for item in queryset:
+            departamento = item['evaluacion__departamento']
+            municipio = item['evaluacion__municipio']
+            total = item['total']
+            
             if departamento not in departamento_totals:
                 departamento_totals[departamento] = 0
             if municipio not in municipio_totals:
@@ -142,8 +139,8 @@ class MonitoringReportTotal(APIView):
             municipio_totals[municipio] += total
 
         response_data = {
-            'departamentos': dict(departamento_totals),
-            'municipios': dict(municipio_totals)
+            'departamentos': departamento_totals,
+            'municipios': municipio_totals
         }
 
         return Response(response_data)    

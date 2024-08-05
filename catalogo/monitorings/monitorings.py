@@ -41,8 +41,8 @@ class MonitoringsView(APIView):
         # Consulta SQL directa
         query = """
             SELECT
-                m.IDmonitoreo,
-                m.ShortcutIDEV_id,
+                m.id,
+                m.evaluacion_id,
                 ea.numero_placa,
                 m.fecha_monitoreo,
                 m.hora,
@@ -52,8 +52,8 @@ class MonitoringsView(APIView):
                 u.first_name,
                 u.last_name,
                 ea.cod_especie_id,
-                ef.habitos, 
-                ef.nom_comunes, 
+                ef.habit, 
+                ef.vernacularName, 
                 ef.nombre_cientifico,                  
                 m.temperatura, 
                 m.humedad, 
@@ -142,11 +142,11 @@ class MonitoringsView(APIView):
                 m.entorno_otro,
                 m.observaciones
             FROM 
-                monitoreo AS m 
+                monitoreo_c AS m 
             LEFT JOIN 
-                evaluacion_as AS ea ON m.ShortcutIDEV_id = ea.ShortcutIDEV 
+                evaluacion_as_c AS ea ON m.evaluacion_id = ea.id 
             LEFT JOIN 
-                especie_forestal AS ef ON ef.cod_especie = ea.cod_especie_id
+                especie_forestal_c AS ef ON ef.code_specie = ea.cod_especie_id
             LEFT JOIN
                 Users AS u ON u.id = m.user_id
             WHERE ea.numero_placa IS NOT NULL;
