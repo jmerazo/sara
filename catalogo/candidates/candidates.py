@@ -1,10 +1,10 @@
 from rest_framework.response import Response
-from django.db.models import F
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from decimal import Decimal
-import random, string, time
+import random, string
 
 from ..species.models import SpecieForrest
 from .models import CandidatesTrees
@@ -85,13 +85,18 @@ class GeoCandidateTreesView(APIView):
             
         return Response(geo_format)
     
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class CandidatesTreesView(APIView):
     def get(self, request, np=None, format=None): 
         if np:
-            queryset = list(CandidatesTrees.objects.filter(id=np))
+            queryset = CandidatesTrees.objects.filter(id=np).prefetch_related('cod_especie', 'user', 'property')
         else:
-            queryset = list(CandidatesTrees.objects.exclude(numero_placa__isnull=True))
-            
+            queryset = CandidatesTrees.objects.exclude(numero_placa__isnull=True).prefetch_related('cod_especie', 'user', 'property')
+        
         # Serializar los datos obtenidos
         serializer = CandidateTreesSerializer(queryset, many=True)
         return Response(serializer.data)

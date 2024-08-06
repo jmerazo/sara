@@ -8,7 +8,7 @@ class CandidatesTrees(models.Model):
     identificador = models.CharField(max_length=10, blank=True, null=True)
     numero_placa = models.IntegerField(blank=True, null=True)
     cod_expediente = models.CharField(max_length=35, blank=True, null=True)
-    cod_especie = models.ForeignKey(SpecieForrest, on_delete=models.RESTRICT, db_column='cod_especie_id')
+    cod_especie = models.ForeignKey(SpecieForrest, on_delete=models.RESTRICT, to_field='code_specie', db_column='cod_especie_id', related_name='candidates_trees')
     eventDate = models.DateField(null=True)
     user = models.ForeignKey(Users, on_delete=models.RESTRICT)
     property = models.ForeignKey(Property, on_delete=models.RESTRICT)

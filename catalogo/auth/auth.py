@@ -202,7 +202,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             # Construye el user_data aquí...
             user_data = {
                 'id' : user_id,
-                'rol': user_instance.rol,
+                'rol': user_instance.role,
                 'email': user_instance.email,
                 'document_type': user_instance.document_type,
                 'document_number': user_instance.document_number,
