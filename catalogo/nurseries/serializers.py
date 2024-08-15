@@ -1,22 +1,36 @@
 from rest_framework import serializers
 from .models import Nurseries, UserNurseries
 from ..serializers import UserSerializer
-from ..species.serializers import NombreCientificoSerializer
+from ..species.models import SpecieForrest
+from ..models import Users
+from ..serializers import DepartmentsSerializer, CitiesSerializer
+
+class NurserieUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ['id', 'first_name', 'last_name']
 
 class NurseriesSerializer(serializers.ModelSerializer):
-    representante_legal = UserSerializer(read_only=True)
+    representante_legal = NurserieUserSerializer(read_only=True)
+    department = DepartmentsSerializer()
+    city = CitiesSerializer()
 
     class Meta:
         model = Nurseries
-        fields = ['id', 'nombre_vivero', 'nit', 'representante_legal', 'ubicacion', 'email', 'telefono', 'department', 'city', 'direccion', 'logo', 'active']
+        fields = '__all__'
+
+class SpecieForrestNurserieSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpecieForrest
+        fields = ['id', 'vernacularName', 'scientificName', 'scientificNameAuthorship']
 
 class UserNurseriesSerializer(serializers.ModelSerializer):
-    vivero = NurseriesSerializer(read_only=True)
-    especie_forestal = NombreCientificoSerializer(read_only=True)
+    vivero = NurseriesSerializer()
+    especie_forestal = SpecieForrestNurserieSerializer()
 
     class Meta:
         model = UserNurseries
-        fields = ['id', 'vivero', 'especie_forestal', 'tipo_venta', 'unidad_medida', 'cantidad_stock', 'ventas_realizadas', 'observaciones', 'activo']
+        fields = '__all__'
 
 class UsersNurseriesSerializer(serializers.ModelSerializer):
     class Meta:

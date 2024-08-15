@@ -1,6 +1,6 @@
 from django.db import models
-from ..species.models import SpecieForrest
 from ..models import Users, Departments, Cities
+from ..species.models import SpecieForrest
 
 class Property(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -20,7 +20,7 @@ class UserPropertyFile(models.Model):
     fecha_exp = models.DateField()
     ep_usuario = models.ForeignKey(Users, on_delete=models.RESTRICT)
     ep_predio = models.ForeignKey(Property, on_delete=models.RESTRICT)
-    ep_especie_cod = models.IntegerField(null=True)
+    ep_especie = models.ForeignKey(SpecieForrest, on_delete=models.RESTRICT)
     tamano_UMF = models.IntegerField(blank=True, null=True)
     cantidad_autorizada = models.IntegerField(blank=True, null=True)
     cantidad_remanentes = models.IntegerField(blank=True, null=True)

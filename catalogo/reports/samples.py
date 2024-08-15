@@ -1,24 +1,33 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import connection
+from django.db.models import Count
+from django.db.models.functions import Concat
 from rest_framework.permissions import IsAuthenticated
+
+from ..samples.models import Samples
 
 class SamplesReport(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
-        with connection.cursor() as cursor:
-            sql_query = """
-                SELECT e.departamento, e.municipio, COUNT(*) AS total FROM muestras m 
-                INNER JOIN evaluacion_as e ON m.nro_placa = e.ShortcutIDEV 
-                GROUP BY e.departamento, e.municipio
-            """
-            cursor.execute(sql_query)
-            results = cursor.fetchall()
+        # Usar ORM para realizar la consulta y agrupar por departamento y municipio
+        results = (
+            Samples.objects
+            .select_related('evaluacion')  # Nos aseguramos de que la relación evaluacion sea seleccionada
+            .values('evaluacion__departamento', 'evaluacion__municipio')  # Especificamos los campos de agrupamiento
+            .annotate(total=Count('id'))  # Contamos el número de muestras por cada grupo
+        )
 
         departamento_municipio_counts = {}
         departamento_total_counts = {}
 
-        for departamento, municipio, total in results:
+        # Procesamos los resultados
+        for result in results:
+            departamento = result['evaluacion__departamento']
+            municipio = result['evaluacion__municipio']
+            total = result['total']
+
             if departamento not in departamento_municipio_counts:
                 departamento_municipio_counts[departamento] = {}
                 departamento_total_counts[departamento] = 0

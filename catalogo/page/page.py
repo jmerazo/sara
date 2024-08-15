@@ -1,14 +1,15 @@
-from rest_framework import status
-from rest_framework.response import Response
 from django.http import Http404
+from django.db import transaction
+from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
+
 from .serializers import PageSerializer, PagesSerializer, SectionSerializer
 from .models import Page, Pages, Section
 from ..species.serializers import SpecieForrestSerializer, SpecieForrestTopSerializer
-from django.db.models import F
-from django.db import connection, transaction
 from ..species.models import SpecieForrest
-from rest_framework.exceptions import NotFound
+
 
 # VISTA PÁGINA ACERCA OTROS            
 class PageView(APIView):

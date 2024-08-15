@@ -11,7 +11,7 @@ from ..users.serializers import UsersSerializer
 class SpecieForrestLiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecieForrest
-        fields = ['vernacularName', 'code_specie', 'scientificName', 'scientificNameAuthorship']
+        fields = ['vernacularName', 'code_specie', 'scientificName', 'scientificNameAuthorship', 'habit']
 
 class PropertyLiteSerializer(serializers.ModelSerializer):
     class Meta:

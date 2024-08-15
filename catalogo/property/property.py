@@ -1,48 +1,28 @@
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from datetime import date
 from rest_framework import status
 from rest_framework.views import APIView
-from django.db import connection
-from .serializers import PropertySerializer, UserPropertyFileSerializer
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Count, F, Subquery, OuterRef, Value, IntegerField
+from .serializers import PropertySerializer, UserPropertyFileSerializer, UserPropertyFileAllSerializer, MonitoringPropertySerializer
 
 from .models import Property, UserPropertyFile
+from ..monitorings.models import Monitorings
 
 class PropertyView(APIView):
     def get(self, request, pk=None, format=None):
+        # Filtrar por 'pk' si se proporciona, de lo contrario obtener todos los registros
         if pk:
-            query = """
-                SELECT p.id, u.first_name, u.last_name, p.nombre_predio, d.name AS departamento_name, c.name AS ciudad_name
-                FROM predios AS p
-                INNER JOIN Users AS u ON u.id = p.p_user_id
-                INNER JOIN departments AS d ON d.code = p.p_departamento_id
-                INNER JOIN cities AS c ON c.id = p.p_municipio_id
-                WHERE p.id = %s;
-            """
-            params = [pk]
+            queryset = Property.objects.filter(id=pk).select_related('p_user', 'p_departamento', 'p_municipio')
         else:
-            query = """
-                SELECT p.id, u.first_name, u.last_name, p.nombre_predio, d.name AS departamento_name, c.name AS ciudad_name
-                FROM predios AS p
-                INNER JOIN Users AS u ON u.id = p.p_user_id
-                INNER JOIN departments AS d ON d.code = p.p_departamento_id
-                INNER JOIN cities AS c ON c.id = p.p_municipio_id;
-            """
-            params = []
+            queryset = Property.objects.all().select_related('p_user', 'p_departamento', 'p_municipio')
 
-        with connection.cursor() as cursor:
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
-
-        # Procesar los resultados para convertirlos en una lista de diccionarios
-        predios = []
-        for row in results:
-            predio = dict(zip(columns, row))
-            predios.append(predio)
+        # Serializar los datos
+        serializer = PropertySerializer(queryset, many=True)
 
         # Retornar la respuesta en formato JSON
-        return Response(predios, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
         serializer = PropertySerializer(data=request.data)
@@ -67,26 +47,19 @@ class PropertyView(APIView):
 class PropertyUserIdView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
-            query = """
-                SELECT p.id, u.first_name, u.last_name, p.nombre_predio, d.name AS departamento_name, c.name AS ciudad_name
-                FROM predios AS p
-                INNER JOIN Users AS u ON u.id = p.p_user_id
-                INNER JOIN departments AS d ON d.code = p.p_departamento_id
-                INNER JOIN cities AS c ON c.id = p.p_municipio_id
-                WHERE p.p_user_id = %s;
-            """
-            params = [pk]
-
-        with connection.cursor() as cursor:
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
+            queryset = Property.objects.filter(p_user_id=pk).select_related(
+                'p_user', 'p_departamento', 'p_municipio'
+            ).values(
+                'id',
+                'p_user__first_name',
+                'p_user__last_name',
+                'nombre_predio',
+                'p_departamento__name',
+                'p_municipio__name'
+            )
 
         # Procesar los resultados para convertirlos en una lista de diccionarios
-        predios = []
-        for row in results:
-            predio = dict(zip(columns, row))
-            predios.append(predio)
+        predios = list(queryset)
 
         # Retornar la respuesta en formato JSON
         return Response(predios, status=status.HTTP_200_OK)
@@ -94,38 +67,15 @@ class PropertyUserIdView(APIView):
 class UserPropertyFileView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
-            query = """
-                SELECT uep.id, uep.ep_especie_cod, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, uep.ep_usuario_id, u.first_name, u.last_name, p.nombre_predio, uep.expediente, uep.resolucion, uep.fecha_exp, uep.tamano_UMF, uep.cantidad_autorizada, uep.cantidad_remanentes, uep.cantidad_aprovechable, uep.cant_monitoreos, uep.PCM, uep.PRM, uep.cantidad_placas
-                FROM usuario_expediente_predio AS uep
-                INNER JOIN especie_forestal AS ef ON ef.cod_especie = uep.ep_especie_cod
-                INNER JOIN Users AS u ON u.id = uep.ep_usuario_id
-                INNER JOIN predios AS p ON p.id = uep.ep_predio_id
-                WHERE uep.ep_usuario_id = %s;
-            """
-            params = [pk]
+            queryset = UserPropertyFile.objects.filter(ep_usuario_id=pk)
         else:
-            query = """
-                SELECT uep.id, uep.ep_especie_cod, ef.nom_comunes, ef.nombre_cientifico_especie, ef.nombre_autor_especie, uep.ep_usuario_id, u.first_name, u.last_name, p.nombre_predio, uep.expediente, uep.resolucion, uep.fecha_exp, uep.tamano_UMF, uep.cantidad_autorizada, uep.cantidad_remanentes, uep.cantidad_aprovechable, uep.cant_monitoreos, uep.PCM, uep.PRM, uep.cantidad_placas
-                FROM usuario_expediente_predio AS uep
-                INNER JOIN especie_forestal AS ef ON ef.cod_especie = uep.ep_especie_cod
-                INNER JOIN Users AS u ON u.id = uep.ep_usuario_id
-                INNER JOIN predios AS p ON p.id = uep.ep_predio_id;
-            """
-            params = []
+            queryset = UserPropertyFile.objects.all()
 
-        with connection.cursor() as cursor:
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
+        print(queryset)  # Esto te mostrará el queryset en la consola
+        print(queryset.query)  # Esto imprimirá la consulta SQL generada
 
-        # Procesar los resultados para convertirlos en una lista de diccionarios
-        user_predios = []
-        for row in results:
-            upredio = dict(zip(columns, row))
-            user_predios.append(upredio)
-
-        # Retornar la respuesta en formato JSON
-        return Response(user_predios, status=status.HTTP_200_OK)
+        serializer = UserPropertyFileAllSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
         serializer = UserPropertyFileSerializer(data=request.data)
@@ -149,55 +99,23 @@ class UserPropertyFileView(APIView):
     
 class MonitoringPropertyView(APIView):
     def get(self, request, format=None):
-        query = """
-                SELECT 
-                    uep.id,
-                    uep.expediente,
-                    uep.resolucion,
-                    uep.fecha_exp, 
-                    uep.ep_usuario_id, 
-                    uep.ep_predio_id,
-                    uep.ep_especie_cod,
-                    uep.tamano_UMF,
-                    uep.cantidad_autorizada,
-                    uep.cantidad_remanentes,
-                    uep.cantidad_aprovechable,
-                    uep.cant_monitoreos,
-                    uep.PCM,
-                    uep.PRM,
-                    uep.cantidad_placas,                                      
-                    IFNULL(m.cant_monitoreos_r, 0) AS cant_monitoreos_r,
-                    (uep.cant_monitoreos - IFNULL(m.cant_monitoreos_r, 0)) AS diferencia_monitoreos
-                FROM 
-                    usuario_expediente_predio AS uep
-                LEFT JOIN (
-                    SELECT 
-                        m.user_id, 
-                        ea.cod_especie,
-                        COUNT(*) AS cant_monitoreos_r
-                    FROM 
-                        monitoreo m
-                    INNER JOIN 
-                        evaluacion_as ea ON m.ShortcutIDEV = ea.ShortcutIDEV
-                    WHERE 
-                        m.fecha_monitoreo BETWEEN '2024-01-01' AND CURDATE()
-                    GROUP BY 
-                        m.user_id, ea.cod_especie
-                ) AS m
-                ON uep.ep_usuario_id = m.user_id AND uep.ep_especie_cod = m.cod_especie;
-            """
-        params = []
+        # Definir la subconsulta para contar los monitoreos relacionados al usuario
+        start_date = date(2024, 1, 1)
 
-        with connection.cursor() as cursor:
-            cursor.execute(query, params)
-            results = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
+        subquery = Monitorings.objects.filter(
+            user_id=OuterRef('ep_usuario_id'),
+            evaluacion__cod_especie_id=OuterRef('ep_especie_id'),
+            fecha_monitoreo__range=(start_date, date.today())
+        ).values('user_id').annotate(
+            cant_monitoreos_r=Count('id')
+        ).values('cant_monitoreos_r')
 
-        # Procesar los resultados para convertirlos en una lista de diccionarios
-        monitoring_property = []
-        for row in results:
-            mp = dict(zip(columns, row))
-            monitoring_property.append(mp)
+        # Realizar la consulta principal con las anotaciones
+        queryset = UserPropertyFile.objects.annotate(
+            cant_monitoreos_r=Subquery(subquery, output_field=IntegerField()),
+            diferencia_monitoreos=F('cant_monitoreos') - Subquery(subquery, output_field=IntegerField(), default=0)
+        ).all()
 
-        # Retornar la respuesta en formato JSON
-        return Response(monitoring_property, status=status.HTTP_200_OK)
+        # Serializar los datos con el serializador actualizado
+        serializer = MonitoringPropertySerializer(queryset, many=True)
+        return Response(serializer.data)
