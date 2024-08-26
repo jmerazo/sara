@@ -53,14 +53,21 @@ class SpecieForrestView(APIView):
             return SpecieForrest.objects.all()
 
     def get(self, request, pk=None, format=None):
+        exclude_codes = [
+            2020, 1897, 2838, 4211, 1747, 5377, 2843, 120, 2320, 2323, 1786, 2484, 2789, 3172, 
+            3434, 4449, 2768, 5392, 5284, 5309, 179, 9994, 9992, 9989, 146, 9988, 4803, 1348, 
+            206, 4946, 5290, 9986, 9982, 142, 2093
+        ]
+        
         if pk is not None:
             species = get_object_or_404(SpecieForrest, pk=pk)
             serializer = SpecieForrestSerializer(species)
             return Response(serializer.data)
         else:
-            species_list = SpecieForrest.objects.prefetch_related('images').all()
+            # Excluir los objetos con code_specie en la lista exclude_codes
+            species_list = SpecieForrest.objects.prefetch_related('images').exclude(code_specie__in=exclude_codes)
             serializer = SpecieForrestSerializer(species_list, many=True)
-            return Response(serializer.data)   
+            return Response(serializer.data)
     
     @transaction.atomic
     def post(self, request, format=None):

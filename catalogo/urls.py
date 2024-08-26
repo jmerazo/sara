@@ -18,4 +18,5 @@ urlpatterns = [
     path('property/', include('catalogo.property.urls')),
     path('empiricalknowledge/', include('catalogo.empirical_knowledge.urls')),
     path('auth/', include('catalogo.auth.urls')),
+    path('utils/', include('catalogo.utils.urls'))
 ]
