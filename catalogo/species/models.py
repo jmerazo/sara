@@ -48,6 +48,7 @@ class ImageSpeciesRelated(models.Model):
     img_landscape_one = models.CharField(max_length=150, blank=True, null=True)
     img_landscape_two = models.CharField(max_length=150, blank=True, null=True)
     img_landscape_three = models.CharField(max_length=150, blank=True, null=True)
+    protocol = models.CharField(max_length=250, blank=True, null=True)
 
     class Meta:
         managed = False
