@@ -1,15 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db import connection
 from django.db.models import Count
-from django.db.models.functions import Concat
-from rest_framework.permissions import IsAuthenticated
 
 from ..samples.models import Samples
 
 class SamplesReport(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request, *args, **kwargs):
         # Usar ORM para realizar la consulta y agrupar por departamento y municipio
         results = (

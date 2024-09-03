@@ -1,4 +1,4 @@
-pip install django-recaptcha python-dotenv djangorestframework djangorestframework-jwt django-cors-headers django-recaptcha django-rest-auth drf-yasg social-auth-app-django mysqlclient djangorestframework-simplejwt django-filter django-pandas scikit-learn django-allauth
+pip install django-recaptcha==3.0.0 python-dotenv djangorestframework djangorestframework-jwt django-cors-headers django-rest-auth==0.9.5 drf-yasg social-auth-app-django==5.4.0 mysqlclient djangorestframework-simplejwt==5.3.0 django-filter django-pandas scikit-learn django-allauth==0.56.1
 
 para instalar mysqlclient en linux o macos se debe descargar los plugins de conexión:
 sudo apt update

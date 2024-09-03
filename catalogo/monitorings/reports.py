@@ -6,7 +6,6 @@ from datetime import datetime
 from collections import defaultdict
 from calendar import monthrange
 from django.db import connection
-from rest_framework.permissions import IsAuthenticated
 from ..candidates.models import CandidatesTrees
 from .models import Monitorings
 
@@ -22,7 +21,6 @@ from django_pandas.io import read_frame
 # - monitores realizados mes, pendientes, totales, por municipio, por departamento
 
 class MonitoringReport(APIView):
-    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         now = datetime.now().date()
         first_day = now.replace(day=1)

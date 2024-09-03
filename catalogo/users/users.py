@@ -201,7 +201,7 @@ class UserPermissionsView(APIView):
                     return Response({
                         "role": role_name.name,  # Asumiendo que role_name es la relación a Roles
                         "modules": modules_data
-                    })
+                    }, status=200)
                 else:
                     return Response({"message": "Usuario no encontrado"}, status=404)
 

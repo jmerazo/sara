@@ -1,7 +1,6 @@
 
-from pathlib import Path
-from datetime import timedelta
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,21 +8,8 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY=os.getenv('SECRET_KEY')
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),  # Cambia el tiempo según tus necesidades
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-    'SLIDING_TOKEN_LIFETIME': timedelta(days=1),
-    'SLIDING_TOKEN_REFRESH_LIFETIME_GRACE_PERIOD': timedelta(days=0),
-    'SLIDING_TOKEN_REFRESH_LIFETIME_ALLOW_REFRESH': True,
-    'SLIDING_TOKEN_REFRESH_LIFETIME_CALCULATION': 'refresh_exp',
-}
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -33,8 +19,33 @@ ALLOWED_HOSTS = ['*']
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')  # Directorio donde se guardarán los archivos de medios
 MEDIA_URL = '/api/images/'  # Ajusta la URL base para incluir '/api/'
 
-# Application definition
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "https://0513-152-200-195-66.ngrok-free.app",
+    "http://localhost:5173",   
+]
 
+EXCLUDED_PATHS = [
+    '/api/auth/login', 
+    '/api/register/', 
+    '/api/refresh-token/',
+    '/api/departments/',
+    '/api/cities/',
+    '/api/species/',
+    '/api/species/families',
+    '/api/glossary',
+    '/api/nurseries/',
+    '/api/page/content',
+    '/api/page/top_species',
+    '/api/utils/sisa/',
+    '/api/monitoring/report/dataFlowerAndFruit',
+    '/api/species/report/general',
+    '/api/candidates/geolocation',
+    '/api/utils/send-email/'
+]
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,44 +55,35 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'rest_framework',
-    'rest_framework.authtoken',
     'rest_framework_jwt',
     'corsheaders',
-    'captcha',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
-    'rest_auth',
-    'rest_auth.registration',
     'drf_yasg',
-    'catalogo',
-    'social_django',
+    'catalogo'
 ]
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-    'social_core.backends.google.GoogleOAuth2',
+    'allauth.account.auth_backends.AuthenticationBackend'
 )
-
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('OAUTH2_KEY')  # Coloca aquí tu Client ID
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('OAUTH2_SECRET') # Coloca aquí tu Client Secret
 
 SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Asegúrate de que esta línea esté presente
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #'catalogo.warden.warden.JWTAuthMiddleware',  # Tu middleware JWT personalizado
+    'catalogo.warden.middleware.FirebaseAuthMiddleware'
 ]
+
+SESSION_COOKIE_SECURE = True  # Solo usar en HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'  # O 'None' si es necesario, pero requiere HTTPS
 
 ROOT_URLCONF = 'sara.urls'
 
@@ -187,45 +189,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-    ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ], 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 12,  # Número de resultados por página
-}
-
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "https://0513-152-200-195-66.ngrok-free.app",
-    "http://localhost:5173",
-    
-    
-]
-
-""" AUTH_USER_MODEL = 'accounts.User'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_ENFORCE_UNIQUE = False """
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': 'tu_client_id',
-            'secret': 'tu_secret_key',
-            'key': ''
-        }
-    },
-    'facebook': {
-        'APP': {
-            'client_id': 'tu_client_id',
-            'secret': 'tu_secret_key',
-            'key': ''
-        }
-    }
 }

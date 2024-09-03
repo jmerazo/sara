@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.views import APIView
 from django.db import connection
 from .serializers import NurseriesSerializer, UserNurseriesSerializer, UsersNurseriesSerializer
-from rest_framework.permissions import IsAuthenticated
 
 from .models import Nurseries, UserNurseries
 
@@ -15,7 +14,7 @@ class NurseriesView(APIView):
             'vivero__representante_legal', 
             'vivero__department', 
             'vivero__city',
-            'especie_forestal'
+            'especie_forestal'  # Cambiado de especie_forestal_c a especie_forestal
         ).all()
 
         # Serializar los datos
@@ -45,7 +44,7 @@ class NurseriesView(APIView):
 
             # Agregar la especie forestal a la lista de especies del vivero
             especie = {
-                'especie_forestal_id': item['especie_forestal']['id'],
+                'especie_forestal_id': item['especie_forestal']['code_specie'],  # Cambiado para usar code_specie
                 'nom_comunes': item['especie_forestal']['vernacularName'],
                 'nombre_cientifico_especie': item['especie_forestal']['scientificName'],
                 'nombre_autor_especie': item['especie_forestal']['scientificNameAuthorship'],

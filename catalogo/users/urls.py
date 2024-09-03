@@ -8,5 +8,5 @@ urlpatterns = [
     path('state/<int:pk>', UsersStateView.as_view()),
     path('modules', UserPermissionsView.as_view()),
     path('roles/', RolesView.as_view()),
-    path('verify-email/<str:token>', verifyEmail)
+    path('verify-email/<str:token>', verifyEmail),
 ]

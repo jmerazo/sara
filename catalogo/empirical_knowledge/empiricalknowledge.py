@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.views import APIView
 from .models import EmpiricalKnowledge
 from .serializers import EmpiricalKnowledgeSerializer
-from rest_framework.permissions import IsAuthenticated
 
 class EmpiricalKnowledgeView(APIView):
     def get(self, request, pk=None, format=None): 

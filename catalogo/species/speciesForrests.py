@@ -1,16 +1,13 @@
 from rest_framework import status
-from collections import namedtuple
 from django.db import connection, transaction
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from rest_framework.views import APIView
-from django.db.models import Count, Sum, Case, When, IntegerField, Q
-from django.db.models import Prefetch
 from django.db import connection
 import random, string, os, base64
+from ..warden.decorator import jwt_auth_required
 
-from ..candidates.models import CandidatesTrees
 from .models import SpecieForrest, ImageSpeciesRelated, Families
 from .serializers import SpecieForrestSerializer
 
@@ -70,6 +67,7 @@ class SpecieForrestView(APIView):
             return Response(serializer.data)
     
     @transaction.atomic
+    @jwt_auth_required
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
 
@@ -180,7 +178,7 @@ class SpecieForrestView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
+    @jwt_auth_required
     def put(self, request, pk, format=None):
         specie = get_object_or_404(SpecieForrest, ShortcutID=pk)
         adjusted_data = request.data
@@ -231,6 +229,7 @@ class SpecieForrestView(APIView):
         serializer = SpecieForrestSerializer(specie)  # Serializa el usuario actualizado
         return Response(serializer.data)
 
+    @jwt_auth_required
     def delete(self, request, pk, format=None):
         specie = self.get_object(pk)
         specie.delete()
@@ -248,7 +247,7 @@ class SearchSpecieForrestView(APIView):
     
 class SearchFamilyView(APIView):
     def get(self, request, family, format=None):        
-        search = SpecieForrest.objects.filter(familia__icontains=family)
+        search = SpecieForrest.objects.filter(family__icontains=family)
         serializer = SpecieForrestSerializer(search, many=True)
         
         return Response(serializer.data)

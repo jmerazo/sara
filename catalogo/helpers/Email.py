@@ -1,11 +1,13 @@
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from email.mime.image import MIMEImage
 from django.conf import settings
-import os
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from .jwt import verify_jwt
 from ..models import Users
@@ -37,9 +39,10 @@ def send_email(subject, body, to_email, html_content=None, attachments=None):
             for attachment in attachments:
                 msg.attach(*attachment)
         msg.send()
-        print("Email sent successfully")
+        return True
     except Exception as e:
         print(f"An error occurred: {e}")
+        return False
 
 def send_verification_email(user, token):
     verification_url = f"{settings.FRONTEND_URL}/verify-email/{token}"
@@ -62,3 +65,26 @@ def send_verification_email(user, token):
         msg.attach(msg_img)
 
     msg.send()
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EmailService(APIView):
+    def post(self, request):
+        subject = request.data.get('subject')
+        body = request.data.get('body')
+        from_email = request.data.get('from_email')
+        
+        if not all([subject, body, from_email]):
+            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Dirección de correo de atención al público
+        to_email = 'support@sara.corpoamazonia.gov.co'
+        
+        # Agregar el correo del remitente al cuerpo del mensaje
+        full_body = f"Correo del remitente: {from_email}\n\n{body}"
+        
+        success = send_email(subject, full_body, to_email, from_email)
+        
+        if success:
+            return Response({'message': 'Email sent successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

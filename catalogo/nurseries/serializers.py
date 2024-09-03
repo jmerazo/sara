@@ -22,7 +22,7 @@ class NurseriesSerializer(serializers.ModelSerializer):
 class SpecieForrestNurserieSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecieForrest
-        fields = ['id', 'vernacularName', 'scientificName', 'scientificNameAuthorship']
+        fields = ['id', 'code_specie', 'vernacularName', 'scientificName', 'scientificNameAuthorship']
 
 class UserNurseriesSerializer(serializers.ModelSerializer):
     vivero = NurseriesSerializer()
