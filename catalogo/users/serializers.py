@@ -1,9 +1,9 @@
-from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
+from django.contrib.auth.hashers import make_password
+
 from ..models import Users
-from ..models import Departments, Cities
-from ..serializers import DepartmentsSerializer, CitiesSerializer
 from ..utils.models import Rol
+from ..models import Departments, Cities
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,7 +24,7 @@ class UsersSerializer(serializers.ModelSerializer):
         return super(UsersSerializer, self).create(validated_data)
     
 class UsersCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
     department = serializers.PrimaryKeyRelatedField(queryset=Departments.objects.all())
     city = serializers.PrimaryKeyRelatedField(queryset=Cities.objects.all())
     rol = serializers.PrimaryKeyRelatedField(queryset=Rol.objects.all())
@@ -34,6 +34,9 @@ class UsersCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        # Hash de la contraseña antes de guardarla en la base de datos
-        validated_data['password'] = make_password(validated_data['password'])
+        password = validated_data.get('password')
+        if password:
+            validated_data['password'] = make_password(password)
+        else:
+            validated_data.pop('password', None)  # Eliminar password si está vacío
         return super().create(validated_data)

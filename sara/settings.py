@@ -33,7 +33,7 @@ EXCLUDED_PATHS = [
     '/api/departments/',
     '/api/cities/',
     '/api/species/',
-    '/api/species/families',
+    '/api/species/families/',
     '/api/glossary',
     '/api/nurseries/',
     '/api/page/content',
@@ -42,7 +42,9 @@ EXCLUDED_PATHS = [
     '/api/monitoring/report/dataFlowerAndFruit',
     '/api/species/report/general',
     '/api/candidates/geolocation',
-    '/api/utils/send-email/'
+    '/api/utils/send-email/',
+    '/api/users/',
+    '/api/users/roles/'
 ]
 
 # Application definition

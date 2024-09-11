@@ -52,9 +52,7 @@ def send_verification_email(user, token):
     }
 
     email_body = render_to_string('emailVerification.html', email_context)
-
-    email_subject = 'Sara | Verificación de cuenta'
-    
+    email_subject = 'Sara | Verificación de cuenta'    
     msg = EmailMultiAlternatives(email_subject, email_body, settings.EMAIL_HOST_USER, [user.email])
     msg.attach_alternative(email_body, "text/html")
     

@@ -1,5 +1,10 @@
+import os
+import requests
+from dotenv import load_dotenv
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+load_dotenv()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -18,3 +23,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate_google_auth(self, code):
         # Asumiendo que tienes una función para manejar la lógica de Google
         return handle_google_auth(code)
+    
+class RecaptchaSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate_token(self, value):
+        data = {
+            'secret': os.getenv('RECAPTCHA_PRIVATE_KEY'),
+            'response': value
+        }
+        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
+        result = r.json()
+        if not result['success']:
+            raise serializers.ValidationError('reCAPTCHA verification failed')
+        return value

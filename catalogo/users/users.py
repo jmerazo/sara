@@ -1,14 +1,12 @@
 from rest_framework.response import Response
+from firebase_admin import auth
 from django.db import transaction
-from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from django.http import Http404
 from rest_framework.views import APIView
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.permissions import IsAuthenticated
-from django.core.mail import send_mail
 
 from .serializers import UsersCreateSerializer, UsersSerializer
 from ..utils.serializers import RolSerializer
@@ -16,17 +14,16 @@ from .models import UserModules
 from ..utils.models import Rol
 from ..page.models import Pages
 from ..models import Users
-from ..helpers.jwt import generate_jwt
-from ..helpers.Email import send_email, send_verification_email
+from ..helpers.jwt import generate_jwt, generate_jwt_register
+from ..helpers.Email import send_verification_email
 
 
 class UsersView(APIView):
     def get_queryset(self):
         queryset = Users.objects.select_related('department').all().values(
-            'id', 'email', 'first_name', 'last_name', 'role', 'is_active', 
-            'document_type', 'document_number', 'entity', 'cellphone', 
-            'department__name', 'city', 'profession', 'reason', 'state', 
-            'is_staff', 'last_login', 'is_superuser', 'date_joined'
+            'id', 'uuid_firebase', 'email', 'first_name', 'last_name', 'rol', 'is_active', 
+            'document_type', 'document_number', 'cellphone', 
+            'department__name', 'city', 'is_staff', 'last_login', 'is_superuser', 'date_joined'
         )
         return list(queryset)
 
@@ -55,46 +52,76 @@ class UsersView(APIView):
             users = [users]
 
         return Response(users)
-    
-    @transaction.atomic
+            
     def post(self, request, format=None):
-        adjusted_data = request.data.copy()
-        email = request.data.get('email')
-        password = request.data.get('password')
-        first_name = request.data.get('first_name')
-        last_name = request.data.get('last_name')
-        document_type = request.data.get('document_type')
-        document_number = request.data.get('document_number')
-        cellphone = request.data.get('cellphone')
-        department = request.data.get('department')
-        city = request.data.get('city')
-        adjusted_data['rol'] = 4
-        adjusted_data['is_active'] = 0
-        adjusted_data['state'] = 'REVIEW'
-        adjusted_data['is_staff'] = 0
-        adjusted_data['last_login'] = None
-        adjusted_data['is_superuser'] = 0
-        adjusted_data['date_joined'] = timezone.now()
+        user_fixed = request.data.copy()
+        email = user_fixed.get('email')
+        password = user_fixed.get('password')
+        first_name = user_fixed.get('first_name')
+        last_name = user_fixed.get('last_name')
+        uuid_firebase = user_fixed.get('uuid_firebase')  # Para registro social
 
-        if not all([email, password, first_name, last_name]):
-            return Response({'msg': 'All fields are required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Ajustar datos como antes
+        user_fixed['rol'] = 4
+        user_fixed['is_active'] = 0
+        user_fixed['is_staff'] = 0
+        user_fixed['is_superuser'] = 0
 
         existing_user = Users.objects.filter(Q(email=email)).first()
         if existing_user:
             return Response({'msg': f'El usuario ya está registrado con el correo electrónico {existing_user.email}.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = UsersCreateSerializer(data=adjusted_data)
-        if serializer.is_valid():
-            user = serializer.save()
+        try:
+            # Validar campos requeridos
+            if not all([email, first_name, last_name]):
+                return Response({'msg': 'Email, nombre y apellido son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
 
-            token = generate_jwt(user.email)  # Genera el token JWT
-            user.token = token
-            user.save()
-            
-            send_verification_email(user, token)  # Envía el correo de verificación
+            # Para registro normal, validar contraseña
+            if not uuid_firebase and not password:
+                return Response({'msg': 'La contraseña es obligatoria para registro normal'}, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Crear usuario en la base de datos local
+            serializer = UsersCreateSerializer(data=user_fixed)
+            if serializer.is_valid():
+                user = serializer.save()
+                
+                # Si no es registro social, crear usuario en Firebase
+                if not uuid_firebase:
+                    firebase_user = auth.create_user(
+                        email=email,
+                        password=password,
+                        display_name=f"{first_name} {last_name}"
+                    )
+                    user.uuid_firebase = firebase_user.uid
+                else:
+                    user.uuid_firebase = uuid_firebase
+
+                # Generar token JWT y guardar
+                token = generate_jwt_register(user.email)
+                print('token ', token)
+                user.token = token
+                user.save()
+                
+                # Enviar correo de verificación para todos los usuarios
+                send_verification_email(user, token)
+
+                return Response({
+                    'msg': 'Usuario registrado exitosamente. Por favor, verifique su correo electrónico.',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Si hay algún error durante el proceso, eliminar el usuario local si fue creado
+            if 'user' in locals():
+                user.delete()
+            if 'firebase_user' in locals():
+                try:
+                    auth.delete_user(firebase_user.uid)
+                except:
+                    pass  # Si falla la eliminación en Firebase, lo manejamos silenciosamente
+            return Response({'msg': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
         user = get_object_or_404(Users, id=pk)

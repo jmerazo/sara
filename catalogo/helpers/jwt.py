@@ -21,7 +21,10 @@ load_dotenv()
 def verify_jwt(token):
     try:
         payload = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=[os.getenv('ALGORITHM')])
-        return payload
+        user = Users.objects.filter(email=payload['id']).first()
+        if user and user.token == token:
+            return payload
+        return None
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
@@ -45,7 +48,16 @@ def generate_jwt(user_id):
         'exp': datetime.utcnow() + timedelta(minutes=30),  # Token de acceso expira en 30 minutos
         'iat': datetime.utcnow()
     }
-    return jwt.encode(payload, os.getenv('JWT_SECRET'), algorithm=os.getenv('ALGORITHM'))
+    token = jwt.encode(payload, os.getenv('JWT_SECRET'), algorithm=os.getenv('ALGORITHM'))
+    return token.decode('utf-8')  # Convertir el token a string
+
+def generate_jwt_register(user_id):
+    payload = {
+        'id': user_id,
+        'iat': datetime.utcnow()
+    }
+    token = jwt.encode(payload, os.getenv('JWT_SECRET'), algorithm=os.getenv('ALGORITHM'))
+    return token.decode('utf-8')  # Convertir el token a string
 
 def formatter_date(date):
     return format(localtime(date), 'j F Y', use_l10n=True, locale='es')

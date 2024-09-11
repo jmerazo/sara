@@ -44,22 +44,18 @@ class Cities(models.Model):
         db_table = 'cities'
 
 class Users(AbstractBaseUser, PermissionsMixin):
+    uuid_firebase = models.CharField(max_length=254, null=False, blank=False)
     email = models.EmailField(max_length=100, unique=True)
     password = models.CharField(max_length=150, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
-    role = models.CharField(max_length=100, blank=True, null=True)
     rol = models.ForeignKey(Rol, on_delete=models.RESTRICT)
     is_active = models.BooleanField(max_length=30, blank=True, null=True, default=False)
     document_type = models.CharField(max_length=40, blank=True, null=True)
     document_number = models.CharField(max_length=20, blank=True, null=True)
-    entity = models.CharField(max_length=100, blank=True, null=True)
     cellphone = models.CharField(max_length=15, blank=True, null=True)
-    department = models.ForeignKey(Departments, on_delete=models.RESTRICT)
-    city = models.ForeignKey(Cities, on_delete=models.RESTRICT)
-    profession = models.CharField(max_length=150, blank=True, null=True)
-    reason = models.CharField(max_length=500, blank=True, null=True)
-    state = models.CharField(max_length=25, blank=True, null=True, default='REVIEW')
+    department = models.ForeignKey(Departments, on_delete=models.RESTRICT, blank=True, null=True)
+    city = models.ForeignKey(Cities, on_delete=models.RESTRICT, blank=True, null=True)
     token = models.CharField(max_length=254, blank=True, null=True)
     verificated = models.BooleanField(null=True, blank=True)
     is_staff = models.BooleanField(default=False)
@@ -81,3 +77,9 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+#role = models.CharField(max_length=100, blank=True, null=True)
+#entity = models.CharField(max_length=100, blank=True, null=True)
+#profession = models.CharField(max_length=150, blank=True, null=True)
+#reason = models.CharField(max_length=500, blank=True, null=True)
+#state = models.CharField(max_length=25, blank=True, null=True, default='REVIEW')

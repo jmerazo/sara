@@ -26,7 +26,8 @@ class FirebaseAuthMiddleware:
         self.excluded_prefixes = [
             '/api/images/',
             '/api/species/search/code/',
-            '/api/species/search/family/'
+            '/api/species/search/family/',
+            '/api/users/verify-email/'
         ]
 
     def is_path_excluded(self, path):

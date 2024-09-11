@@ -1,10 +1,15 @@
+import os
 import jwt
+import requests
 from .firebase import cred
+from dotenv import load_dotenv
+from django.conf import settings
 from rest_framework.views import APIView
 from firebase_admin import auth as firebase_auth
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 from rest_framework import status
+load_dotenv()
 
 from ..helpers.jwt import generate_jwt, generate_refresh_token, verify_token
 
@@ -69,11 +74,34 @@ class RefreshTokenView(APIView):
         except jwt.InvalidTokenError:
             return Response({"error": "Invalid refresh token"}, status=status.HTTP_403_FORBIDDEN)
         
+def verify_recaptcha(recaptcha_token):
+    url = 'https://www.google.com/recaptcha/api/siteverify'
+    data = {
+        'secret': os.getenv('RECAPTCHA_PRIVATE_KEY'),
+        'response': recaptcha_token
+    }
+    try:
+        response = requests.post(url, data=data)
+        response.raise_for_status()
+        result = response.json()
+        return result
+    except requests.RequestException as e:
+        return {'success': False, 'error': str(e)}
+
 class AuthView(APIView):
     def post(self, request):
         firebase_token = request.data.get('token')
-        if not firebase_token:
+        recaptcha_token = request.data.get('recaptcha_token')
+
+        if not firebase_token or not recaptcha_token:
             return Response({"error": "No token provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        recaptcha_result = verify_recaptcha(recaptcha_token)
+        
+        if not recaptcha_result['success']:
+            error_codes = recaptcha_result.get('error-codes', [])
+            error_message = f"reCAPTCHA verification failed: {', '.join(error_codes)}"
+            return Response({'error': error_message}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             decoded_token = firebase_auth.verify_id_token(firebase_token)
@@ -102,7 +130,7 @@ class AuthView(APIView):
             }
 
             return Response({
-                'token': firebase_token,  # Devolvemos el token de Firebase
+                'token': firebase_token,
                 'user_id': user.id,
                 'user_data': user_data,
                 'is_new_user': created
