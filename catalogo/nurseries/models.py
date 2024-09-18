@@ -16,6 +16,10 @@ class Nurseries(models.Model):
     direccion = models.CharField(max_length=255, blank=True, null=True)
     logo = models.CharField(max_length=255, blank=True, null=True)
     active = models.SmallIntegerField(default=1, null=True)
+    clase_vivero = models.CharField(max_length=100, blank=True, null=True)
+    vigencia_registro = models.SmallIntegerField(max_length=1, blank=True, null=True)
+    tipo_registro = models.CharField(max_length=100, blank=True, null=True)
+    numero_registro_ica = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
         managed = False

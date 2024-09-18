@@ -115,16 +115,56 @@ class AuthView(APIView):
             
             user_data = {
                 'id': user.id,
-                'role': user.role,
+                'uuid_firebase': user.uuid_firebase,
+                'rol': user.rol.name,
                 'email': user.email,
                 'document_type': user.document_type,
                 'document_number': user.document_number,
                 'cellphone': user.cellphone,
-                'entity': user.entity,
-                'profession': user.profession,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'state': user.state,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
+            }
+
+            return Response({
+                'token': firebase_token,
+                'user_id': user.id,
+                'user_data': user_data,
+                'is_new_user': created
+            })
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        
+class AuthAppView(APIView):
+    def post(self, request):
+        firebase_token = request.data.get('token')
+
+        if not firebase_token:
+            return Response({"error": "No token provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_auth.verify_id_token(firebase_token)
+            email = decoded_token.get('email')
+            
+            if not email:
+                return Response({"error": "No email associated with this Firebase account"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            User = get_user_model()
+            user, created = User.objects.get_or_create(email=email)
+            print('user', user)
+            
+            user_data = {
+                'id': user.id,
+                'uuid_firebase': user.uuid_firebase,
+                'rol': user.rol.name,
+                'email': user.email,
+                'document_type': user.document_type,
+                'document_number': user.document_number,
+                'cellphone': user.cellphone,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
                 'is_staff': user.is_staff,
                 'is_superuser': user.is_superuser,
             }

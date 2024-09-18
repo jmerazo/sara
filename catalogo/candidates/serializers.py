@@ -33,7 +33,10 @@ class CandidateTreesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CandidateTreesCreateSerializer(serializers.ModelSerializer):
-    cod_especie = serializers.PrimaryKeyRelatedField(queryset=SpecieForrest.objects.all())
+    cod_especie = serializers.SlugRelatedField(
+        queryset=SpecieForrest.objects.all(),
+        slug_field='code_specie'
+    )
     user = serializers.PrimaryKeyRelatedField(queryset=Users.objects.all())
     property = serializers.PrimaryKeyRelatedField(queryset=Property.objects.all())
 

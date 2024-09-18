@@ -27,7 +27,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 EXCLUDED_PATHS = [
-    '/api/auth/login', 
+    '/api/auth/login',
+    '/api/auth/login-app', 
     '/api/register/', 
     '/api/refresh-token/',
     '/api/departments/',
@@ -44,7 +45,7 @@ EXCLUDED_PATHS = [
     '/api/candidates/geolocation',
     '/api/utils/send-email/',
     '/api/users/',
-    '/api/users/roles/'
+    '/api/users/roles/',
 ]
 
 # Application definition

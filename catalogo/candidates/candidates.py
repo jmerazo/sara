@@ -8,7 +8,7 @@ import random, string
 
 from ..species.models import SpecieForrest
 from .models import CandidatesTrees
-from .serializers import CandidateTreesSerializer
+from .serializers import CandidateTreesSerializer, CandidateTreesCreateSerializer
 
 def convert_to_decimal_or_int(value):
     if value is None or value == '':
@@ -102,7 +102,7 @@ class CandidatesTreesView(APIView):
         return Response(serializer.data)
     
     def post(self, request, format=None):
-        serializer = CandidateTreesSerializer(data=request.data)
+        serializer = CandidateTreesCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -110,7 +110,7 @@ class CandidatesTreesView(APIView):
     
     def put(self, request, np, format=None):
         tree = get_object_or_404(CandidatesTrees, numero_placa=np)
-        serializer = CandidateTreesSerializer(tree, data=request.data)
+        serializer = CandidateTreesCreateSerializer(tree, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
