@@ -153,7 +153,6 @@ class AuthAppView(APIView):
             
             User = get_user_model()
             user, created = User.objects.get_or_create(email=email)
-            print('user', user)
             
             user_data = {
                 'id': user.id,

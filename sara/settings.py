@@ -19,12 +19,24 @@ ALLOWED_HOSTS = ['*']
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')  # Directorio donde se guardarán los archivos de medios
 MEDIA_URL = '/api/images/'  # Ajusta la URL base para incluir '/api/'
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "https://0513-152-200-195-66.ngrok-free.app",
     "http://localhost:5173",   
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+]
+
+SESSION_COOKIE_SECURE = True  # Solo usar en HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'  # O 'None' si es necesario, pero requiere HTTPS
+CSRF_COOKIE_SECURE = True
 
 EXCLUDED_PATHS = [
     '/api/auth/login',
@@ -44,7 +56,7 @@ EXCLUDED_PATHS = [
     '/api/species/report/general',
     '/api/candidates/geolocation',
     '/api/utils/send-email/',
-    '/api/users/',
+    '/api/users/register/',
     '/api/users/roles/',
 ]
 
@@ -76,17 +88,14 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'catalogo.warden.csrfMiddleware.CsrfExemptAPIMiddleware', 
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Asegúrate de que esta línea esté presente
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',  # Middleware necesario para el admin
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'catalogo.warden.warden.JWTAuthMiddleware',  # Tu middleware JWT personalizado
-    'catalogo.warden.middleware.FirebaseAuthMiddleware'
+    'catalogo.warden.middleware.FirebaseAuthMiddleware',  # Middleware de Firebase
 ]
 
-SESSION_COOKIE_SECURE = True  # Solo usar en HTTPS
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'  # O 'None' si es necesario, pero requiere HTTPS
 
 ROOT_URLCONF = 'sara.urls'
 

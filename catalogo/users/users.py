@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
 from firebase_admin import auth
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -13,7 +14,7 @@ from ..utils.serializers import RolSerializer
 from .models import UserModules
 from ..utils.models import Rol
 from ..page.models import Pages
-from ..models import Users
+from ..models import Users, Departments, Cities
 from ..helpers.jwt import generate_jwt, generate_jwt_register
 from ..helpers.Email import send_verification_email
 
@@ -23,7 +24,7 @@ class UsersView(APIView):
         queryset = Users.objects.select_related('department').all().values(
             'id', 'uuid_firebase', 'email', 'first_name', 'last_name', 'rol', 'is_active', 
             'document_type', 'document_number', 'cellphone', 
-            'department__name', 'city', 'is_staff', 'last_login', 'is_superuser', 'date_joined'
+            'department', 'city', 'is_staff', 'last_login', 'is_superuser', 'date_joined'
         )
         return list(queryset)
 
@@ -127,7 +128,7 @@ class UsersView(APIView):
         user = get_object_or_404(Users, id=pk)
         adjusted_data = request.data
 
-        # Actualizar solo los campos que están presentes en adjusted_data
+        # Validaciones y actualizaciones de campos específicos
         if 'email' in adjusted_data:
             email = adjusted_data['email']
             # Validar que el nuevo email no exista en otros usuarios
@@ -137,36 +138,125 @@ class UsersView(APIView):
 
         if 'first_name' in adjusted_data:
             user.first_name = adjusted_data['first_name']
+
         if 'last_name' in adjusted_data:
             user.last_name = adjusted_data['last_name']
+
         if 'rol' in adjusted_data:
-            user.rol = adjusted_data['rol']
+            try:
+                rol_instance = Rol.objects.get(id=adjusted_data['rol'])
+                user.rol = rol_instance
+            except Rol.DoesNotExist:
+                return Response({'error': 'El rol especificado no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+
         if 'document_type' in adjusted_data:
             user.document_type = adjusted_data['document_type']
-        if 'entity' in adjusted_data:
-            user.entity = adjusted_data['entity']
+
         if 'cellphone' in adjusted_data:
             user.cellphone = adjusted_data['cellphone']
+
         if 'department' in adjusted_data:
-            user.department = adjusted_data['department']
+            try:
+                department_instance = Departments.objects.get(id=adjusted_data['department'])
+                user.department = department_instance
+            except Departments.DoesNotExist:
+                return Response({'error': 'El departamento especificado no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+
         if 'city' in adjusted_data:
-            user.city = adjusted_data['city']
-        if 'profession' in adjusted_data:
-            user.profession = adjusted_data['profession']
+            try:
+                city_instance = Cities.objects.get(id=adjusted_data['city'])
+                user.city = city_instance
+            except Cities.DoesNotExist:
+                return Response({'error': 'La ciudad especificada no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+
         if 'is_active' in adjusted_data:
             user.is_active = adjusted_data['is_active']
 
-        # Guardar los cambios
-        user.save()
+        # Validación de datos usando el serializador con actualizaciones parciales
+        serializer = UsersCreateSerializer(user, data=request.data, partial=True)
 
-        # Serializar el usuario actualizado y devolver la respuesta
-        serializer = UsersSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if serializer.is_valid():
+            # Guardar los cambios en la base de datos
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Si hay errores de validación, devolver los errores
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
         user = self.get_object_for_delete(pk)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class UserRegisterView(APIView):
+    def post(self, request, format=None):
+        user_fixed = request.data.copy()
+        email = user_fixed.get('email')
+        password = user_fixed.get('password')
+        first_name = user_fixed.get('first_name')
+        last_name = user_fixed.get('last_name')
+        uuid_firebase = user_fixed.get('uuid_firebase')  # Para registro social
+
+        # Ajustar datos como antes
+        user_fixed['rol'] = 4
+        user_fixed['is_active'] = 0
+        user_fixed['is_staff'] = 0
+        user_fixed['is_superuser'] = 0
+
+        existing_user = Users.objects.filter(Q(email=email)).first()
+        if existing_user:
+            return Response({'msg': f'El usuario ya está registrado con el correo electrónico {existing_user.email}.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Validar campos requeridos
+            if not all([email, first_name, last_name]):
+                return Response({'msg': 'Email, nombre y apellido son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Para registro normal, validar contraseña
+            if not uuid_firebase and not password:
+                return Response({'msg': 'La contraseña es obligatoria para registro normal'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Crear usuario en la base de datos local
+            serializer = UsersCreateSerializer(data=user_fixed)
+            if serializer.is_valid():
+                user = serializer.save()
+                
+                # Si no es registro social, crear usuario en Firebase
+                if not uuid_firebase:
+                    firebase_user = auth.create_user(
+                        email=email,
+                        password=password,
+                        display_name=f"{first_name} {last_name}"
+                    )
+                    user.uuid_firebase = firebase_user.uid
+                else:
+                    user.uuid_firebase = uuid_firebase
+
+                # Generar token JWT y guardar
+                token = generate_jwt_register(user.email)
+                user.token = token
+                user.save()
+                
+                # Enviar correo de verificación para todos los usuarios
+                send_verification_email(user, token)
+
+                return Response({
+                    'msg': 'Usuario registrado exitosamente. Por favor, verifique su correo electrónico.',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Si hay algún error durante el proceso, eliminar el usuario local si fue creado
+            if 'user' in locals():
+                user.delete()
+            if 'firebase_user' in locals():
+                try:
+                    auth.delete_user(firebase_user.uid)
+                except:
+                    pass  # Si falla la eliminación en Firebase, lo manejamos silenciosamente
+            return Response({'msg': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 class UsersStateView(APIView):
     def get_object_state(self, id):

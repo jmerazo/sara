@@ -1,7 +1,8 @@
 from firebase_admin import auth
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
+from .csrfMiddleware import CsrfExemptAPIMiddleware
 
 def get_user(request):
     User = get_user_model()
@@ -37,21 +38,25 @@ class FirebaseAuthMiddleware:
         )
 
     def __call__(self, request):
+        response = self.get_response(request)
+        return response
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
         if not self.is_path_excluded(request.path_info):
             auth_header = request.META.get('HTTP_AUTHORIZATION')
             if not auth_header:
-                return JsonResponse({'error': 'No se proporcionó token de autorización'}, status=401)
-            
+                # No interrumpimos el flujo, permitimos que la vista maneje la autenticación
+                return
+
             try:
+                # Asumimos que el header es "Bearer <token>"
                 token = auth_header.split()[1]
                 decoded_token = auth.verify_id_token(token)
                 email = decoded_token.get('email')
-                
+
                 User = get_user_model()
                 user = User.objects.get(email=email)
                 request.user = user
-            except Exception as e:
-                return JsonResponse({'error': 'Token inválido o usuario no encontrado'}, status=401)
-
-        response = self.get_response(request)
-        return response
+            except Exception:
+                # No interrumpimos el flujo, permitimos que la vista maneje la autenticación
+                pass

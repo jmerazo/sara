@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Solicitud</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="cid:logo" alt="Logo" style="max-width: 100px;">
+    </div>
+    <h2 style="color: #0d4c30; text-align: center;">Confirmación de Solicitud de Información</h2>
+    <p>Estimado/a cliente,</p>
+    <p>Gracias por contactar con {{ nursery_name }}. Le confirmamos que hemos recibido su solicitud de información y la hemos enviado al vivero.</p>
+    <p>Detalles de su solicitud:</p>
+    <ul>
+        <li><strong>Vivero contactado:</strong> {{ nursery_name }}</li>
+        <li><strong>Su mensaje:</strong> {{ customer_message }}</li>
+    </ul>
+    <p>El vivero se pondrá en contacto con usted lo antes posible para responder a su consulta.</p>
+    <p>Si tiene alguna pregunta adicional, no dude en ponerse en contacto con nosotros.</p>
+    <div style="margin-top: 20px; text-align: center; font-size: 0.8em; color: #666;">
+        <p>Este es un mensaje automático, por favor no responda a este correo.</p>
+        <p>© {{ current_year }} Sara. Todos los derechos reservados.</p>
+    </div>
+</body>
+</html>

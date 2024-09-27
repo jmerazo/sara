@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Información de Cliente</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="cid:logo" alt="Logo" style="max-width: 100px;">
+    </div>
+    <h2 style="color: #0d4c30; text-align: center;">Solicitud de Información de Cliente</h2>
+    <p>Estimado usuario,</p>
+    <p>Se ha generado una solicitud de información:</p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px;">
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Remitente:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ customer_email }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Mensaje:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ customer_message }}</td>
+        </tr>
+    </table>
+    <p>Si tiene alguna duda, por favor responda directamente a este correo electrónico para contactar al cliente.</p>
+    <p>Recuerde proporcionar una respuesta oportuna para mantener un buen servicio al cliente.</p>
+    <div style="margin-top: 20px; text-align: center; font-size: 0.8em; color: #666;">
+        <p>Este es un mensaje automático generado por el sistema de contacto del vivero.</p>
+        <p>© {{ current_year }} {{ nursery_name }}. Todos los derechos reservados.</p>
+    </div>
+</body>
+</html>

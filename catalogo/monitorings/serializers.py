@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Monitorings
+from .models import Monitorings, ViewMonitorings
 from ..candidates.models import CandidatesTrees
 from ..models import Users
 from ..candidates.serializers import CandidateTreesSerializer
@@ -34,4 +34,9 @@ class MonitoringsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Monitorings
+        fields = '__all__'
+
+class ViewMonitoringsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ViewMonitorings
         fields = '__all__'

@@ -25,9 +25,10 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
     
 class Departments(models.Model):
-    id = models.IntegerField()
-    code = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=100, blank=True, null=True)
+    lat = models.CharField(max_length=50, blank=True, null=True)
+    long = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -35,8 +36,9 @@ class Departments(models.Model):
 
 class Cities(models.Model):
     id = models.IntegerField(primary_key=True)
-    code = models.CharField(max_length=10, blank=True, null=True)
     name = models.CharField(max_length=60, blank=True, null=True)
+    lat = models.CharField(max_length=50, blank=True, null=True)
+    long = models.CharField(max_length=50, blank=True, null=True)
     department = models.ForeignKey(Departments, on_delete=models.RESTRICT)
 
     class Meta:

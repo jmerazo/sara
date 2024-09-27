@@ -1,12 +1,15 @@
 import random, string
 from rest_framework import status
+from django.core.cache import cache
+from django.db.models import Prefetch
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from .models import Monitorings
+from .models import Monitorings, ViewMonitorings
 from ..candidates.models import CandidatesTrees
-from .serializers import  MonitoringsSerializer
+from ..species.models import SpecieForrest
+from .serializers import  MonitoringsSerializer, ViewMonitoringsSerializer
 
 def generate_random_id(length):
             characters = string.ascii_letters + string.digits
@@ -35,25 +38,33 @@ class SearchMonitoringSpecieView(APIView):
 
 class MonitoringsView(APIView):
     def get_queryset(self):
-        queryset = Monitorings.objects.filter(
+        return Monitorings.objects.filter(
             evaluacion__numero_placa__isnull=False
         ).select_related(
-            'evaluacion__cod_especie',  # Relación a la especie
-            'user'  # Relación al usuario
+            'evaluacion__cod_especie',
+            'user'
         ).prefetch_related(
-            'evaluacion'  # Pre-fetch de la relación de evaluación
+            Prefetch('evaluacion', queryset=CandidatesTrees.objects.all()),
+            Prefetch('evaluacion__cod_especie', queryset=SpecieForrest.objects.all())
         )
 
-        return queryset
-
     def get(self, request, pk=None, format=None):
-        queryset = self.get_queryset()
+        cache_key = f"monitorings_{pk if pk else 'all'}"
+        result = cache.get(cache_key)
 
-        if pk:
-            queryset = queryset.filter(id=pk)
+        if result is None:
+            queryset = self.get_queryset()
 
-        serializer = MonitoringsSerializer(queryset, many=True)
-        return Response(serializer.data)
+            if pk:
+                queryset = queryset.filter(id=pk)
+
+            serializer = MonitoringsSerializer(queryset, many=True)
+            result = serializer.data
+
+            # Cachear el resultado por un tiempo apropiado (ajusta según tus necesidades)
+            cache.set(cache_key, result, 300)  # 300 segundos = 5 minutos
+
+        return Response(result)
     
     def post(self, request, format=None):
         serializer = MonitoringsSerializer(data=request.data)
