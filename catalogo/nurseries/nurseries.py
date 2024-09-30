@@ -1,9 +1,12 @@
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+import os
+import uuid
+from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
-from django.db import connection
-from .serializers import NurseriesSerializer, UserNurseriesSerializer, UsersNurseriesSerializer
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django.core.files.storage import default_storage
+from .serializers import NurseriesSerializer, UserNurseriesSerializer, UsersNurseriesSerializer, NurseriesCreateSerializer
 
 from .models import Nurseries, UserNurseries
 
@@ -44,6 +47,7 @@ class NurseriesView(APIView):
                 'departamento': nursery.department.name,
                 'municipio': nursery.city.name,
                 'activo': nursery.active,  # Asumimos que todos los viveros están activos por defecto
+                'logo': nursery.logo,
                 'clase_vivero': nursery.clase_vivero,
                 'vigencia_registro': nursery.vigencia_registro,
                 'tipo_registro': nursery.tipo_registro,
@@ -74,10 +78,40 @@ class NurseriesView(APIView):
         return Response(list(viveros.values()))
 
     def post(self, request, format=None):
-        serializer = NurseriesSerializer(data=request.data)
+        nit = request.data.get('nit')  # Obtén el nit desde los datos enviados en la solicitud
+        image = request.FILES.get('logo')  # Asumiendo que el archivo se envía en un campo llamado "logo"
+
+        if not nit:
+            return Response({"error": "NIT is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if image:
+            # Generar nombre aleatorio para la imagen
+            random_filename = f"{uuid.uuid4().hex}.png"  # Genera un nombre aleatorio con extensión .jpeg
+
+            # Crear la ruta donde se almacenará la imagen: /images/img/nit/<NIT>/nombre_aleatorio.jpeg
+            nit_folder = os.path.join(settings.MEDIA_ROOT, 'img', str(nit))
+            if not os.path.exists(nit_folder):
+                os.makedirs(nit_folder)  # Crear la carpeta si no existe
+
+            # Ruta completa de la imagen
+            image_path = os.path.join(nit_folder, random_filename)
+
+            # Guardar la imagen
+            with default_storage.open(image_path, 'wb+') as destination:
+                for chunk in image.chunks():
+                    destination.write(chunk)
+
+            # Ruta relativa para almacenar en la base de datos
+            relative_image_path = os.path.join('img', str(nit), random_filename)
+
+            # Modificar los datos antes de guardar en la base de datos
+            request.data['logo'] = relative_image_path
+
+        serializer = NurseriesCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, pk, format=None):

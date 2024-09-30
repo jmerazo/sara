@@ -46,7 +46,7 @@ class MonitoringsView(APIView):
         ).prefetch_related(
             Prefetch('evaluacion', queryset=CandidatesTrees.objects.all()),
             Prefetch('evaluacion__cod_especie', queryset=SpecieForrest.objects.all())
-        )
+        )[:1000]  # Limitar la queryset a 1000 registros
 
     def get(self, request, pk=None, format=None):
         cache_key = f"monitorings_{pk if pk else 'all'}"

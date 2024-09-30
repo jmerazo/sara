@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Nurseries, UserNurseries
 from ..serializers import UserSerializer
 from ..species.models import SpecieForrest
-from ..models import Users
+from ..models import Users, Departments, Cities
 from ..serializers import DepartmentsSerializer, CitiesSerializer
 
 class NurserieUserSerializer(serializers.ModelSerializer):
@@ -14,6 +14,15 @@ class NurseriesSerializer(serializers.ModelSerializer):
     representante_legal = NurserieUserSerializer(read_only=True)
     department = DepartmentsSerializer()
     city = CitiesSerializer()
+
+    class Meta:
+        model = Nurseries
+        fields = '__all__'
+
+class NurseriesCreateSerializer(serializers.ModelSerializer):
+    representante_legal = serializers.PrimaryKeyRelatedField(queryset=Users.objects.all())
+    department = serializers.PrimaryKeyRelatedField(queryset=Departments.objects.all())
+    city = serializers.PrimaryKeyRelatedField(queryset=Cities.objects.all())
 
     class Meta:
         model = Nurseries

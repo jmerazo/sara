@@ -6,10 +6,9 @@ from django.http import Http404
 from rest_framework.views import APIView
 from django.db import connection
 import random, string, os, base64
-from ..warden.decorator import jwt_auth_required
 
 from .models import SpecieForrest, ImageSpeciesRelated, Families
-from .serializers import SpecieForrestSerializer
+from .serializers import SpecieForrestSerializer, SpecieForrestCreateSerializer
 
 def save_image(image, cod_especie, nom_comunes, image_type):
     # Carpeta principal para las imágenes
@@ -67,7 +66,6 @@ class SpecieForrestView(APIView):
             return Response(serializer.data)
     
     @transaction.atomic
-    @jwt_auth_required
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
 
@@ -178,58 +176,96 @@ class SpecieForrestView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @jwt_auth_required
     def put(self, request, pk, format=None):
-        specie = get_object_or_404(SpecieForrest, ShortcutID=pk)
+        specie = get_object_or_404(SpecieForrest, id=pk)
         adjusted_data = request.data
 
-        cod_specie_currently = specie.cod_especie
+        code_specie_currently = specie.cod_especie
+        code_specie_new = adjusted_data.get('cod_especie')
 
-        # Aquí puedes realizar las validaciones y actualizaciones necesarias.
-        # Por ejemplo, para actualizar el email y el número de documento:
-        cod_especie_new = adjusted_data.get('cod_especie')
-        nom_comunes = adjusted_data.get('nom_comunes')
-        otros_nombres = adjusted_data.get('otros_nombres')
-        nombre_cientifico = adjusted_data.get('nombre_cientifico')
-        sinonimos = adjusted_data.get('sinonimos')
-        familia = adjusted_data.get('familia')
-        distribucion = adjusted_data.get('distribucion')
-        hojas = adjusted_data.get('hojas')
-        flor = adjusted_data.get('flor')
-        frutos = adjusted_data.get('frutos')
-        semillas = adjusted_data.get('semillas')
-        tallo = adjusted_data.get('tallo')
-        raiz = adjusted_data.get('raiz')
-        
-        # Asegurémonos de que el nuevo email o número de documento no existan en otros usuarios
-        if cod_specie_currently != cod_especie_new:
-            existing_specie = SpecieForrest.objects.exclude(ShortcutID=pk).filter(cod_especie=cod_especie_new).first()
+        # Validar si el nuevo código de especie ya está en uso
+        if code_specie_currently != code_specie_new:
+            existing_specie = SpecieForrest.objects.exclude(id=pk).filter(cod_especie=code_specie_new).first()
             if existing_specie:
-                return Response({'error': f'El código de espeie {cod_especie_new} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f'El código de especie {code_specie_new} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Actualizamos los campos del usuario
-        specie.cod_especie = cod_especie_new
-        specie.nom_comunes = nom_comunes
-        specie.otros_nombres = otros_nombres
-        specie.nombre_cientifico = nombre_cientifico
-        specie.sinonimos = sinonimos
-        specie.familia = familia
-        specie.distribucion = distribucion
-        specie.hojas = hojas
-        specie.flor = flor
-        specie.frutos = frutos
-        specie.semillas = semillas
-        specie.tallo = tallo
-        specie.raiz = raiz        
+        cod_especie_img = adjusted_data['cod_especie']
+        base_dir = 'images'
+        sub_dir = os.path.join(base_dir, cod_especie_img)
+        os.makedirs(sub_dir, exist_ok=True)  # Asegúrate de que la carpeta exista
 
-        # Aquí debes continuar actualizando los demás campos según tus necesidades
+        # Obtener los datos de las imágenes del request
+        imgGeneral = adjusted_data.get('imageInputGeneral')
+        imgLeaf = adjusted_data.get('imageInputLeaf')
+        imgFlower = adjusted_data.get('imageInputFlower')
+        imgFruit = adjusted_data.get('imageInputFruit')
+        imgSeed = adjusted_data.get('imageInputSeed')
+        imgStem = adjusted_data.get('imageInputStem')
+        imgLandScapeOne = adjusted_data.get('imageInputLandScapeOne')
+        imgLandScapeTwo = adjusted_data.get('imageInputLandScapeTwo')
+        imgLandScapeThree = adjusted_data.get('imageInputLandScapeThree')
 
-        specie.save()  # Guardar los cambios
+        # Crear diccionario con las imágenes
+        image_columns = {
+            'img_general': imgGeneral,
+            'img_leafs': imgLeaf,
+            'img_fruits': imgFruit,
+            'img_flowers': imgFlower,
+            'img_seeds': imgSeed,
+            'img_stem': imgStem,
+            'img_landscape_one': imgLandScapeOne,
+            'img_landscape_two': imgLandScapeTwo,
+            'img_landscape_three': imgLandScapeThree,
+        }
 
-        serializer = SpecieForrestSerializer(specie)  # Serializa el usuario actualizado
-        return Response(serializer.data)
+        # Nombres válidos de imágenes para el guardado
+        valid_image_names = {
+            'img_general': 'imgGeneral',
+            'img_leafs': 'imgLeaf',
+            'img_fruits': 'imgFruit',
+            'img_flowers': 'imgFlower',
+            'img_seeds': 'imgSeed',
+            'img_stem': 'imgStem',
+            'img_landscape_one': 'imgLandScapeOne',
+            'img_landscape_two': 'imgLandScapeTwo',
+            'img_landscape_three': 'imgLandScapeThree',
+        }
 
-    @jwt_auth_required
+        # Función para generar un nombre aleatorio para los archivos
+        def generate_random_filename(length):
+            characters = string.ascii_letters + string.digits
+            return ''.join(random.choice(characters) for _ in range(length))
+
+        # Actualizar imágenes
+        for column_name, img_data in image_columns.items():
+            if img_data:
+                random_filename = generate_random_filename(8)
+                file_extension = ".jpeg"  # Reemplaza con la extensión correcta si es necesario
+
+                valid_image_name = valid_image_names[column_name]
+                destination_path = os.path.join(sub_dir, f"{valid_image_name}_{random_filename}{file_extension}")
+
+                img_data = img_data.split(';base64,')[-1]
+                img_data_bytes = base64.b64decode(img_data)
+
+                # Guardar la imagen en la carpeta correspondiente
+                with open(destination_path, 'wb') as dest_file:
+                    dest_file.write(img_data_bytes)
+
+                # Asignar la ruta de la imagen al campo correspondiente del modelo
+                setattr(specie, column_name, destination_path)
+                print(f"Imagen actualizada en {column_name}")
+
+        # Usar el serializer para validar y actualizar otros campos
+        serializer = SpecieForrestSerializer(specie, data=adjusted_data)
+        if serializer.is_valid():
+            serializer.save()  # Guardar cambios en el modelo SpecieForrest
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
     def delete(self, request, pk, format=None):
         specie = self.get_object(pk)
         specie.delete()

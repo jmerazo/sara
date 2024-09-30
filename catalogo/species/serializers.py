@@ -12,6 +12,13 @@ class SpecieForrestSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecieForrest
         fields = '__all__'
+        read_only_fields = ['id']
+
+class SpecieForrestCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpecieForrest
+        fields = '__all__'
+        read_only_fields = ['id']
 
 # Return top species
 class ImageSpeciesTopSerializer(serializers.ModelSerializer):

@@ -28,7 +28,7 @@ class FirebaseAuthMiddleware:
             '/api/images/',
             '/api/species/search/code/',
             '/api/species/search/family/',
-            '/api/users/verify-email/'
+            '/api/users/verify-email/',
         ]
 
     def is_path_excluded(self, path):
