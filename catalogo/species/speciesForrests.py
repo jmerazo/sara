@@ -1,3 +1,4 @@
+from django.db import models
 from rest_framework import status
 from django.db import connection, transaction
 from rest_framework.response import Response
@@ -5,10 +6,10 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from rest_framework.views import APIView
 from django.db import connection
-import random, string, os, base64
+import random, string, os, base64, shutil
 
 from .models import SpecieForrest, ImageSpeciesRelated, Families
-from .serializers import SpecieForrestSerializer, SpecieForrestCreateSerializer
+from .serializers import SpecieForrestSerializer, SpecieForrestCreatSerializer, SpecieForrestCreateSerializer
 
 def save_image(image, cod_especie, nom_comunes, image_type):
     # Carpeta principal para las imágenes
@@ -42,7 +43,7 @@ class SpecieForrestView(APIView):
     def get_object(self, pk=None):
         if pk is not None:
             try:
-                return SpecieForrest.objects.get(ShortcutID=pk)
+                return SpecieForrest.objects.get(id=pk)
             except SpecieForrest.DoesNotExist:
                 raise Http404
         else:
@@ -65,83 +66,42 @@ class SpecieForrestView(APIView):
             serializer = SpecieForrestSerializer(species_list, many=True)
             return Response(serializer.data)
     
-    @transaction.atomic
     def post(self, request, format=None):
         adjusted_data = request.data.copy()
 
-        ce = adjusted_data.get('cod_especie')
-
-        existing_specie = SpecieForrest.objects.filter(cod_especie=ce).first()
-        if existing_specie:
-            return Response({'error': f'El código de especie {ce} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        while True:
-            random_id = generate_random_id(8)
-            existing_code = SpecieForrest.objects.filter(ShortcutID=random_id).first()
-            
-            if existing_code is None:
-                # El ID no existe en la base de datos, se puede utilizar
-                break
-
-        cod_especie_img = adjusted_data['cod_especie']
+        # Manejo de imágenes
+        cod_especie_img = adjusted_data['code_specie']
 
         base_dir = 'images'
         sub_dir = os.path.join(base_dir, cod_especie_img)
-        os.makedirs(sub_dir, exist_ok=True)  # Asegúrate de que la carpeta principal exista
+        os.makedirs(sub_dir, exist_ok=True)  # Asegura que la carpeta principal exista
 
-        imgGeneral = adjusted_data['imageInputGeneral']
-        imgLeaf = adjusted_data['imageInputLeaf']
-        imgFlower = adjusted_data['imageInputFlower']
-        imgFruit = adjusted_data['imageInputFruit']
-        imgSeed = adjusted_data['imageInputSeed']
-        imgStem = adjusted_data['imageInputStem']
-        imgLandScapeOne = adjusted_data['imageInputLandScapeOne']
-        imgLandScapeTwo = adjusted_data['imageInputLandScapeTwo']
-        imgLandScapeThree = adjusted_data['imageInputLandScapeThree']
-
-        img_related = ImageSpeciesRelated()
-        img_related.specie_id = random_id
-
-        image_columns = {
-            'img_general': imgGeneral,
-            'img_leafs': imgLeaf,
-            'img_fruits': imgFruit,
-            'img_flowers': imgFlower,
-            'img_seeds': imgSeed,
-            'img_stem': imgStem,
-            'img_landscape_one': imgLandScapeOne,
-            'img_landscape_two': imgLandScapeTwo,
-            'img_landscape_three': imgLandScapeThree,
+        image_fields = {
+            'img_general': 'imageInputGeneral',
+            'img_leafs': 'imageInputLeaf',
+            'img_flowers': 'imageInputFlower',
+            'img_fruits': 'imageInputFruit',
+            'img_seeds': 'imageInputSeed',
+            'img_stem': 'imageInputStem',
+            'img_landscape_one': 'imageInputLandScapeOne',
+            'img_landscape_two': 'imageInputLandScapeTwo',
+            'img_landscape_three': 'imageInputLandScapeThree',
         }
 
-        # Arreglo adicional para validar nombres de archivo
-        valid_image_names = {
-            'img_general': 'imgGeneral',
-            'img_leafs': 'imgLeaf',
-            'img_fruits': 'imgFruit',
-            'img_flowers': 'imgFlower',
-            'img_seeds': 'imgSeed',
-            'img_stem': 'imgStem',
-            'img_landscape_one': 'imgLandScapeOne',
-            'img_landscape_two': 'imgLandScapeTwo',
-            'img_landscape_three': 'imgLandScapeThree',
-        }
-
-        # Función para generar un nombre alfanumérico aleatorio
+        # Función para generar un nombre de archivo aleatorio
         def generate_random_filename(length):
             characters = string.ascii_letters + string.digits
             return ''.join(random.choice(characters) for _ in range(length))
 
-        img_related = ImageSpeciesRelated()
-        img_related.specie_id = random_id
+        img_related_data = {}
 
-        for column_name, img_data in image_columns.items():
+        for field_name, input_name in image_fields.items():
+            img_data = adjusted_data.get(input_name)
             if img_data:
                 random_filename = generate_random_filename(8)
                 file_extension = ".jpeg"  # Reemplaza con la extensión de archivo adecuada
 
-                valid_image_name = valid_image_names[column_name]
-                destination_path = os.path.join(sub_dir, f"{valid_image_name}_{random_filename}{file_extension}")
+                destination_path = os.path.join(sub_dir, f"{input_name}_{random_filename}{file_extension}")
 
                 img_data = img_data.split(';base64,')[-1]
                 img_data_bytes = base64.b64decode(img_data)
@@ -149,39 +109,34 @@ class SpecieForrestView(APIView):
                 with open(destination_path, 'wb') as dest_file:
                     dest_file.write(img_data_bytes)
 
-                setattr(img_related, column_name, destination_path)
-                print(f"Imagen asignada a {column_name}")
+                img_related_data[field_name] = destination_path
 
-        img_related.save()
-
-        serializer = SpecieForrestSerializer(data=adjusted_data)
+        # Ahora, utiliza el serializer
+        serializer = SpecieForrestCreatSerializer(data=adjusted_data)
         if serializer.is_valid():
-            specie = SpecieForrest(
-                ShortcutID = random_id,
-                cod_especie = adjusted_data['cod_especie'],
-                nom_comunes = adjusted_data['nom_comunes'],
-                otros_nombres = adjusted_data['otros_nombres'],
-                nombre_cientifico = adjusted_data['nombre_cientifico'],
-                sinonimos = adjusted_data['sinonimos'],
-                familia = adjusted_data['familia'],
-                distribucion = adjusted_data['distribucion'],
-                hojas = adjusted_data['hojas'],
-                flor = adjusted_data['flor'],
-                frutos = adjusted_data['frutos'],
-                semillas = adjusted_data['semillas'],
-                tallo = adjusted_data['tallo'],
-                raiz = adjusted_data['raiz']
-            )
-            specie.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            specie = serializer.save()  # Guarda la instancia de SpecieForrest
+            # Guarda la relación de imágenes
+            if img_related_data:
+                img_related = ImageSpeciesRelated.objects.create(specie=specie, **img_related_data)
+                img_related.save()
+
+            return Response({
+                'success': True,
+                'message': 'Especie creada con éxito!',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'message': 'Error al crear la especie',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
         specie = get_object_or_404(SpecieForrest, id=pk)
         adjusted_data = request.data
 
-        code_specie_currently = specie.cod_especie
-        code_specie_new = adjusted_data.get('cod_especie')
+        code_specie_currently = specie.code_specie
+        code_specie_new = adjusted_data.get('code_specie')
 
         # Validar si el nuevo código de especie ya está en uso
         if code_specie_currently != code_specie_new:
@@ -189,7 +144,7 @@ class SpecieForrestView(APIView):
             if existing_specie:
                 return Response({'error': f'El código de especie {code_specie_new} ya está registrado en otra especie.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cod_especie_img = adjusted_data['cod_especie']
+        cod_especie_img = adjusted_data['code_specie']
         base_dir = 'images'
         sub_dir = os.path.join(base_dir, cod_especie_img)
         os.makedirs(sub_dir, exist_ok=True)  # Asegúrate de que la carpeta exista
@@ -257,19 +212,80 @@ class SpecieForrestView(APIView):
                 print(f"Imagen actualizada en {column_name}")
 
         # Usar el serializer para validar y actualizar otros campos
-        serializer = SpecieForrestSerializer(specie, data=adjusted_data)
+        serializer = SpecieForrestCreateSerializer(specie, data=adjusted_data)
         if serializer.is_valid():
             serializer.save()  # Guardar cambios en el modelo SpecieForrest
-            return Response(serializer.data)
+            return Response({
+                'success': True,
+                'message': 'Especie actualizada con éxito!',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+            return Response({
+                'success': False,
+                'message': 'Error al actualizar la especie',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
-        specie = self.get_object(pk)
-        specie.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            # Obtener la especie
+            specie = self.get_object(pk)
+
+            # Obtener las imágenes relacionadas
+            img_related_qs = ImageSpeciesRelated.objects.filter(specie=specie)
+
+            if img_related_qs.exists():
+                for img_related in img_related_qs:
+                    # Obtener todos los campos que son CharField y pueden contener rutas de imágenes
+                    fields = [field.name for field in img_related._meta.get_fields() if isinstance(field, models.CharField)]
+
+                    for field_name in fields:
+                        image_path = getattr(img_related, field_name)
+                        if image_path and os.path.exists(image_path):
+                            try:
+                                os.remove(image_path)
+                            except Exception as e:
+                                print(f"Error al eliminar la imagen {image_path}: {e}")
+
+                # Eliminar registros de imágenes relacionadas
+                img_related_qs.delete()
+
+            # Eliminar el directorio de imágenes asociado
+            # Asumimos que el directorio está nombrado por el código de especie
+            base_dir = 'images'
+            specie_code = specie.code_specie  # Asegúrate de que 'code_specie' es el nombre correcto del campo
+            dir_to_remove = os.path.join(base_dir, str(specie_code))
+
+            if os.path.exists(dir_to_remove) and os.path.isdir(dir_to_remove):
+                try:
+                    shutil.rmtree(dir_to_remove)
+                except Exception as e:
+                    print(f"Error al eliminar el directorio {dir_to_remove}: {e}")
+
+            # Eliminar la especie
+            specie.delete()
+
+            # Retornar respuesta exitosa
+            return Response({
+                'success': True,
+                'message': 'Especie eliminada con éxito!',
+                'data': None
+            }, status=status.HTTP_200_OK)
+
+        except SpecieForrest.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'La especie no existe.',
+                'errors': {'specie': ['No se encontró la especie especificada.']}
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error al eliminar la especie',
+                'errors': {'detail': str(e)}
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 class SearchSpecieForrestView(APIView):
     def get(self, request, code, format=None):
