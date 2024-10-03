@@ -40,3 +40,8 @@ class UsersCreateSerializer(serializers.ModelSerializer):
         else:
             validated_data.pop('password', None)  # Eliminar password si está vacío
         return super().create(validated_data)
+
+class UsersValidateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ['id', 'uuid_firebase', 'email', 'first_name', 'last_name', 'rol', 'is_active', 'verificated', 'date_joined']

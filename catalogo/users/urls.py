@@ -1,5 +1,5 @@
 from django.urls import path
-from .users import UsersView, UsersStateView, UserPermissionsView, SomeView, RolesView, UserRegisterView
+from .users import UsersView, UsersStateView, UserPermissionsView, RolesView, UserRegisterView, UsersValidateView
 from ..helpers.Email import verifyEmail
 
 urlpatterns = [
@@ -10,4 +10,6 @@ urlpatterns = [
     path('modules', UserPermissionsView.as_view()),
     path('roles/', RolesView.as_view()),
     path('verify-email/<str:token>', verifyEmail),
+    path('validate/', UsersValidateView.as_view()),
+    path('validate/<int:user_id>', UsersValidateView.as_view()),
 ]

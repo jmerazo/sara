@@ -1,5 +1,4 @@
 from rest_framework.response import Response
-from django.views.decorators.csrf import csrf_exempt
 from firebase_admin import auth
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -9,14 +8,14 @@ from rest_framework.views import APIView
 from django.db.models import Q
 from django.utils import timezone
 
-from .serializers import UsersCreateSerializer, UsersSerializer
+from .serializers import UsersCreateSerializer, UsersSerializer, UsersValidateSerializer
 from ..utils.serializers import RolSerializer
 from .models import UserModules
 from ..utils.models import Rol
 from ..page.models import Pages
 from ..models import Users, Departments, Cities
-from ..helpers.jwt import generate_jwt, generate_jwt_register
-from ..helpers.Email import send_verification_email
+from ..helpers.jwt import generate_jwt_register
+from ..helpers.Email import send_verification_email, send_acceptance_email, send_rejection_email
 
 
 class UsersView(APIView):
@@ -68,24 +67,40 @@ class UsersView(APIView):
         user_fixed['is_staff'] = 0
         user_fixed['is_superuser'] = 0
 
+        # Verificar si el usuario ya existe
         existing_user = Users.objects.filter(Q(email=email)).first()
         if existing_user:
-            return Response({'msg': f'El usuario ya está registrado con el correo electrónico {existing_user.email}.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'success': False,
+                'message': f'El usuario ya está registrado con el correo electrónico {existing_user.email}.',
+                'errors': {'email': ['El correo electrónico ya está registrado.']}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar campos requeridos
+        missing_fields = {}
+        if not email:
+            missing_fields['email'] = ['Este campo es obligatorio.']
+        if not first_name:
+            missing_fields['first_name'] = ['Este campo es obligatorio.']
+        if not last_name:
+            missing_fields['last_name'] = ['Este campo es obligatorio.']
+        # Para registro normal, validar contraseña
+        if not uuid_firebase and not password:
+            missing_fields['password'] = ['La contraseña es obligatoria para registro normal.']
+
+        if missing_fields:
+            return Response({
+                'success': False,
+                'message': 'Faltan campos obligatorios.',
+                'errors': missing_fields
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Validar campos requeridos
-            if not all([email, first_name, last_name]):
-                return Response({'msg': 'Email, nombre y apellido son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Para registro normal, validar contraseña
-            if not uuid_firebase and not password:
-                return Response({'msg': 'La contraseña es obligatoria para registro normal'}, status=status.HTTP_400_BAD_REQUEST)
-
             # Crear usuario en la base de datos local
             serializer = UsersCreateSerializer(data=user_fixed)
             if serializer.is_valid():
                 user = serializer.save()
-                
+
                 # Si no es registro social, crear usuario en Firebase
                 if not uuid_firebase:
                     firebase_user = auth.create_user(
@@ -99,19 +114,23 @@ class UsersView(APIView):
 
                 # Generar token JWT y guardar
                 token = generate_jwt_register(user.email)
-                print('token ', token)
                 user.token = token
                 user.save()
-                
+
                 # Enviar correo de verificación para todos los usuarios
                 send_verification_email(user, token)
 
                 return Response({
-                    'msg': 'Usuario registrado exitosamente. Por favor, verifique su correo electrónico.',
+                    'success': True,
+                    'message': 'Usuario registrado exitosamente. Por favor, verifique su correo electrónico.',
                     'data': serializer.data
                 }, status=status.HTTP_201_CREATED)
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'success': False,
+                    'message': 'Error al registrar el usuario.',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             # Si hay algún error durante el proceso, eliminar el usuario local si fue creado
@@ -122,7 +141,13 @@ class UsersView(APIView):
                     auth.delete_user(firebase_user.uid)
                 except:
                     pass  # Si falla la eliminación en Firebase, lo manejamos silenciosamente
-            return Response({'msg': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Retornar una respuesta consistente con el formato de error
+            return Response({
+                'success': False,
+                'message': 'Error durante el registro del usuario.',
+                'errors': {'detail': str(e)}
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
         user = get_object_or_404(Users, id=pk)
@@ -276,16 +301,80 @@ class UsersStateView(APIView):
         serializer = UsersSerializer(user)  # Serializa el usuario actualizado
         return Response(serializer.data)
     
-class SomeView(APIView):
+class UsersValidateView(APIView):
     def get(self, request):
-        # Acceder al usuario actual
-        user = request.user
-        if user.is_authenticated:
-            # Realiza operaciones con el usuario
-            return Response({"message": "Usuario autenticado"})
-        else:
-            return Response({"message": "Usuario no autenticado"})
-        
+        try:
+            queryset = Users.objects.filter(verificated=1, is_active=0)
+            serializer = UsersValidateSerializer(queryset, many=True)
+            return Response({
+                'success': True,
+                'message': 'Usuarios cargados satisfactoriamente',
+                'data': {
+                    'users': serializer.data,
+                }
+            }, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'No se encontraron usuarios.',
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    def put(self, request, user_id):
+        try:
+            user = Users.objects.get(id=user_id, is_active=0)
+            user.is_active = 1
+            user.save()
+
+            # Enviar el correo de aceptación
+            send_acceptance_email(user)
+
+            return Response({
+                'success': True,
+                'message': 'Usuario activado correctamente',
+            }, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Usuario no encontrado o ya está activo.',
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error al activar el usuario: {str(e)}',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, user_id):
+        try:
+            user = Users.objects.get(id=user_id)
+
+            firebase_user_uid = user.uuid_firebase if hasattr(user, 'uuid_firebase') else None
+            user.delete()
+
+            # Eliminar usuario de Firebase
+            if firebase_user_uid:
+                try:
+                    auth.delete_user(firebase_user_uid)
+                except Exception as e:
+                    pass  # Si hay un error eliminando en Firebase, lo manejamos silenciosamente
+
+            # Enviar el correo de rechazo (opcional)
+            send_rejection_email(user)
+
+            return Response({
+                'success': True,
+                'message': 'Usuario eliminado correctamente',
+            }, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Usuario no encontrado.',
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error al eliminar el usuario: {str(e)}',
+            }, status=status.HTTP_400_BAD_REQUEST)      
+
 class UserPermissionsView(APIView):
     def get(self, request):
         """ user = request.user """

@@ -128,3 +128,40 @@ class EmailService(APIView):
             msg_img = MIMEImage(f.read())
             msg_img.add_header('Content-ID', '<logo>')
             msg.attach(msg_img)
+
+def send_acceptance_email(user):
+    email_context = {
+        'first_name': user.first_name,
+    }
+
+    email_body = render_to_string('activateUser.html', email_context)
+    email_subject = 'Sara | Cuenta activada'    
+    msg = EmailMultiAlternatives(email_subject, email_body, settings.EMAIL_HOST_USER, [user.email])
+    msg.attach_alternative(email_body, "text/html")
+    
+    # Adjunta la imagen con un CID
+    with open('catalogo/helpers/resources/imgs/sara.png', 'rb') as f:
+        msg_img = MIMEImage(f.read())
+        msg_img.add_header('Content-ID', '<logo>')
+        msg.attach(msg_img)
+
+    msg.send()
+
+def send_rejection_email(user):
+    email_context = {
+        'first_name': user.first_name,
+    }
+
+    email_body = render_to_string('rejectUser.html', email_context)
+    email_subject = 'Sara | Cuenta rechazada'    
+    msg = EmailMultiAlternatives(email_subject, email_body, settings.EMAIL_HOST_USER, [user.email])
+    msg.attach_alternative(email_body, "text/html")
+    
+    # Adjunta la imagen con un CID
+    with open('catalogo/helpers/resources/imgs/sara.png', 'rb') as f:
+        msg_img = MIMEImage(f.read())
+        msg_img.add_header('Content-ID', '<logo>')
+        msg.attach(msg_img)
+
+    msg.send()
+

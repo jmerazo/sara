@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cuenta activada</title>
+    <style>
+        .container {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .button {
+            background-color: #0d4c30;
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .logo {
+            max-width: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="cid:logo" alt="Logo" class="logo">
+        <h2>Hola {{ first_name }},</h2>
+        <p>Lamentamos informarle que su solicitud ha sido rechazada.</p>
+        <p>Gracias por su interes!</p>
+        <p>El equipo de Sara</p>
+    </div>
+</body>
+</html>
