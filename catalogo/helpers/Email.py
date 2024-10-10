@@ -165,3 +165,75 @@ def send_rejection_email(user):
 
     msg.send()
 
+@method_decorator(csrf_exempt, name='dispatch')
+class EmailContactService(APIView):
+    def post(self, request):
+        to_email = request.data.get('to_email')
+        from_email = request.data.get('from_email')
+        subject = request.data.get('subject')
+        body = request.data.get('body')
+
+        if not all([to_email, subject, from_email, body]):
+            return Response({
+                'success': False,
+                'message': 'Faltan campos requeridos para enviar el correo.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Enviar correo al vivero
+            self.send_email_to_contact(to_email, subject, from_email, body)
+            # Enviar correo de confirmación al cliente
+            self.send_confirmation_to_customer(from_email, subject, from_email, body)
+            return Response({
+                'success': True,
+                'message': 'Correo enviado satisfactoriamente',
+                'data': {
+                    'to_email': to_email,
+                    'from_email': from_email,
+                    'subject': subject
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Error al enviar el correo.',
+                'error': str(e)  # Detalle del error
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def send_email_to_contact(self, to_email, subject, from_email, body):
+        subject = subject
+        context = {
+            'customer_email': from_email,
+            'customer_message': body,
+            'current_year': datetime.now().year
+        }
+        content_html = render_to_string('contactAboutUs.html', context)
+        
+        msg = EmailMultiAlternatives(subject, content_html, settings.EMAIL_HOST_USER, [to_email])
+        msg.attach_alternative(content_html, "text/html")
+        
+        self.attach_logo(msg)
+        msg.send()
+
+    def send_confirmation_to_customer(self, to_email, subject, from_email, body):
+        subject = subject
+        context = {
+            'customer_email': from_email,
+            'customer_message': body,
+            'current_year': datetime.now().year
+        }
+        content_html = render_to_string('contactAboutUs.html', context)
+        
+        msg = EmailMultiAlternatives(subject, content_html, settings.EMAIL_HOST_USER, [to_email])
+        msg.attach_alternative(content_html, "text/html")
+        
+        self.attach_logo(msg)
+        msg.send()
+
+    def attach_logo(self, msg):
+        with open('catalogo/helpers/resources/imgs/sara.png', 'rb') as f:
+            msg_img = MIMEImage(f.read())
+            msg_img.add_header('Content-ID', '<logo>')
+            msg.attach(msg_img)
+

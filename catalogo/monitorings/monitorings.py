@@ -3,6 +3,7 @@ from rest_framework import status
 from django.core.cache import cache
 from django.db.models import Prefetch
 from rest_framework.views import APIView
+from django.core.paginator import Paginator
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
@@ -38,7 +39,8 @@ class SearchMonitoringSpecieView(APIView):
 
 class MonitoringsView(APIView):
     def get_queryset(self):
-        return Monitorings.objects.filter(
+        # Filtro base
+        queryset = Monitorings.objects.filter(
             evaluacion__numero_placa__isnull=False
         ).select_related(
             'evaluacion__cod_especie',
@@ -46,25 +48,39 @@ class MonitoringsView(APIView):
         ).prefetch_related(
             Prefetch('evaluacion', queryset=CandidatesTrees.objects.all()),
             Prefetch('evaluacion__cod_especie', queryset=SpecieForrest.objects.all())
-        )[:1000]  # Limitar la queryset a 1000 registros
+        )
+        
+        # Filtro de búsqueda global
+        search_term = self.request.query_params.get('search', None)
+        if search_term:
+            queryset = queryset.filter(evaluacion__numero_placa__icontains=search_term)
+        
+        return queryset
 
     def get(self, request, pk=None, format=None):
-        cache_key = f"monitorings_{pk if pk else 'all'}"
-        result = cache.get(cache_key)
+        # Obtener el queryset completo de acuerdo con el término de búsqueda
+        queryset = self.get_queryset()
+        
+        # Configurar paginación a nivel de backend
+        page_size = int(request.query_params.get('page_size', 50))  # Tamaño de página ajustable
+        page_number = int(request.query_params.get('page', 1))  # Página solicitada
+        paginator = Paginator(queryset, page_size)  # Paginador con el queryset completo
+        page = paginator.get_page(page_number)  # Obtener la página solicitada
 
-        if result is None:
-            queryset = self.get_queryset()
+        # Serializar la página actual
+        serializer = MonitoringsSerializer(page, many=True)
 
-            if pk:
-                queryset = queryset.filter(id=pk)
+        # Obtener total de elementos y páginas
+        total_items = paginator.count
+        total_pages = paginator.num_pages
 
-            serializer = MonitoringsSerializer(queryset, many=True)
-            result = serializer.data
-
-            # Cachear el resultado por un tiempo apropiado (ajusta según tus necesidades)
-            cache.set(cache_key, result, 300)  # 300 segundos = 5 minutos
-
-        return Response(result)
+        # Respuesta con datos paginados
+        return Response({
+            'total_items': total_items,
+            'total_pages': total_pages,
+            'current_page': page_number,
+            'results': serializer.data
+        }, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
         serializer = MonitoringsSerializer(data=request.data)

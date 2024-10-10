@@ -323,6 +323,19 @@ class UsersValidateView(APIView):
         try:
             user = Users.objects.get(id=user_id, is_active=0)
             user.is_active = 1
+            
+            # Extraer el ID de rol desde el diccionario
+            rol_id = request.data.get('rol')
+            
+            if rol_id is None:
+                return Response({
+                    'success': False,
+                    'message': 'El rol es requerido para activar el usuario.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Obtener la instancia del rol y asignarla al usuario
+            rol_instance = get_object_or_404(Rol, id=rol_id)  # Asegura que el rol existe
+            user.rol = rol_instance
             user.save()
 
             # Enviar el correo de aceptación
@@ -332,11 +345,13 @@ class UsersValidateView(APIView):
                 'success': True,
                 'message': 'Usuario activado correctamente',
             }, status=status.HTTP_200_OK)
+        
         except Users.DoesNotExist:
             return Response({
                 'success': False,
                 'message': 'Usuario no encontrado o ya está activo.',
             }, status=status.HTTP_404_NOT_FOUND)
+        
         except Exception as e:
             return Response({
                 'success': False,
