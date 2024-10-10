@@ -259,7 +259,8 @@ class UserRegisterView(APIView):
 
                 # Generar token JWT y guardar
                 token = generate_jwt_register(user.email)
-                user.token = token
+                if isinstance(token, str):
+                    token = token.encode('utf-8')
                 user.save()
                 
                 # Enviar correo de verificación para todos los usuarios
