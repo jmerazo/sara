@@ -1,11 +1,11 @@
 from django.db import models
+from django.http import Http404
+from django.db import connection
 from rest_framework import status
+from rest_framework.views import APIView
 from django.db import connection, transaction
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.http import Http404
-from rest_framework.views import APIView
-from django.db import connection
 import random, string, os, base64, shutil
 
 from .models import SpecieForrest, ImageSpeciesRelated, Families
@@ -32,11 +32,6 @@ def save_image(image, cod_especie, nom_comunes, image_type):
             f.write(chunk)
 
     return file_path
-
-def generate_random_id(length):
-            characters = string.ascii_letters + string.digits
-            random_id = ''.join(random.choice(characters) for _ in range(length))
-            return random_id
 
 # VISTAS ESPECIES FORESTALES
 class SpecieForrestView(APIView):
@@ -371,59 +366,3 @@ class ReportSpecieDataView(APIView):
             }
             data.append(item)
         return Response(data)
-    
-class SearchCandidatesSpecieView(APIView):
-    def get(self, request, nom, format=None):
-        # Define la consulta SQL con un marcador de posición para nom
-        sql = """
-            SELECT 
-            ea.ShortcutIDEV, 
-            ea.numero_placa, 
-            ea.cod_expediente, 
-            ea.cod_especie_id, 
-            ea.fecha_evaluacion, 
-            ea.departamento, 
-            ea.municipio, 
-            ea.altitud, 
-            ea.altura_total, 
-            ea.altura_fuste, 
-            ea.cobertura, 
-            ea.cober_otro, 
-            ea.entorno_individuo, 
-            ea.entorno_otro, 
-            ea.especies_forestales_asociadas, 
-            ea.dominancia_if, 
-            ea.forma_fuste, 
-            ea.dominancia, 
-            ea.alt_bifurcacion, 
-            ea.estado_copa, 
-            ea.posicion_copa, 
-            ea.fitosanitario, 
-            ea.presencia, 
-            ea.resultado, 
-            ea.evaluacion, 
-            ea.observaciones
-            FROM evaluacion_as AS ea
-            INNER JOIN especie_forestal AS ef ON ea.cod_especie_id = ef.cod_especie
-            WHERE ef.nom_comunes = '%s' AND ea.numero_placa IS NOT NULL;
-        """
-
-        # Ejecuta la consulta con el valor de nom
-        with connection.cursor() as cursor:
-            cursor.execute(sql % nom)
-            result = cursor.fetchall()
-
-            columns = [column[0] for column in cursor.description if column[0] is not None]
-
-            # Filtra las filas que contienen valores NULL y sustituye 'None' por None
-            queryset = []
-            for row in result:
-                row_dict = {}
-                for idx, col in enumerate(columns):
-                    value = row[idx]
-                    if value == 'None':
-                        value = None
-                    row_dict[col] = value
-                queryset.append(row_dict)
-
-            return Response(queryset)

@@ -1,15 +1,17 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django_pandas.io import read_frame
 from django.db.models import F
 from django.db.models import Count, OuterRef, Subquery
 from datetime import datetime
 from collections import defaultdict
 from calendar import monthrange
 from django.db import connection
-from ..candidates.models import CandidatesTrees
-from .models import Monitorings
 
 from .models import Monitorings
+from ..candidates.models import CandidatesTrees
+from ..species.models import SpecieForrest
+from .serializers import  MonitoringsSerializer
 
 import pandas as pd
 from sklearn.model_selection import train_test_split

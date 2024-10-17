@@ -1,14 +1,15 @@
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-from django.shortcuts import get_object_or_404
+import random, string
+from decimal import Decimal
+from django.db import connection
 from rest_framework import status
 from rest_framework.views import APIView
-from decimal import Decimal
-import random, string
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 
 from ..species.models import SpecieForrest
 from .models import CandidatesTrees
-from .serializers import CandidateTreesSerializer, CandidateTreesCreateSerializer
+from .serializers import CandidateTreesSerializer, CandidateTreesCreateSerializer, CandidatesSpecieForrestSerializer
 
 def convert_to_decimal_or_int(value):
     if value is None or value == '':
@@ -153,32 +154,70 @@ class AverageCandidateTreesView(APIView):
             return Response({'error': 'Ocurrió un error al obtener los datos'}, status=500)
 
 class SearchCandidatesSpecieView(APIView):
-    def get(self, request, nom, format=None):
-        # Realiza la consulta utilizando el ORM de Django
-        queryset = CandidatesTrees.objects.filter(
-            numero_placa__isnull=False,
-            cod_especie__nom_comunes=nom
-        ).select_related('cod_especie').values(
-            'ShortcutIDEV', 'numero_placa', 'cod_expediente', 'cod_especie', 
-            'fecha_evaluacion', 'departamento', 'municipio', 'altitud', 
-            'altura_total', 'altura_fuste', 'cobertura', 'cober_otro', 
-            'entorno_individuo', 'entorno_otro', 'especies_forestales_asociadas', 
-            'dominancia_if', 'forma_fuste', 'dominancia', 'alt_bifurcacion', 
-            'estado_copa', 'posicion_copa', 'fitosanitario', 'presencia', 
-            'resultado', 'evaluacion', 'observaciones'
-        )
+    def get(self, request, code, format=None):
+        sql = """
+            SELECT 
+                ea.id,
+                ea.eventDate,
+                ea.numero_placa,
+                ea.cod_expediente,
+                ea.cod_especie_id,
+                ea.property_id,
+                ea.minimumElevationInMeters,
+                ea.cobertura,
+                ea.entorno_individuo,
+                ea.dominancia_if,
+                ea.forma_fuste,
+                ea.dominancia,
+                ea.alt_bifurcacion,
+                ea.estado_copa,
+                ea.posicion_copa,
+                ea.fitosanitario,
+                ea.presencia,
+                ea.resultado,
+                ea.evaluacion,
+                ea.observaciones,
+                ef.habit,
+                ef.vernacularName,
+                ef.nombre_cientifico,
+                p.p_departamento_id,
+                dp.name AS departamento_name,
+                ct.name AS ciudad_name,
+                p.p_municipio_id,
+                p.p_user_id
+            FROM 
+                evaluacion_as_c AS ea
+            INNER JOIN 
+                especie_forestal_c AS ef ON ea.cod_especie_id = ef.code_specie
+            LEFT JOIN 
+                predios AS p ON ea.property_id = p.id
+            INNER JOIN 
+                departments AS dp ON p.p_departamento_id = dp.id
+            INNER JOIN 
+                cities AS ct ON p.p_municipio_id = ct.id
+            WHERE 
+                ef.code_specie = %s
+            AND 
+                ea.numero_placa IS NOT NULL
+            AND ea.estado_placa <> 'Archivado';
+        """
+        
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [code])
+            result = cursor.fetchall()
+            
+            # Verifica si cursor.description y result tienen datos
+            if cursor.description and result:
+                columns = [col[0] for col in cursor.description]
+                data = [dict(zip(columns, row)) for row in result]
+            else:
+                data = []  # Asigna una lista vacía si no hay resultados
 
-        # Filtra las filas que contienen valores NULL y sustituye 'None' por None
-        filtered_queryset = []
-        for row in queryset:
-            row_dict = {}
-            for col, value in row.items():
-                if value == 'None':
-                    value = None
-                row_dict[col] = value
-            filtered_queryset.append(row_dict)
-
-        return Response(filtered_queryset)
+        return Response({
+            'success': True,
+            'message': 'Consulta realizada con éxito',
+            'data': data
+        })
         
 class CandidatesSpecieUserView(APIView):
     def get(self, request, user_id, format=None):

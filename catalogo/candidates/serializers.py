@@ -58,3 +58,35 @@ class TreesVerifyMonitoringSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidatesTrees
         fields = ['ShortcutIDEV', 'numero_placa', 'cod_especie', 'fecha_evaluacion', 'usuario_evaluador', 'departamento', 'municipio']
+
+class CandidatesSpecieForrestSerializer(serializers.ModelSerializer):
+    # Asumiendo que 'property' es un ForeignKey, no uses many=True
+    property = PropertySerializer(read_only=True)
+    specie = SpecieForrestLiteSerializer(source='cod_especie', read_only=True)
+
+    class Meta:
+        model = CandidatesTrees  # Asegúrate de que este es el modelo correcto
+        fields = [
+            'id', 
+            'eventDate', 
+            'numero_placa', 
+            'cod_expediente', 
+            'cod_especie_id', 
+            'specie',
+            'minimumElevationInMeters', 
+            'cobertura', 
+            'entorno_individuo', 
+            'dominancia_if', 
+            'forma_fuste', 
+            'dominancia',
+            'alt_bifurcacion',
+            'estado_copa',
+            'posicion_copa',
+            'fitosanitario',
+            'presencia',
+            'resultado',
+            'evaluacion',
+            'observaciones',
+            'property'
+        ]
+        read_only_fields = ['id']

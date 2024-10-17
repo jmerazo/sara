@@ -1,5 +1,5 @@
 from django.urls import path
-from .monitorings import MonitoringsView, SearchMonitoringCandidateView, SearchMonitoringSpecieView, MonitoringsUserView
+from .monitorings import MonitoringsView, SearchMonitoringCandidateView, SearchMonitoringSpecieView, MonitoringsUserView, DownloadMonitoringsView
 from .reports import MonitoringReport, MonitoringReportLocates, MonitoringReportTotal, TrainMonitoring, reportFruitAndFlower
 
 urlpatterns = [
@@ -7,7 +7,7 @@ urlpatterns = [
     path('report/month', MonitoringReport.as_view()), # (PROTECT) Retorna la cantidad mensual de monitoreos realizados, pendientes y total -- http://localhost:8000/api/monitoring/report/month
     path('report/month/locates', MonitoringReportLocates.as_view()), # (PROTECT) Retorna la cantidad mensual de monitoreos realizados, pendientes y total por municipios -- http://localhost:8000/api/monitoring/report/month/locates
     path('report/general/total', MonitoringReportTotal.as_view()),  # (PROTECT) Retorna la cantidad mensual de monitoreos realizados, pendientes y total por municipios -- http://localhost:8000/api/monitoring/report/general/total
-    path('report/data', MonitoringsView.as_view()), # Exporta todos los datos de monitoreos en excel -- http://localhost:8000/api/monitoring/report/data
+    path('report/data', DownloadMonitoringsView.as_view()), # Exporta todos los datos de monitoreos en excel -- http://localhost:8000/api/monitoring/report/data
     path('', MonitoringsView.as_view()),
     path('<str:pk>', MonitoringsView.as_view()),
     path('user/<int:user_id>', MonitoringsUserView.as_view()), # Retorna los datos de monitoreos de cada usuario

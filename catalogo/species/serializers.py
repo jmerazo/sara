@@ -1,8 +1,9 @@
-import random
-import string
+import random, string
 from django.db import IntegrityError
 from rest_framework import serializers
+
 from .models import SpecieForrest, ImageSpeciesRelated, Families
+
 
 class ImageSpeciesRelatedSerializer(serializers.ModelSerializer):
     class Meta:
