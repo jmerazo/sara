@@ -1,6 +1,6 @@
+import json
 from django.db import models
 from django.http import Http404
-from django.db import connection
 from rest_framework import status
 from rest_framework.views import APIView
 from django.db import connection, transaction
@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 import random, string, os, base64, shutil
 
-from .models import SpecieForrest, ImageSpeciesRelated, Families
-from .serializers import SpecieForrestSerializer, SpecieForrestCreatSerializer, SpecieForrestCreateSerializer
+from .models import SpecieForrest, ImageSpeciesRelated, Families, SpeciesGBIF
+from .serializers import SpecieForrestSerializer, SpecieForrestCreatSerializer, SpecieForrestCreateSerializer, SpeciesGBIFSerializer
 
 def save_image(image, cod_especie, nom_comunes, image_type):
     # Carpeta principal para las imágenes
@@ -284,14 +284,135 @@ class SpecieForrestView(APIView):
 
 class SearchSpecieForrestView(APIView):
     def get(self, request, code, format=None):
-        # Obtener la especie con sus imágenes relacionadas
-        specie = get_object_or_404(SpecieForrest.objects.prefetch_related('images'), code_specie=code)
-        
-        # Serializar los datos de la especie
-        serializer = SpecieForrestSerializer(specie)
-        
-        return Response(serializer.data)
-    
+        print('code search ', code)
+        with connection.cursor() as cursor:
+            # Consulta para la especie y las imágenes relacionadas
+            cursor.execute("""
+                SELECT 
+                    ef.id,
+                    ef.taxon_key,
+                    ef.code_specie, 
+                    ef.vernacularName, 
+                    ef.scientificName, 
+                    ef.family, 
+                    ef.genus, 
+                    ef.descriptionGeneral, 
+                    ef.leaves, 
+                    ef.flowers, 
+                    ef.fruits, 
+                    ef.seeds,
+
+                    -- JSON Array de Imágenes Relacionadas
+                    (SELECT 
+                        JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'img_general', img.img_general,
+                                'img_leafs', img.img_leafs,
+                                'img_fruits', img.img_fruits,
+                                'img_flowers', img.img_flowers,
+                                'img_seeds', img.img_seeds,
+                                'img_stem', img.img_stem,
+                                'img_landscape_one', img.img_landscape_one,
+                                'img_landscape_two', img.img_landscape_two,
+                                'img_landscape_three', img.img_landscape_three,
+                                'protocol', img.protocol,
+                                'resolution_protocol', img.resolution_protocol,
+                                'annex_one', img.annex_one,
+                                'annex_two', img.annex_two,
+                                'format_coordinates', img.format_coordinates,
+                                'intructive_coordinates', img.intructive_coordinates,
+                                'format_inventary', img.format_inventary
+                            )
+                        )
+                    FROM img_species img 
+                    WHERE img.specie_id = ef.id) AS images
+                FROM 
+                    especie_forestal_c ef
+                WHERE 
+                    ef.code_specie = %s
+                GROUP BY 
+                    ef.id, ef.taxon_key, ef.code_specie, ef.vernacularName, ef.scientificName, ef.family, 
+                    ef.genus, ef.descriptionGeneral, ef.leaves, ef.flowers, ef.fruits, ef.seeds;
+            """, [code])
+            specie_result = cursor.fetchone()
+
+            if specie_result:
+                # Realizar la consulta para los datos de geo_data de evaluacion_as_c
+                cursor.execute("""
+                    SELECT 
+                        SUBSTRING_INDEX(ea.abcisa_xy, ', ', 1) AS lat,
+                        SUBSTRING_INDEX(ea.abcisa_xy, ', ', -1) AS lon,
+                        ef.habit AS habito,
+                        ea.created AS last_created,
+                        'original' AS source
+                    FROM evaluacion_as_c ea
+                    LEFT JOIN especie_forestal_c ef ON ea.cod_especie_id = ef.code_specie
+                    WHERE ef.code_specie = %s AND ea.numero_placa IS NOT NULL
+                """, [code])
+                geo_data_original = cursor.fetchall()
+
+                # Realizar la consulta para los datos de gbif_species
+                cursor.execute("""
+                    SELECT 
+                        gb.decimalLatitude AS lat,
+                        gb.decimalLongitude AS lon,
+                        ef.habit AS habito,
+                        gb.created AS last_created,
+                        'gbif' AS source
+                    FROM gbif_species gb
+                    LEFT JOIN especie_forestal_c ef ON gb.taxonKey = ef.taxon_key
+                    WHERE ef.code_specie = %s
+                """, [code])
+                geo_data_gbif = cursor.fetchall()
+
+                # Combinar los resultados de evaluacion_as_c y gbif_species en un solo array
+                geo_data = []
+                for row in geo_data_original:
+                    geo_data.append({
+                        'lat': row[0],
+                        'lon': row[1],
+                        'habito': row[2],
+                        'last_created': row[3],
+                        'source': row[4]
+                    })
+
+                for row in geo_data_gbif:
+                    geo_data.append({
+                        'lat': row[0],
+                        'lon': row[1],
+                        'habito': row[2],
+                        'last_created': row[3],
+                        'source': row[4]
+                    })
+
+                # Verificar si el campo "images" es None y manejarlo
+                images_data = specie_result[12]
+                if images_data is not None:
+                    images = json.loads(images_data)  # Convertir el campo JSON de imágenes
+                else:
+                    images = []  # Si no hay imágenes, devolver una lista vacía
+
+                # Construir la respuesta con todos los campos de la especie
+                response_data = {
+                    'id': specie_result[0],
+                    'taxon_key': specie_result[1],
+                    'code_specie': specie_result[2],
+                    'vernacularName': specie_result[3],
+                    'scientificName': specie_result[4],
+                    'family': specie_result[5],
+                    'genus': specie_result[6],
+                    'descriptionGeneral': specie_result[7],
+                    'leaves': specie_result[8],
+                    'flowers': specie_result[9],
+                    'fruits': specie_result[10],
+                    'seeds': specie_result[11],
+                    'images': images,  # Utilizar el JSON de imágenes o lista vacía
+                    'geo_data': geo_data  # Geo_data unificado con GBIF y original
+                }
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Especie no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+            
 class SearchFamilyView(APIView):
     def get(self, request, family, format=None):        
         search = SpecieForrest.objects.filter(family__icontains=family)
@@ -366,3 +487,58 @@ class ReportSpecieDataView(APIView):
             }
             data.append(item)
         return Response(data)
+    
+class SpecieGBIFView(APIView):
+    def post(self, request, format=None):
+        data = request.data
+
+        if not isinstance(data, list):
+            return Response({"error": "Se espera una lista de ocurrencias"}, status=status.HTTP_400_BAD_REQUEST)
+
+        results = []
+        errors = []
+        new_entries = []
+
+        for item in data:
+            gbifID = item.get('gbifID')
+            if not gbifID:
+                errors.append({"error": "Falta el gbifID en los datos de la ocurrencia"})
+                continue
+
+            # Verificar si el registro ya existe
+            if SpeciesGBIF.objects.filter(gbifID=gbifID).exists():
+                results.append(f"El registro con gbifID {gbifID} ya existe.")
+                continue
+
+            new_entry = SpeciesGBIF(
+                gbifID=gbifID,
+                taxonKey=item.get('taxonKey'),
+                vernacularName=item.get('vernacularName'),
+                scientificName=item.get('scientificName'),
+                decimalLatitude=item.get('decimalLatitude'),
+                decimalLongitude=item.get('decimalLongitude'),
+                basisOfRecord=item.get('basisOfRecord'),
+                institutionCode=item.get('institutionCode'),
+                collectionCode=item.get('collectionCode'),
+                catalogNumber=item.get('catalogNumber'),
+                recordedBy=item.get('recordedBy'),
+                elevation=item.get('elevation')
+            )
+            new_entries.append(new_entry)
+
+        try:
+            if new_entries:
+                SpeciesGBIF.objects.bulk_create(new_entries, batch_size=1000)
+                results.append(f"{len(new_entries)} nuevos registros almacenados exitosamente.")
+            else:
+                results.append("No hay nuevos datos para almacenar.")
+        except Exception as e:
+            errors.append({"error": str(e)})
+
+        response_data = {"results": results, "errors": errors}
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+class SpecieGBIFExistsView(APIView):
+    def get(self, request, taxonKey, format=None):
+        exists = SpeciesGBIF.objects.filter(taxonKey=taxonKey).exists()
+        return Response({'exists': exists}, status=status.HTTP_200_OK)

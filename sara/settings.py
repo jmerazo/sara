@@ -58,7 +58,8 @@ EXCLUDED_PATHS = [
     '/api/utils/send-email/',
     '/api/users/register/',
     '/api/users/roles/',
-    '/api/monitoring/report/data'
+    '/api/monitoring/report/data',
+    '/api/species/gbif/'
 ]
 
 # Application definition

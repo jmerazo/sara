@@ -62,3 +62,22 @@ class Families(models.Model):
     class Meta:
         managed = True
         db_table = 'families'
+
+class SpeciesGBIF(models.Model):
+    gbifID = models.CharField(max_length=100, unique=True)
+    taxonKey = models.IntegerField(blank=True, null=True)
+    vernacularName = models.CharField(max_length=250, blank=True, null=True)
+    scientificName = models.CharField(max_length=250, blank=True, null=True)
+    decimalLatitude = models.CharField(max_length=20, blank=True, null=True)
+    decimalLongitude = models.CharField(max_length=20, blank=True, null=True)
+    basisOfRecord = models.CharField(max_length=250, blank=True, null=True)
+    institutionCode = models.CharField(max_length=250, blank=True, null=True)
+    collectionCode = models.CharField(max_length=250, blank=True, null=True)
+    catalogNumber = models.CharField(max_length=250, blank=True, null=True)
+    recordedBy = models.CharField(max_length=250, blank=True, null=True)
+    elevation = models.IntegerField(blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = True
+        db_table = 'gbif_species'

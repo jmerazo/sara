@@ -2,7 +2,7 @@ import random, string
 from django.db import IntegrityError
 from rest_framework import serializers
 
-from .models import SpecieForrest, ImageSpeciesRelated, Families
+from .models import SpecieForrest, ImageSpeciesRelated, Families, SpeciesGBIF
 
 
 class ImageSpeciesRelatedSerializer(serializers.ModelSerializer):
@@ -93,3 +93,9 @@ class FamilySerializer(serializers.ModelSerializer):
     class Meta:
         model = Families
         fields = '__all__'
+
+class SpeciesGBIFSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpeciesGBIF
+        fields = '__all__'
+        read_only_fields = ['id']

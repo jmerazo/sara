@@ -46,45 +46,81 @@ def generate_random_id(length):
 # VISTA INDIVIDUOS EVALUADOS    
 class GeoCandidateTreesView(APIView):
     def get(self, request, format=None):
-        # Realiza la consulta sin select_related ni prefetch_related
-        queryset = CandidatesTrees.objects.filter(
-            numero_placa__isnull=False,
-            abcisa_xy__isnull=False
-        )
+        with connection.cursor() as cursor:
+            # Consulta SQL para unir los datos de SARA y GBIF
+            cursor.execute("""
+                SELECT 
+                    ef.code_specie AS codigo, 
+                    ea.numero_placa, 
+                    dp.name AS departamento,
+                    pr.p_departamento_id, 
+                    ct.name AS municipio,
+                    pr.p_municipio_id, 
+                    ea.locality AS vereda, 
+                    pr.nombre_predio, 
+                    ea.abcisa_xy AS coordenadas, 
+                    ef.vernacularName AS nombre_comun,
+                    ef.nombre_cientifico AS nombre_cientifico,
+                    ef.taxon_key, 
+                    ef.habit AS habito,
+                    ea.evaluacion,
+                    'original' AS source,
+                    SUBSTRING_INDEX(ea.abcisa_xy, ', ', 1) AS lat, 
+                    SUBSTRING_INDEX(ea.abcisa_xy, ', ', -1) AS lon
+                FROM 
+                    evaluacion_as_c ea
+                JOIN 
+                    especie_forestal_c ef ON ef.code_specie = ea.cod_especie_id
+                JOIN 
+                    predios pr ON pr.id = ea.property_id
+                JOIN 
+                    departments dp ON dp.id = pr.p_departamento_id
+                JOIN
+                    cities ct ON ct.id = pr.p_municipio_id 
+                WHERE 
+                    ea.numero_placa IS NOT NULL 
+                    AND ea.abcisa_xy IS NOT NULL
 
-        specie_dict = {specie.code_specie: specie for specie in SpecieForrest.objects.all()}
+                UNION ALL
 
-        geo_format = []
-        for ea in queryset:
-            ef = specie_dict.get(ea.cod_especie_id)
+                SELECT 
+                    ef.code_specie AS codigo,  -- Cambiado de gb.taxonKey a ef.code_specie
+                    NULL AS numero_placa, 
+                    NULL AS departamento,
+                    NULL AS p_departamento_id, 
+                    NULL AS municipio,
+                    NULL AS p_municipio_id, 
+                    NULL AS vereda, 
+                    NULL AS nombre_del_predio, 
+                    CONCAT(gb.decimalLatitude, ', ', gb.decimalLongitude) AS coordenadas, 
+                    gb.vernacularName AS nombre_comun,
+                    gb.scientificName,
+                    gb.taxonKey, 
+                    ef.habit AS habito,
+                    NULL as evaluacion,
+                    'gbif' AS source,
+                    gb.decimalLatitude AS lat, 
+                    gb.decimalLongitude AS lon
+                FROM 
+                    gbif_species gb
+                LEFT JOIN 
+                    especie_forestal_c ef ON ef.taxon_key = gb.taxonKey
+                WHERE 
+                    gb.taxonKey IS NOT NULL;
+            """)
+            # Obtener todos los resultados
+            geo_format = cursor.fetchall()
 
-            if ef is None:
-                continue
+        # Definir las columnas que corresponden a cada campo
+        columns = [
+            'codigo', 'numero_placa', 'departamento', 'departamento_id', 'municipio', 'municipio_id', 'vereda', 'nombre_del_predio',
+            'coordenadas', 'nombre_comun', 'nombre_cientifico', 'taxon_key', 'habito', 'evaluacion', 'source', 'lat', 'lon'
+        ]
 
-            if ea.abcisa_xy:
-                latitud, longitud = map(float, ea.abcisa_xy.split(', '))
-            else:
-                latitud, longitud = None, None
+        # Convertir los resultados en una lista de diccionarios
+        geo_format_dict = [dict(zip(columns, row)) for row in geo_format]
 
-            geo_fixed = {
-                'codigo': ef.code_specie,
-                'numero_placa': ea.numero_placa,
-                'departamento': ea.departamento,
-                'municipio': ea.municipio,
-                'vereda': ea.locality,
-                'nombre_del_predio': ea.nombre_del_predio,
-                'lat': latitud,
-                'lon': longitud,
-                'coordenadas': ea.abcisa_xy,
-                'resultado': ea.resultado,
-                'nombre_comun': ef.scientificName,
-                'nombre_cientifico': ef.nombre_cientifico,
-                'taxon_key': ef.taxon_key,
-                'habito': ef.habit
-            }
-            geo_format.append(geo_fixed)
-            
-        return Response(geo_format)
+        return Response(geo_format_dict)
     
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
