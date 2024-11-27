@@ -1,12 +1,13 @@
 import os
 import uuid
+from django.db import connection
 from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
-from .serializers import NurseriesSerializer, UserNurseriesSerializer, UsersNurseriesSerializer, NurseriesCreateSerializer
+from .serializers import NurseriesSerializer, UserNurseriesSerializer, UsersNurseriesSerializer, NurseriesCreateSerializer, UserNurseriesCreateSerializer
 
 from .models import Nurseries, UserNurseries
 
@@ -156,6 +157,108 @@ class NurseriesAdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk, format=None):
-        unurseries = get_object_or_404(Nurseries, pk=pk)
+        unurseries = get_object_or_404(UserNurseries, pk=pk)
         unurseries.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class NurseriesUserView(APIView):
+    def get(self, request, rlid=None, format=None):
+        if rlid is None:
+            return Response({"error": "El parámetro 'representante_legal_id' es obligatorio."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Realiza la consulta usando SQL crudo
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT v.id, v.nombre_vivero, v.nit, v.`representante_legal_id`, ef.`code_specie`, ef.`vernacularName`, ef.`scientificName`, ef.`scientificNameAuthorship`, uef.*
+                FROM UserEspecieForestal AS uef
+                INNER JOIN viveros AS v ON uef.vivero_id = v.id
+                INNER JOIN especie_forestal_c AS ef ON ef.`code_specie` = uef.`especie_forestal_id`
+                WHERE v.representante_legal_id = %s
+            """, [rlid])
+
+            # Obtén los nombres de las columnas
+            columns = [col[0] for col in cursor.description]
+            # Convierte los resultados en una lista de diccionarios
+            rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        # Retorna los datos como JSON
+        return Response(rows, status=status.HTTP_200_OK)
+    
+    def post(self, request, format=None):
+        serializer = UserNurseriesCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Especie agregada al inventario!',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'success': False,
+            'message': 'Error al actualizar al agregar la especie al inventario!',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, rlid, format=None):
+        unurseries = get_object_or_404(UserNurseries, pk=rlid)
+        print('Request data:', request.data)
+        serializer = UserNurseriesCreateSerializer(unurseries, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Inventario actualizado!',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'success': False,
+            'message': 'Error al actualizar el inventario!',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, rlid, format=None):
+        try:
+            # Intentar obtener el registro con la clave primaria proporcionada
+            unurseries = get_object_or_404(UserNurseries, pk=rlid)
+            unurseries.delete()
+            return Response({
+                'success': True,
+                'message': 'Especie eliminada del inventario',
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Manejo de cualquier excepción durante la eliminación
+            return Response({
+                'success': False,
+                'message': 'Error al eliminar la especie del inventario!',
+                'error': str(e)  # Devuelve el mensaje de error para diagnóstico
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+class NurseryUserStateView(APIView):       
+    def put(self, request, pk, format=None):
+        # Buscar el objeto por ID
+        unurseries = get_object_or_404(UserNurseries, pk=pk)
+        
+        # Obtener el nuevo estado desde el cuerpo de la solicitud
+        newState = request.data.get('newState')
+
+        # Validar que el estado sea válido (0 o 1)
+        if newState is not None and newState in [0, 1]:
+            # Actualizar el estado activo
+            unurseries.activo = newState
+            unurseries.save()
+            
+            # Serializar los datos actualizados
+            serializer = UserNurseriesCreateSerializer(unurseries)
+            return Response({
+                'success': True,
+                'message': 'Inventario actualizado!',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        else:
+            # Manejar el caso de error
+            return Response({
+                'success': False,
+                'message': 'Estado inválido proporcionado. Debe ser 0 o 1.',
+                'errors': {'newState': 'Valor inválido. Asegúrate de enviar 0 o 1.'}
+            }, status=status.HTTP_400_BAD_REQUEST)

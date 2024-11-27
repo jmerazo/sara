@@ -41,6 +41,14 @@ class UserNurseriesSerializer(serializers.ModelSerializer):
         model = UserNurseries
         fields = '__all__'
 
+class UserNurseriesCreateSerializer(serializers.ModelSerializer):
+    vivero = serializers.PrimaryKeyRelatedField(queryset=Nurseries.objects.all(), required=False)
+    especie_forestal = serializers.PrimaryKeyRelatedField(queryset=SpecieForrest.objects.all(), required=False)
+
+    class Meta:
+        model = UserNurseries
+        fields = '__all__'
+
 class UsersNurseriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserNurseries

@@ -1,12 +1,14 @@
+import os
 import json
 from django.db import models
 from django.http import Http404
 from rest_framework import status
 from rest_framework.views import APIView
-from django.db import connection, transaction
+from django.db import connection
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 import random, string, os, base64, shutil
+from ..helpers.pdfToImages import pdf_to_images
 
 from .models import SpecieForrest, ImageSpeciesRelated, Families, SpeciesGBIF
 from .serializers import SpecieForrestSerializer, SpecieForrestCreatSerializer, SpecieForrestCreateSerializer, SpeciesGBIFSerializer
@@ -337,7 +339,7 @@ class SearchSpecieForrestView(APIView):
             specie_result = cursor.fetchone()
 
             if specie_result:
-                # Realizar la consulta para los datos de geo_data de evaluacion_as_c
+                # Consulta para los datos de evaluacion_as_c
                 cursor.execute("""
                     SELECT 
                         SUBSTRING_INDEX(ea.abcisa_xy, ', ', 1) AS lat,
@@ -351,7 +353,7 @@ class SearchSpecieForrestView(APIView):
                 """, [code])
                 geo_data_original = cursor.fetchall()
 
-                # Realizar la consulta para los datos de gbif_species
+                # Consulta para los datos de gbif_species
                 cursor.execute("""
                     SELECT 
                         gb.decimalLatitude AS lat,
@@ -365,34 +367,49 @@ class SearchSpecieForrestView(APIView):
                 """, [code])
                 geo_data_gbif = cursor.fetchall()
 
-                # Combinar los resultados de evaluacion_as_c y gbif_species en un solo array
-                geo_data = []
-                for row in geo_data_original:
-                    geo_data.append({
-                        'lat': row[0],
-                        'lon': row[1],
-                        'habito': row[2],
-                        'last_created': row[3],
-                        'source': row[4]
-                    })
+                # Consulta para los datos de sisa
+                cursor.execute("""
+                    SELECT 
+                        s.lat,
+                        s.long AS lon,
+                        ef.habit AS habito,
+                        NULL AS last_created,
+                        s.source
+                    FROM sisa s
+                    LEFT JOIN especie_forestal_c ef ON s.code_specie = ef.code_specie
+                    WHERE ef.code_specie = %s
+                """, [code])
+                geo_data_sisa = cursor.fetchall()
 
-                for row in geo_data_gbif:
-                    geo_data.append({
-                        'lat': row[0],
-                        'lon': row[1],
-                        'habito': row[2],
-                        'last_created': row[3],
-                        'source': row[4]
-                    })
+                # Combinar los datos en geo_data
+                geo_data = [
+                    {'lat': row[0], 'lon': row[1], 'habito': row[2], 'last_created': row[3], 'source': row[4]}
+                    for result in [geo_data_original, geo_data_gbif, geo_data_sisa]
+                    for row in result
+                ]
 
-                # Verificar si el campo "images" es None y manejarlo
+                # Manejar imágenes (si existen)
                 images_data = specie_result[12]
-                if images_data is not None:
-                    images = json.loads(images_data)  # Convertir el campo JSON de imágenes
-                else:
-                    images = []  # Si no hay imágenes, devolver una lista vacía
+                images = json.loads(images_data) if images_data is not None else []
 
-                # Construir la respuesta con todos los campos de la especie
+                protocol_path = None
+
+                # Verificar si hay protocolo en las imágenes
+                if images:
+                    protocol_path = images[0].get('protocol', None)
+                
+                if protocol_path and os.path.exists(protocol_path):
+                    # Crear la ruta del directorio flipbook
+                    base_dir = os.path.dirname(protocol_path)
+                    flipbook_dir = os.path.join(base_dir, "flipbook")
+
+                    if not os.path.exists(flipbook_dir):
+                        os.makedirs(flipbook_dir)
+                        # Convertir el PDF a imágenes y guardarlas en flipbook_dir
+                        pdf_to_images(protocol_path, flipbook_dir)
+                        
+
+                # Construir la respuesta
                 response_data = {
                     'id': specie_result[0],
                     'taxon_key': specie_result[1],
@@ -406,8 +423,8 @@ class SearchSpecieForrestView(APIView):
                     'flowers': specie_result[9],
                     'fruits': specie_result[10],
                     'seeds': specie_result[11],
-                    'images': images,  # Utilizar el JSON de imágenes o lista vacía
-                    'geo_data': geo_data  # Geo_data unificado con GBIF y original
+                    'images': images,
+                    'geo_data': geo_data
                 }
                 return Response(response_data, status=status.HTTP_200_OK)
             else:

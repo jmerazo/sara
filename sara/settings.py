@@ -56,6 +56,7 @@ EXCLUDED_PATHS = [
     '/api/species/report/general',
     '/api/candidates/geolocation',
     '/api/utils/send-email/',
+    '/api/utils/contact/send-email/',
     '/api/users/register/',
     '/api/users/roles/',
     '/api/monitoring/report/data',

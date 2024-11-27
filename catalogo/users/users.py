@@ -293,8 +293,7 @@ class UsersStateView(APIView):
         
     def put(self, request, pk, format=None):
         user = self.get_object_state(id=pk)
-        newState = request.data.get('nuevoEstado')
-        print('state', newState)        
+        newState = request.data.get('nuevoEstado')      
         if newState in [0, 1]:
             user.is_active = newState
         # Aquí debes continuar actualizando los demás campos según tus necesidades

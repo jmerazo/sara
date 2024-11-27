@@ -31,10 +31,11 @@ class UserNurseries(models.Model):
     especie_forestal = models.ForeignKey(SpecieForrest, to_field='code_specie', on_delete=models.RESTRICT, db_column='especie_forestal_id')
     tipo_venta = models.CharField(max_length=100, blank=True, null=True)
     unidad_medida = models.CharField(max_length=50, blank=True, null=True)
-    cantidad_stock = models.IntegerField()
-    ventas_realizadas = models.IntegerField()
-    observaciones = models.TextField()
-    activo = models.SmallIntegerField()
+    cantidad_stock = models.IntegerField(blank=True, null=True)
+    ventas_realizadas = models.IntegerField(blank=True, null=True)
+    total_disponible = models.IntegerField(blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
+    activo = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

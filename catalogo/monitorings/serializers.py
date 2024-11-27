@@ -10,7 +10,7 @@ from .models import Monitorings, ViewMonitorings
 class MonitoringTreesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Monitorings
-        fields = ['id', 'evaluacion', 'fecha_monitoreo', 'usuario_realiza_monitoreo']
+        fields = ['id', 'evaluacion', 'fecha_monitoreo', 'user']
 
 class CandidateTreesMonSerializer(serializers.ModelSerializer):
     class Meta:
