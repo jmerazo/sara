@@ -403,11 +403,20 @@ class SearchSpecieForrestView(APIView):
                     base_dir = os.path.dirname(protocol_path)
                     flipbook_dir = os.path.join(base_dir, "flipbook")
 
+                    num_pages = 0  # Inicializar num_pages como 0 por defecto
+
                     if not os.path.exists(flipbook_dir):
                         os.makedirs(flipbook_dir)
                         # Convertir el PDF a imágenes y guardarlas en flipbook_dir
                         pdf_to_images(protocol_path, flipbook_dir)
-                        
+
+                    # Contar los archivos .jpg en el directorio flipbook si este existe
+                    if os.path.exists(flipbook_dir):
+                        num_pages = len([
+                            file for file in os.listdir(flipbook_dir) if file.endswith('.jpg')
+                        ])
+                else:
+                    num_pages = None  # O usar 0 si prefieres que el valor sea numérico
 
                 # Construir la respuesta
                 response_data = {
@@ -424,7 +433,8 @@ class SearchSpecieForrestView(APIView):
                     'fruits': specie_result[10],
                     'seeds': specie_result[11],
                     'images': images,
-                    'geo_data': geo_data
+                    'geo_data': geo_data,
+                    'num_pages': num_pages,  # Agregado correctamente
                 }
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
