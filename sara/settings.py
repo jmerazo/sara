@@ -60,7 +60,8 @@ EXCLUDED_PATHS = [
     '/api/users/register/',
     '/api/users/roles/',
     '/api/monitoring/report/data',
-    '/api/species/gbif/'
+    '/api/species/gbif/',
+    '__debug__'
 ]
 
 # Application definition
@@ -76,7 +77,8 @@ INSTALLED_APPS = [
     'rest_framework_jwt',
     'corsheaders',
     'drf_yasg',
-    'catalogo'
+    'catalogo',
+    'debug_toolbar'
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -87,6 +89,7 @@ AUTHENTICATION_BACKENDS = (
 SITE_ID = 1
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -208,3 +211,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 12,  # Número de resultados por página
 }
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+]

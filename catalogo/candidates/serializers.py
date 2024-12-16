@@ -35,10 +35,17 @@ class CandidateTreesSerializer(serializers.ModelSerializer):
 class CandidateTreesCreateSerializer(serializers.ModelSerializer):
     cod_especie = serializers.SlugRelatedField(
         queryset=SpecieForrest.objects.all(),
-        slug_field='code_specie'
+        slug_field='code_specie',
+        required=False  # Hace que este campo no sea obligatorio
     )
-    user = serializers.PrimaryKeyRelatedField(queryset=Users.objects.all())
-    property = serializers.PrimaryKeyRelatedField(queryset=Property.objects.all())
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=Users.objects.all(),
+        required=False  # Hace que este campo no sea obligatorio
+    )
+    property = serializers.PrimaryKeyRelatedField(
+        queryset=Property.objects.all(),
+        required=False  # Hace que este campo no sea obligatorio
+    )
 
     class Meta:
         model = CandidatesTrees

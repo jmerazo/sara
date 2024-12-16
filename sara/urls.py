@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+import debug_toolbar
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -27,6 +28,7 @@ urlpatterns = [
    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0)),
    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
    path('api/accounts/google/login/callback/', include('social_django.urls')),
+   path('__debug__/', include(debug_toolbar.urls)),
 ]
 
 # Configurar la ruta estática para las imágenes

@@ -1,13 +1,14 @@
 import os
 import json
 from django.db import models
-from django.http import Http404
-from rest_framework import status
-from rest_framework.views import APIView
 from django.db import connection
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from rest_framework import status
+from django.core.cache import cache
+from rest_framework.views import APIView
 import random, string, os, base64, shutil
+from rest_framework.response import Response
+from django.http import JsonResponse, Http404
+from django.shortcuts import get_object_or_404
 from ..helpers.pdfToImages import pdf_to_images
 
 from .models import SpecieForrest, ImageSpeciesRelated, Families, SpeciesGBIF
@@ -52,6 +53,7 @@ class SpecieForrestView(APIView):
             3434, 4449, 2768, 5392, 5284, 5309, 179, 9994, 9992, 9989, 146, 9988, 4803, 1348, 
             206, 4946, 5290, 9986, 9982, 142, 2093
         ]
+        cache.set('exclude_codes', exclude_codes, timeout=3600)
         
         if pk is not None:
             species = get_object_or_404(SpecieForrest, pk=pk)
@@ -296,6 +298,7 @@ class SearchSpecieForrestView(APIView):
                     ef.code_specie, 
                     ef.vernacularName, 
                     ef.scientificName, 
+                    ef.scientificNameAuthorship,
                     ef.family, 
                     ef.genus, 
                     ef.descriptionGeneral, 
@@ -389,7 +392,7 @@ class SearchSpecieForrestView(APIView):
                 ]
 
                 # Manejar imágenes (si existen)
-                images_data = specie_result[12]
+                images_data = specie_result[13]
                 images = json.loads(images_data) if images_data is not None else []
 
                 protocol_path = None
@@ -397,13 +400,20 @@ class SearchSpecieForrestView(APIView):
                 # Verificar si hay protocolo en las imágenes
                 if images:
                     protocol_path = images[0].get('protocol', None)
-                
-                if protocol_path and os.path.exists(protocol_path):
+
+                if protocol_path:
+                    # Convertir los separadores de Windows (\) a Linux (/)
+                    protocol_path = protocol_path.replace("\\", "/")
+
                     # Crear la ruta del directorio flipbook
                     base_dir = os.path.dirname(protocol_path)
                     flipbook_dir = os.path.join(base_dir, "flipbook")
 
                     num_pages = 0  # Inicializar num_pages como 0 por defecto
+
+                    # Convertir las rutas de directorios a formato compatible
+                    base_dir = base_dir.replace("\\", "/")
+                    flipbook_dir = flipbook_dir.replace("\\", "/")
 
                     if not os.path.exists(flipbook_dir):
                         os.makedirs(flipbook_dir)
@@ -413,7 +423,8 @@ class SearchSpecieForrestView(APIView):
                     # Contar los archivos .jpg en el directorio flipbook si este existe
                     if os.path.exists(flipbook_dir):
                         num_pages = len([
-                            file for file in os.listdir(flipbook_dir) if file.endswith('.jpg')
+                            file for file in os.listdir(flipbook_dir)
+                            if file.lower().endswith('.jpg')  # Manejar extensiones en mayúsculas/minúsculas
                         ])
                 else:
                     num_pages = None  # O usar 0 si prefieres que el valor sea numérico
@@ -425,17 +436,19 @@ class SearchSpecieForrestView(APIView):
                     'code_specie': specie_result[2],
                     'vernacularName': specie_result[3],
                     'scientificName': specie_result[4],
-                    'family': specie_result[5],
-                    'genus': specie_result[6],
-                    'descriptionGeneral': specie_result[7],
-                    'leaves': specie_result[8],
-                    'flowers': specie_result[9],
-                    'fruits': specie_result[10],
-                    'seeds': specie_result[11],
+                    'scientificNameAuthorship': specie_result[5],  # Nuevo campo agregado
+                    'family': specie_result[6],
+                    'genus': specie_result[7],
+                    'descriptionGeneral': specie_result[8],
+                    'leaves': specie_result[9],
+                    'flowers': specie_result[10],
+                    'fruits': specie_result[11],
+                    'seeds': specie_result[12],
                     'images': images,
                     'geo_data': geo_data,
                     'num_pages': num_pages,  # Agregado correctamente
                 }
+
                 return Response(response_data, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Especie no encontrada"}, status=status.HTTP_404_NOT_FOUND)

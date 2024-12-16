@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.db import transaction
+from django.db import connection
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -59,9 +60,18 @@ class UpdateCountVisitsView(APIView):
     
 class TopSpeciesView(APIView):
     def get(self, request, pk=None, format=None):
-        queryset = SpecieForrest.objects.prefetch_related('images').order_by('-views')[:4]
-        serializer = SpecieForrestTopSerializer(queryset, many=True)
-        return Response(serializer.data)
+        query = """
+            SELECT sf.code_specie, sf.vernacularName, isr.img_general
+            FROM especie_forestal_c AS sf
+            LEFT JOIN img_species AS isr ON isr.specie_id = sf.id
+            ORDER BY sf.views DESC
+            LIMIT 4;
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns = [col[0] for col in cursor.description]
+            queryset = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        return Response(queryset)
             
 class PagesView(APIView):
     def get_object(self, pk=None):
