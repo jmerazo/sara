@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime
+from urllib.parse import quote
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from email.mime.image import MIMEImage
@@ -17,11 +18,13 @@ from ..models import Users
 
 @api_view(['GET'])
 def verifyEmail(request, token):
+    print('token ', token)
     payload = verify_jwt(token)
     if not payload:
-        return Response({'msg': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'msg': 'Token invalido o expirado'}, status=status.HTTP_400_BAD_REQUEST)
     
     email = payload.get('id')
+    print('email ', email)
     user = Users.objects.filter(email=email).first()
     
     if not user:
@@ -48,7 +51,10 @@ def send_email(subject, body, to_email, html_content=None, attachments=None):
         return False
 
 def send_verification_email(user, token):
-    verification_url = f"{settings.FRONTEND_URL}?token={token}"
+    # Codificar el token correctamente para incluirlo en la URL
+    encoded_token = quote(token)
+    verification_url = f"{settings.FRONTEND_URL}?token={encoded_token}"
+
     email_context = {
         'first_name': user.first_name,
         'verification_url': verification_url,
