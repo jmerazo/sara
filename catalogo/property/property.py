@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, F, Subquery, OuterRef, IntegerField
-from .serializers import PropertySerializer, UserPropertyFileSerializer, UserPropertyFileAllSerializer, MonitoringPropertySerializer
+from .serializers import PropertySerializer, UserPropertyFileSerializer, UserPropertyFileAllSerializer, MonitoringPropertySerializer, PropertyCreateSerializer
 
 from .models import Property, UserPropertyFile
 from ..monitorings.models import Monitorings
@@ -24,24 +24,43 @@ class PropertyView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        serializer = PropertySerializer(data=request.data)
+        serializer = PropertyCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response({
+                'success': True,
+                'msg': 'Propiedad creada exitosamente.',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'msg': 'Error al crear la propiedad.',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request, pk, format=None):
         nurseries = get_object_or_404(Property, pk=pk)
-        serializer = PropertySerializer(nurseries, data=request.data)
+        serializer = PropertyCreateSerializer(nurseries, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response({
+                'success': True,
+                'msg': 'Propiedad actualizada exitosamente.',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'success': False,
+            'msg': 'Error al actualizar la propiedad.',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk, format=None):
         nurseries = get_object_or_404(Property, pk=pk)
         nurseries.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            'success': True,
+            'msg': 'Propiedad eliminada exitosamente.'
+        }, status=status.HTTP_204_NO_CONTENT)
     
 class PropertyUserIdView(APIView):
     def get(self, request, pk=None, format=None):
@@ -80,21 +99,40 @@ class UserPropertyFileView(APIView):
         serializer = UserPropertyFileSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response({
+                'success': True,
+                'msg': 'Especie asignada satisfactoriamente.',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'msg': 'Error al asignar la especie.',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request, pk, format=None):
         u_property = get_object_or_404(UserPropertyFile, pk=pk)
         serializer = UserPropertyFileSerializer(u_property, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response({
+                'success': True,
+                'msg': 'Especie actualizada satisfactoriamente.',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'success': False,
+            'msg': 'Error al actualizar la especie.',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk, format=None):
         u_property = get_object_or_404(UserPropertyFile, pk=pk)
         u_property.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            'success': True,
+            'msg': 'Especie eliminada satisfactoriamente.'
+        }, status=status.HTTP_204_NO_CONTENT)
     
 class MonitoringPropertyView(APIView):
     def get(self, request, format=None):

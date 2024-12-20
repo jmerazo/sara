@@ -17,6 +17,16 @@ class PropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = '__all__'
+    
+class PropertyCreateSerializer(serializers.ModelSerializer):
+    # Aceptar únicamente IDs
+    p_user = serializers.PrimaryKeyRelatedField(queryset=Users.objects.all(), required=True)
+    p_departamento = serializers.PrimaryKeyRelatedField(queryset=DepartmentsSerializer.Meta.model.objects.all(), required=True)
+    p_municipio = serializers.PrimaryKeyRelatedField(queryset=CitiesSerializer.Meta.model.objects.all(), required=True)
+
+    class Meta:
+        model = Property
+        fields = '__all__'
 
 class SpecieForrestPropertySerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,9 +43,24 @@ class UserPropertyFileAllSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserPropertyFileSerializer(serializers.ModelSerializer):
+    ep_especie = serializers.IntegerField(write_only=True)  # Aceptar code_specie como entero
+    ep_especie_detail = SpecieForrestPropertySerializer(read_only=True, source='ep_especie')  # Serializador para mostrar detalles
+
     class Meta:
         model = UserPropertyFile
         fields = '__all__'
+
+    def validate_ep_especie(self, value):
+        try:
+            # Validar si existe una especie con el code_specie proporcionado
+            return SpecieForrest.objects.get(code_specie=value)
+        except SpecieForrest.DoesNotExist:
+            raise serializers.ValidationError("El código de especie proporcionado no es válido.")
+
+    def create(self, validated_data):
+        # Asignar instancia de SpecieForrest al campo ep_especie
+        validated_data['ep_especie'] = validated_data.pop('ep_especie')
+        return super().create(validated_data)
 
 class MonitoringPropertySerializer(serializers.ModelSerializer):
     ep_especie = SpecieForrestPropertySerializer()
