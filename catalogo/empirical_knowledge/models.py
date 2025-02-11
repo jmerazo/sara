@@ -109,5 +109,4 @@ class EmpiricalKnowledge(models.Model):
     recomendaciones_cuidados = models.CharField(max_length=500, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'con_empirico'

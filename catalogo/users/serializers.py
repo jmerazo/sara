@@ -45,3 +45,8 @@ class UsersValidateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ['id', 'uuid_firebase', 'email', 'first_name', 'last_name', 'rol', 'is_active', 'verificated', 'date_joined']
+
+class UserSendEmailMonitoring(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ['id', 'email', 'first_name', 'last_name']

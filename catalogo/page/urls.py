@@ -1,5 +1,5 @@
 from django.urls import path
-from .page import PageView, UpdateCountVisitsView, TopSpeciesView, PagesView, SectionView
+from .page import PageView, UpdateCountVisitsView, TopSpeciesView, PagesView, SectionView, SliderImagesView, OrderSliderImagesView, SliderView
 
 urlpatterns = [
     # PAGE
@@ -12,4 +12,8 @@ urlpatterns = [
     path('<int:pk>', PagesView.as_view()),
     path('section', SectionView.as_view()),
     path('section/<int:pk>', SectionView.as_view()),
+    path('slider', SliderImagesView.as_view()),
+    path('slider/<int:pk>', SliderImagesView.as_view()),
+    path('slider/order', OrderSliderImagesView.as_view()),
+    path('slider/images', SliderView.as_view())
 ]

@@ -94,5 +94,4 @@ class CandidatesTrees(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        managed = False
         db_table = 'evaluacion_as_c'

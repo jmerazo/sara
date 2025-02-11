@@ -27,7 +27,6 @@ class SpecieForrest(models.Model):
     views = models.IntegerField(blank=True, null=True) # vistas
 
     class Meta:
-        managed = True
         db_table = 'especie_forestal_c'
 
 class ImageSpeciesRelated(models.Model):
@@ -50,7 +49,6 @@ class ImageSpeciesRelated(models.Model):
     format_inventary = models.CharField(max_length=250, blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'img_species'
 
 class Families(models.Model):
@@ -60,7 +58,6 @@ class Families(models.Model):
     active = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'families'
 
 class SpeciesGBIF(models.Model):
@@ -79,5 +76,4 @@ class SpeciesGBIF(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        managed = True
         db_table = 'gbif_species'

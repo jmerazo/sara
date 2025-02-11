@@ -37,5 +37,4 @@ class UserModules(models.Model):
     view_monitoring = models.SmallIntegerField()
 
     class Meta:
-        managed = True
         db_table = 'users_modules'

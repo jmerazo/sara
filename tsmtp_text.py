@@ -1,35 +1,22 @@
-# -*- coding: utf-8 -*-
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.header import Header
 
-def send_email():
-    try:
-        smtp_server = "sara.corpoamazonia.gov.co"
-        port = 465  # o 587 si usas TLS
-        sender_email = "support@sara.corpoamazonia.gov.co"
-        password = "Sara2024*"
-        receiver_email = "sheesarte@gmail.com"
+try:
+    smtp_server = 'smtp.gmail.com'
+    smtp_port = 587
+    smtp_user = 'apps@corpoamazonia.gov.co'
+    smtp_password = 'dxfs uoio tohn kjvw'
 
-        message = MIMEMultipart()
-        message["From"] = sender_email
-        message["To"] = receiver_email
-        message["Subject"] = Header("Asunto de prueba con", "utf-8")
+    msg = MIMEText("Este es un correo de prueba desde smtplib.")
+    msg['Subject'] = 'Prueba SMTP'
+    msg['From'] = smtp_user
+    msg['To'] = 'jmerazo96@gmail.com'
 
-        body = "Este es un correo de prueba con caracteres especiales"
-        message.attach(MIMEText(body.encode('utf-8'), 'plain', 'utf-8'))
-
-        with smtplib.SMTP_SSL(smtp_server, port) as server:
-            server.login(sender_email, password)
-            server.sendmail(sender_email, receiver_email, message.as_string())
-        
-        print("Correo enviado exitosamente")
-    except UnicodeEncodeError as e:
-        print(f"Error de codificación Unicode: {e}")
-    except smtplib.SMTPException as e:
-        print(f"Error SMTP: {e}")
-    except Exception as e:
-        print(f"Error inesperado: {e}")
-
-send_email()
+    server = smtplib.SMTP(smtp_server, smtp_port)
+    server.starttls()  # Inicia TLS
+    server.login(smtp_user, smtp_password)
+    server.sendmail(smtp_user, 'jmerazo96@gmail.com', msg.as_string())
+    server.quit()
+    print("Correo enviado exitosamente con smtplib.")
+except Exception as e:
+    print(f"Error al enviar correo con smtplib: {e}")

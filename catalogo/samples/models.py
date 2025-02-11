@@ -25,5 +25,4 @@ class Samples(models.Model):
     updated = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'muestras_c'

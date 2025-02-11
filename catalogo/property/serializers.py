@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Property, UserPropertyFile
+from .models import Property, UserPropertyFile, SpeciesRecord
 from ..serializers import DepartmentsSerializer, CitiesSerializer
 from ..models import Users
 from ..species.models import SpecieForrest
@@ -31,10 +31,9 @@ class PropertyCreateSerializer(serializers.ModelSerializer):
 class SpecieForrestPropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecieForrest
-        fields = ['id', 'vernacularName', 'scientificName', 'scientificNameAuthorship']
+        fields = ['id', 'vernacularName', 'scientificName', 'scientificNameAuthorship', 'habit']
 
 class UserPropertyFileAllSerializer(serializers.ModelSerializer):
-    ep_especie = SpecieForrestPropertySerializer()
     ep_usuario = PropertyUserSerializer()
     ep_predio = PropertySerializer()
 
@@ -43,11 +42,26 @@ class UserPropertyFileAllSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserPropertyFileSerializer(serializers.ModelSerializer):
-    ep_especie = serializers.IntegerField(write_only=True)  # Aceptar code_specie como entero
-    ep_especie_detail = SpecieForrestPropertySerializer(read_only=True, source='ep_especie')  # Serializador para mostrar detalles
-
     class Meta:
         model = UserPropertyFile
+        fields = '__all__'
+    
+class SpeciesRecordSerializer(serializers.ModelSerializer):
+    ep_especie = SpecieForrestPropertySerializer()
+    expediente = UserPropertyFileAllSerializer()
+    
+    class Meta:
+        model = SpeciesRecord
+        fields = '__all__'
+
+class SpeciesRecordCreateSerializer(serializers.ModelSerializer):
+    # Cambiamos el campo 'expediente' para que acepte el ID del expediente
+    expediente = serializers.PrimaryKeyRelatedField(queryset=UserPropertyFile.objects.all())
+    # El campo ep_especie se recibe como entero (code_specie)
+    ep_especie = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = SpeciesRecord
         fields = '__all__'
 
     def validate_ep_especie(self, value):
@@ -58,12 +72,12 @@ class UserPropertyFileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El código de especie proporcionado no es válido.")
 
     def create(self, validated_data):
-        # Asignar instancia de SpecieForrest al campo ep_especie
-        validated_data['ep_especie'] = validated_data.pop('ep_especie')
+        # Obtener la instancia de SpecieForrest usando el code_specie validado
+        ep_especie_instance = validated_data.pop('ep_especie')
+        validated_data['ep_especie'] = ep_especie_instance
         return super().create(validated_data)
 
 class MonitoringPropertySerializer(serializers.ModelSerializer):
-    ep_especie = SpecieForrestPropertySerializer()
     ep_usuario = PropertyUserSerializer()
     ep_predio = PropertySerializer()
     cant_monitoreos_r = serializers.IntegerField(read_only=True)

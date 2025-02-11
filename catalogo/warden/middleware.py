@@ -1,3 +1,5 @@
+import pytz, time
+from datetime import timedelta
 from firebase_admin import auth
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -21,6 +23,10 @@ def get_user(request):
     except Exception:
         return None
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class FirebaseAuthMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -33,6 +39,7 @@ class FirebaseAuthMiddleware:
         ]
 
     def is_path_excluded(self, path):
+        logger.debug(f"Verificando si la ruta '{path}' está excluida.")
         return (
             any(path.startswith(prefix) for prefix in self.excluded_prefixes) or
             any(path == excluded for excluded in self.excluded_paths)
@@ -40,27 +47,34 @@ class FirebaseAuthMiddleware:
 
     def __call__(self, request):
         if not self.is_path_excluded(request.path_info):
+            logger.debug(f"Validando token para la ruta '{request.path_info}'.")
             auth_header = request.META.get('HTTP_AUTHORIZATION')
             if not auth_header:
+                logger.warning("Encabezado de autorización faltante.")
                 return JsonResponse(
                     {"detail": "Authorization header is missing."},
                     status=403
                 )
-
             try:
-                # Asumimos que el header es "Bearer <token>"
                 token = auth_header.split()[1]
-                decoded_token = auth.verify_id_token(token)
+                logger.debug(f"Token recibido: {token[:10]}...")
+                decoded_token = auth.verify_id_token(token, check_revoked=True, clock_skew_seconds=5)
+                logger.debug(f"Token decodificado: {decoded_token}")
                 email = decoded_token.get('email')
-
+                if not email:
+                    raise ValueError("El token no contiene un correo electrónico.")
+                
+                current_time = int(time.time())
+                logger.debug(f"Tiempo actual del servidor: {current_time}")
+                logger.debug(f"Tiempo 'nbf' del token: {decoded_token.get('nbf')}")
+                logger.debug(f"Tiempo 'exp' del token: {decoded_token.get('exp')}")
+                
                 User = get_user_model()
                 user = User.objects.get(email=email)
                 request.user = user
             except Exception as e:
-                return JsonResponse(
-                    {"detail": "Authentication failed."},
-                    status=403
-                )
+                logger.error(f"Error durante la autenticación: {str(e)}")
+                return JsonResponse({"detail": "Authentication failed."}, status=403)
         
         response = self.get_response(request)
         return response

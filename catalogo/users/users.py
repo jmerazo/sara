@@ -17,7 +17,6 @@ from ..models import Users, Departments, Cities
 from ..helpers.jwt import generate_jwt_register
 from ..helpers.Email import send_verification_email, send_acceptance_email, send_rejection_email
 
-
 class UsersView(APIView):
     def get_queryset(self):
         queryset = Users.objects.select_related('department').all().values(
@@ -158,7 +157,14 @@ class UsersView(APIView):
             email = adjusted_data['email']
             # Validar que el nuevo email no exista en otros usuarios
             if Users.objects.exclude(id=pk).filter(email=email).exists():
-                return Response({'error': f'El correo electrónico {email} ya está registrado en otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        'success': False,
+                        'msg': f'El correo electrónico {email} ya está registrado en otro usuario.',
+                        'data': None
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             user.email = email
 
         if 'first_name' in adjusted_data:
@@ -172,7 +178,14 @@ class UsersView(APIView):
                 rol_instance = Rol.objects.get(id=adjusted_data['rol'])
                 user.rol = rol_instance
             except Rol.DoesNotExist:
-                return Response({'error': 'El rol especificado no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        'success': False,
+                        'msg': 'El rol especificado no existe.',
+                        'data': None
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         if 'document_type' in adjusted_data:
             user.document_type = adjusted_data['document_type']
@@ -185,14 +198,28 @@ class UsersView(APIView):
                 department_instance = Departments.objects.get(id=adjusted_data['department'])
                 user.department = department_instance
             except Departments.DoesNotExist:
-                return Response({'error': 'El departamento especificado no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        'success': False,
+                        'msg': 'El departamento especificado no existe.',
+                        'data': None
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         if 'city' in adjusted_data:
             try:
                 city_instance = Cities.objects.get(id=adjusted_data['city'])
                 user.city = city_instance
             except Cities.DoesNotExist:
-                return Response({'error': 'La ciudad especificada no existe.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        'success': False,
+                        'msg': 'La ciudad especificada no existe.',
+                        'data': None
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         if 'is_active' in adjusted_data:
             user.is_active = adjusted_data['is_active']
@@ -203,11 +230,25 @@ class UsersView(APIView):
         if serializer.is_valid():
             # Guardar los cambios en la base de datos
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    'success': True,
+                    'msg': 'Usuario actualizado exitosamente.',
+                    'data': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
 
         # Si hay errores de validación, devolver los errores
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response(
+            {
+                'success': False,
+                'msg': 'Error de validación en los datos proporcionados.',
+                'data': serializer.errors
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
     def delete(self, request, pk, format=None):
         user = self.get_object_for_delete(pk)
         user.delete()
@@ -294,14 +335,60 @@ class UsersStateView(APIView):
             raise Http404
         
     def put(self, request, pk, format=None):
-        user = self.get_object_state(id=pk)
-        newState = request.data.get('nuevoEstado')      
-        if newState in [0, 1]:
+        try:
+            # Obtener el usuario por su ID
+            user = self.get_object_state(id=pk)
+            if not user:
+                return Response(
+                    {
+                        'success': False,
+                        'msg': 'El usuario no existe.',
+                        'data': None
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Obtener el nuevo estado del cuerpo de la solicitud
+            newState = request.data.get('nuevoEstado')
+
+            # Validar que el nuevo estado sea válido (0 o 1)
+            if newState not in [0, 1]:
+                return Response(
+                    {
+                        'success': False,
+                        'msg': 'El estado proporcionado no es válido. Debe ser 0 (inactivo) o 1 (activo).',
+                        'data': None
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Actualizar el estado del usuario
             user.is_active = newState
-        # Aquí debes continuar actualizando los demás campos según tus necesidades
-        user.save()  # Guardar los cambios
-        serializer = UsersSerializer(user)  # Serializa el usuario actualizado
-        return Response(serializer.data)
+            user.save()  # Guardar los cambios
+
+            # Serializar el usuario actualizado
+            serializer = UsersSerializer(user)
+
+            # Retornar una respuesta exitosa
+            return Response(
+                {
+                    'success': True,
+                    'msg': 'Estado del usuario actualizado exitosamente.',
+                    'data': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            # Manejar cualquier excepción inesperada
+            return Response(
+                {
+                    'success': False,
+                    'msg': f'Ocurrió un error inesperado: {str(e)}',
+                    'data': None
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
 class UsersValidateView(APIView):
     def get(self, request):
@@ -396,14 +483,135 @@ class UserPermissionsView(APIView):
     def get(self, request):
         """ user = request.user """
         user = request.GET.get('email')
-        print('user email: ', user)
+
+        # Array de permisos y módulos por defecto
+        roles_permissions = {
+            "ADMINISTRADOR": {
+                "permissions": {
+                    "add": 1,
+                    "update": 1,
+                    "delete": 1,
+                    "download": 1,
+                },
+                "modules": {
+                    "inicio": 1,
+                    "especies": 1,
+                    "familias": 1,
+                    "evaluaciones": 1,
+                    "monitoreos": 1,
+                    "muestras": 1,
+                    "datos_especies": 1,
+                    "contadores": 1,
+                    "mapa": 1,
+                    "viveros": 1,
+                    "admin": 1,
+                },
+            },
+            "VERIFICADOR": {
+                "permissions": {
+                    "add": 0,
+                    "update": 1,
+                    "delete": 0,
+                    "download": 1,
+                },
+                "modules": {
+                    "inicio": 1,
+                    "especies": 1,
+                    "familias": 1,
+                    "evaluaciones": 0,
+                    "monitoreos": 0,
+                    "muestras": 1,
+                    "datos_especies": 0,
+                    "contadores": 1,
+                    "mapa": 0,
+                    "viveros": 0,
+                    "admin": 0,
+                },
+            },
+            "TECNICO": {
+                "permissions": {
+                    "add": 1,
+                    "update": 0,
+                    "delete": 0,
+                    "download": 0,
+                },
+                "modules": {
+                    "inicio": 1,
+                    "especies": 1,
+                    "familias": 1,
+                    "evaluaciones": 1,
+                    "monitoreos": 1,
+                    "muestras": 1,
+                    "datos_especies": 1,
+                    "contadores": 1,
+                    "mapa": 0,
+                    "viveros": 0,
+                    "admin": 0,
+                },
+            },
+            "USUARIO": {
+                "permissions": {
+                    "add": 0,
+                    "update": 0,
+                    "delete": 0,
+                    "download": 0,
+                },
+                "modules": {
+                    "inicio": 1,
+                    "especies": 1,
+                    "familias": 1,
+                    "evaluaciones": 0,
+                    "monitoreos": 0,
+                    "muestras": 0,
+                    "datos_especies": 0,
+                    "contadores": 1,
+                    "mapa": 0,
+                    "viveros": 0,
+                    "admin": 0,
+                },
+            },
+            "USUARIO DEL BOSQUE": {
+                "permissions": {
+                    "add": 1,
+                    "update": 0,
+                    "delete": 0,
+                    "download": 1,
+                },
+                "modules": {
+                    "inicio": 1,
+                    "especies": 1,
+                    "familias": 1,
+                    "evaluaciones": 0,
+                    "monitoreos": 1,
+                    "muestras": 0,
+                    "datos_especies": 0,
+                    "contadores": 1,
+                    "mapa": 0,
+                    "viveros": 1,
+                    "admin": 0,
+                },
+            },
+        }
+
         if user:
             try:
+                # Obtener el usuario y su rol
                 user_role = Users.objects.filter(email=user).first()
                 if user_role:
                     role_name = Rol.objects.filter(id=user_role.rol_id).first()
+                    role_name = role_name.name if role_name else "Rol desconocido"
                     modules_with_permissions = UserModules.objects.filter(rol_id=user_role.rol_id)
 
+                    if not modules_with_permissions.exists():
+                        # Si no hay módulos, usar permisos y módulos por defecto
+                        default_role_data = roles_permissions.get(role_name, {})
+                        return Response({
+                            "role": role_name,
+                            "permissions": default_role_data.get("permissions", {}),
+                            "modules": default_role_data.get("modules", {}),
+                        }, status=200)
+
+                    # Procesar módulos con permisos asignados
                     modules_data = []
                     for module in modules_with_permissions:
                         page = Pages.objects.get(id=module.page_id)
@@ -413,16 +621,14 @@ class UserPermissionsView(APIView):
                         module_data = {
                             'page_id': page.id,
                             'page_router': page.router,
-                            'page_section' : page.section,
                             'page_name': page.title,
                             'page_icon': page.icon,
-                            'page_subtitle': page.sub_title,
                             'permissions': permissions
                         }
                         modules_data.append(module_data)
 
                     return Response({
-                        "role": role_name.name,  # Asumiendo que role_name es la relación a Roles
+                        "role": role_name,
                         "modules": modules_data
                     }, status=200)
                 else:

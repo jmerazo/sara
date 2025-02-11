@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo Monitoreo</title>
+    <style>
+        .container {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-family: Montserrat, sans-serif;
+        }
+        .table-container {
+            margin: 20px auto;
+            width: 80%;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            border: 1px solid #dddddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f2f2f2;
+        }
+        .logo {
+            max-width: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Se usa el mismo nombre que el attachment para mostrar la imagen inline -->
+        <img src="cid:sara.png" alt="Logo" class="logo">
+        <h2>Nuevo monitoreo registrado por {{ usuario_registrador }}</h2>
+        <div class="table-container">
+            <table>
+                <tbody>
+                    {% for key, value in email_context.items %}
+                    <tr>
+                        <th>{{ key }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p>Gracias,</p>
+        <p>El equipo de Sara</p>
+    </div>
+</body>
+</html>

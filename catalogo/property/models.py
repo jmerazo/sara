@@ -11,7 +11,6 @@ class Property(models.Model):
     vereda = models.CharField(max_length=80, blank=True, null=True)
     
     class Meta:
-        managed = False
         db_table = 'predios'
 
 class UserPropertyFile(models.Model):
@@ -20,16 +19,23 @@ class UserPropertyFile(models.Model):
     fecha_exp = models.DateField()
     ep_usuario = models.ForeignKey(Users, on_delete=models.RESTRICT)
     ep_predio = models.ForeignKey(Property, on_delete=models.RESTRICT)
-    ep_especie = models.ForeignKey(SpecieForrest, to_field='code_specie', on_delete=models.RESTRICT)  # Relación basada en code_specie
-    tamano_UMF = models.IntegerField(blank=True, null=True)
-    cantidad_autorizada = models.IntegerField(blank=True, null=True)
-    cantidad_remanentes = models.IntegerField(blank=True, null=True)
-    cantidad_aprovechable = models.IntegerField(blank=True, null=True)
-    cant_monitoreos = models.IntegerField(blank=True, null=True)
-    PCM = models.IntegerField(blank=True, null=True)
-    PRM = models.IntegerField(blank=True, null=True)
-    cantidad_placas = models.IntegerField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'usuario_expediente_predio'
+
+class SpeciesRecord(models.Model):
+    expediente = models.ForeignKey(
+        UserPropertyFile,
+        db_column='expediente_id',  # La columna en la base de datos se sigue llamando expediente_id
+        on_delete=models.RESTRICT
+    )
+    ep_especie = models.ForeignKey(SpecieForrest, to_field='code_specie', on_delete=models.RESTRICT)
+    cantidad_autorizada = models.IntegerField(blank=False, null=False)
+    cantidad_remanentes = models.IntegerField(blank=False, null=False)
+    cantidad_aprovechable = models.IntegerField(blank=False, null=False)
+    CM = models.IntegerField(blank=False, null=False)
+    RM = models.IntegerField(blank=False, null=False)
+    cantidad_placas = models.IntegerField(blank=False, null=False)
 
     class Meta:
-        managed = False
-        db_table = 'usuario_expediente_predio'
+        db_table = 'especies_expediente'

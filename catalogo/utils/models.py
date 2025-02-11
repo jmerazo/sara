@@ -4,7 +4,6 @@ class Rol(models.Model):
     name = models.CharField(max_length=35, blank=False, null=False)
 
     class Meta:
-        managed = True
         db_table = 'roles'
 
 class Glossary(models.Model):
@@ -13,7 +12,6 @@ class Glossary(models.Model):
     definition = models.TextField()
 
     class Meta:
-        managed = False
         db_table = 'glossary'
 
     def __str__(self):
@@ -29,5 +27,4 @@ class Sisa(models.Model):
     clasificacion_res = models.CharField(max_length=60, blank=True, null=True)    
 
     class Meta:
-        managed = False
         db_table = 'species_sisa'

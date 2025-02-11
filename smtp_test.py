@@ -39,6 +39,6 @@ def send_test_email(use_ssl=False):
         print(f"Error al enviar correo: {e}")
 
 # Probar con SSL
-send_test_email(use_ssl=True)
-# Probar sin SSL
 send_test_email(use_ssl=False)
+# Probar sin SSL
+send_test_email(use_ssl=True)

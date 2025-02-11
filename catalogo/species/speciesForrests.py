@@ -505,7 +505,7 @@ class ReportSpecieDataView(APIView):
             COUNT(DISTINCT mu.id) AS muestras
         FROM evaluacion_as_c AS ea
         LEFT JOIN especie_forestal_c AS ef ON ef.code_specie = ea.cod_especie_id
-        LEFT JOIN monitoreo_c AS mn ON mn.id = ea.id
+        LEFT JOIN monitoreo_c AS mn ON mn.evaluacion_id = ea.id
         LEFT JOIN muestras_c AS mu ON mu.evaluacion_id = ea.id
         WHERE ea.numero_placa IS NOT NULL
         GROUP BY ea.cod_especie_id, ef.vernacularName, ef.nombre_cientifico;

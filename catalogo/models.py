@@ -31,7 +31,6 @@ class Departments(models.Model):
     long = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'departments'
 
 class Cities(models.Model):
@@ -42,7 +41,6 @@ class Cities(models.Model):
     department = models.ForeignKey(Departments, on_delete=models.RESTRICT)
 
     class Meta:
-        managed = False
         db_table = 'cities'
 
 class Users(AbstractBaseUser, PermissionsMixin):
@@ -74,8 +72,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     class Meta:
-        managed = True
-        db_table = 'Users'
+        db_table = 'users'
 
     def __str__(self):
         return self.email

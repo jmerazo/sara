@@ -22,7 +22,6 @@ class Nurseries(models.Model):
     numero_registro_ica = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'viveros'
 
 class UserNurseries(models.Model):
@@ -38,5 +37,4 @@ class UserNurseries(models.Model):
     activo = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
-        db_table = 'UserEspecieForestal'
+        db_table = 'userespecieforestal'

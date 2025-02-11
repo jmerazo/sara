@@ -11,7 +11,6 @@ class Monitorings(models.Model):
     validacion_ubicacion = models.CharField(max_length=255, blank=True, null=True)
     user = models.ForeignKey(Users, on_delete=models.RESTRICT)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     precipitacion = models.CharField(max_length=13, blank=True, null=True)
-    estado_sanitario_palma = models.CharField(max_length=255, blank=True, null=True)
     estado_fisico_tallo = models.CharField(max_length=255, blank=True, null=True)
     factores_amenaza_individuos = models.CharField(max_length=255, blank=True, null=True)
     cant_racimos_capuchon = models.IntegerField(blank=True, null=True)
@@ -22,7 +21,6 @@ class Monitorings(models.Model):
     peso_racimo_completo = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     peso_frutos_desgranados = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cant_frutos_por_racimo = models.IntegerField(blank=True, null=True)
-    cantidad_anillos_tallo = models.IntegerField(blank=True, null=True)
     cobertura = models.CharField(max_length=51, blank=True, null=True)
     altura_total = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True)
     altura_del_fuste = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True)
@@ -39,7 +37,6 @@ class Monitorings(models.Model):
     estado_madurez_frutos_maduros = models.CharField(max_length=255, blank=True, null=True)
     estado_madurez_frutos_pintones = models.CharField(max_length=255, blank=True, null=True)
     estado_madurez_frutos = models.CharField(max_length=255, blank=True, null=True)
-    estado_madurez = models.CharField(max_length=15, blank=True, null=True)
     color_fruto = models.CharField(max_length=20, blank=True, null=True)
     cantidad_frutos_rama = models.IntegerField(blank=True, null=True)
     cant_ramas_fraccion_copa = models.IntegerField(blank=True, null=True)
@@ -55,7 +52,6 @@ class Monitorings(models.Model):
     peso_por_fruto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fauna_frutos = models.CharField(max_length=30, blank=True, null=True)
     cant_semillas = models.IntegerField(blank=True, null=True)
-    medida_peso_sem = models.CharField(max_length=30, blank=True, null=True)
     peso_semillas = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cantidad_semillas_medidos = models.IntegerField(blank=True, null=True)
     peso_por_semilla = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -67,7 +63,6 @@ class Monitorings(models.Model):
     observaciones = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'monitoreo_c'
 
 
@@ -107,7 +102,6 @@ class ViewMonitorings(models.Model):
     observaciones_afec = models.CharField(max_length=200, blank=True, null=True)
     cantidad_hojas_corona = models.IntegerField(blank=True, null=True)
     estado_fisico_tallo = models.CharField(max_length=255, blank=True, null=True)
-    estado_sanitario_palma = models.CharField(max_length=255, blank=True, null=True)
     factores_amenaza_individuos = models.CharField(max_length=255, blank=True, null=True)
     follaje = models.CharField(max_length=50, blank=True, null=True)
     follaje_porcentaje = models.CharField(max_length=50, blank=True, null=True)
@@ -126,7 +120,6 @@ class ViewMonitorings(models.Model):
     estado_madurez_frutos_maduros = models.CharField(max_length=255, blank=True, null=True)
     estado_madurez_frutos_pintones = models.CharField(max_length=255, blank=True, null=True)
     estado_madurez_frutos = models.CharField(max_length=255, blank=True, null=True)
-    estado_madurez = models.CharField(max_length=15, blank=True, null=True)
     color_fruto = models.CharField(max_length=20, blank=True, null=True)
     color_fruto_otro = models.CharField(max_length=50, blank=True, null=True)
     fructificacion_copa = models.CharField(max_length=255, blank=True, null=True)
